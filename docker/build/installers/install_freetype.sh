@@ -1,0 +1,1 @@
+sudo apt-get install -y libfreetype-dev libharfbuzz-dev

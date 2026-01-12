@@ -1,0 +1,45 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}",
+                // "${workspaceFolder}/**",
+                "${workspaceFolder}/cyber",
+                "${workspaceFolder}/modules",
+                "${workspaceFolder}/tools",
+                // "${workspaceFolder}/third_party/install",
+                // "/usr/include",
+                "/usr/include/x86_64-linux-gnu",
+                "/usr/include/aarch64-linux-gnu",
+                "/usr/include/opencv4",
+                "/usr/include/eigen3",
+                "/usr/include/pcl-1.14",
+                "/usr/include/vtk-9.1",
+                "/opt/CodexOpen",
+                // "/opt/ros/noetic/include",
+                // "/opt/ros/humble/include",
+                "/opt/kernelsoftdds/include",
+                "/opt/kernelsoftdds/include/ddscxx",
+                "/opt/kernelsoftdds/include/iceoryx/v2.90.0"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/clang-18",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "linux-clang-x64",
+            "configurationProvider": "ms-vscode.cmake-tools",
+            "browse": {
+                "path": [
+                    "${workspaceFolder}/cyber",
+                    "${workspaceFolder}/modules",
+                    "${workspaceFolder}/tools",
+                    "${workspaceFolder}/third_party/install"
+                ],
+                "limitSymbolsToIncludedHeaders": true,
+                "databaseFilename": "${workspaceFolder}/.vscode/browse.vc.db"
+            }
+        }
+    ],
+    "version": 4
+}

@@ -1,0 +1,5 @@
+rslidar_sdk-1.3.2
+/workspaces/CodexOpen/tools/data_processor/rs_driver/ros1/devel/.private/rslidar_sdk/lib/pkgconfig/rslidar_sdk.pc /workspaces/CodexOpen/tools/data_processor/rs_driver/ros1/devel/lib/pkgconfig/rslidar_sdk.pc
+/workspaces/CodexOpen/tools/data_processor/rs_driver/ros1/devel/.private/rslidar_sdk/lib/rslidar_sdk/rslidar_sdk_node /workspaces/CodexOpen/tools/data_processor/rs_driver/ros1/devel/lib/rslidar_sdk/rslidar_sdk_node
+/workspaces/CodexOpen/tools/data_processor/rs_driver/ros1/devel/.private/rslidar_sdk/share/rslidar_sdk/cmake/rslidar_sdkConfig-version.cmake /workspaces/CodexOpen/tools/data_processor/rs_driver/ros1/devel/share/rslidar_sdk/cmake/rslidar_sdkConfig-version.cmake
+/workspaces/CodexOpen/tools/data_processor/rs_driver/ros1/devel/.private/rslidar_sdk/share/rslidar_sdk/cmake/rslidar_sdkConfig.cmake /workspaces/CodexOpen/tools/data_processor/rs_driver/ros1/devel/share/rslidar_sdk/cmake/rslidar_sdkConfig.cmake

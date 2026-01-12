@@ -1,0 +1,79 @@
+// generated from rosidl_typesupport_fastrtps_cpp/resource/idl__rosidl_typesupport_fastrtps_cpp.hpp.em
+// with input from ars548_interface:msg/VelocityVehicle.idl
+// generated code does not contain a copyright notice
+
+#ifndef ARS548_INTERFACE__MSG__DETAIL__VELOCITY_VEHICLE__ROSIDL_TYPESUPPORT_FASTRTPS_CPP_HPP_
+#define ARS548_INTERFACE__MSG__DETAIL__VELOCITY_VEHICLE__ROSIDL_TYPESUPPORT_FASTRTPS_CPP_HPP_
+
+#include "rosidl_runtime_c/message_type_support_struct.h"
+#include "rosidl_typesupport_interface/macros.h"
+#include "ars548_interface/msg/rosidl_typesupport_fastrtps_cpp__visibility_control.h"
+#include "ars548_interface/msg/detail/velocity_vehicle__struct.hpp"
+
+#ifndef _WIN32
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wunused-parameter"
+# ifdef __clang__
+#  pragma clang diagnostic ignored "-Wdeprecated-register"
+#  pragma clang diagnostic ignored "-Wreturn-type-c-linkage"
+# endif
+#endif
+#ifndef _WIN32
+# pragma GCC diagnostic pop
+#endif
+
+#include "fastcdr/Cdr.h"
+
+namespace ars548_interface
+{
+
+namespace msg
+{
+
+namespace typesupport_fastrtps_cpp
+{
+
+bool
+ROSIDL_TYPESUPPORT_FASTRTPS_CPP_PUBLIC_ars548_interface
+cdr_serialize(
+  const ars548_interface::msg::VelocityVehicle & ros_message,
+  eprosima::fastcdr::Cdr & cdr);
+
+bool
+ROSIDL_TYPESUPPORT_FASTRTPS_CPP_PUBLIC_ars548_interface
+cdr_deserialize(
+  eprosima::fastcdr::Cdr & cdr,
+  ars548_interface::msg::VelocityVehicle & ros_message);
+
+size_t
+ROSIDL_TYPESUPPORT_FASTRTPS_CPP_PUBLIC_ars548_interface
+get_serialized_size(
+  const ars548_interface::msg::VelocityVehicle & ros_message,
+  size_t current_alignment);
+
+size_t
+ROSIDL_TYPESUPPORT_FASTRTPS_CPP_PUBLIC_ars548_interface
+max_serialized_size_VelocityVehicle(
+  bool & full_bounded,
+  size_t current_alignment);
+
+}  // namespace typesupport_fastrtps_cpp
+
+}  // namespace msg
+
+}  // namespace ars548_interface
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+ROSIDL_TYPESUPPORT_FASTRTPS_CPP_PUBLIC_ars548_interface
+const rosidl_message_type_support_t *
+  ROSIDL_TYPESUPPORT_INTERFACE__MESSAGE_SYMBOL_NAME(rosidl_typesupport_fastrtps_cpp, ars548_interface, msg, VelocityVehicle)();
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif  // ARS548_INTERFACE__MSG__DETAIL__VELOCITY_VEHICLE__ROSIDL_TYPESUPPORT_FASTRTPS_CPP_HPP_

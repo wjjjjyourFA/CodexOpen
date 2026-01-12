@@ -1,0 +1,60 @@
+# 语言: None, Cpp, Java, JavaScript, ObjC, Proto, TableGen, TextProto
+Language: Cpp
+BasedOnStyle: Google
+
+# 缩进宽度
+IndentWidth: 2
+
+# 每行字符的限制，0表示没有限制 default google 80
+ColumnLimit: 80
+
+# 确保每级命名空间分开写
+CompactNamespaces: false
+
+# tab宽度
+TabWidth: 2
+
+# 使用tab字符: Never, ForIndentation, ForContinuationAndIndentation, Always
+UseTab: Never
+
+# 在括号后的内容对齐，增加代码的整齐度
+AlignAfterOpenBracket: Align
+
+# 连续赋值时，对齐所有等号
+AlignConsecutiveAssignments: true
+
+# 连续声明时，对齐所有声明的变量名
+AlignConsecutiveDeclarations: false
+
+# 右对齐逃脱换行(使用反斜杠换行)的反斜杠
+AlignEscapedNewlines: Right
+
+# 水平对齐二元和三元表达式的操作数
+AlignOperands: true
+
+# 禁用注释格式化
+ReflowComments: false
+
+# 对齐连续的尾随的注释
+AlignTrailingComments: false
+
+# 注释//只有一个空格
+SpacesInLineComment 1
+
+# 不允许函数声明的所有参数在放在下一行
+AllowAllParametersOfDeclarationOnNextLine: false
+
+# 允许排序#include
+SortIncludes: false
+
+# 允许排序 using 声明
+SortUsingDeclarations: false
+
+# 允许在函数调用时将所有参数放在下一行
+AllowAllArgumentsOnNextLine: true
+
+# 多行字符串总是在之前换行，使长字符串更清晰
+AlwaysBreakBeforeMultilineStrings: true
+
+# 指针符号 * 放在变量名的左侧，如 int* ptr
+PointerAlignment: Left
