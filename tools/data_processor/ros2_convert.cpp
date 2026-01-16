@@ -15,7 +15,7 @@ Ros2Convert::Ros2Convert() {}
 Ros2Convert::~Ros2Convert() {}
 
 void Ros2Convert::Init(std::shared_ptr<rclcpp::Node> nh,
-                       std::shared_ptr<ParamSimple> param) {
+                       std::shared_ptr<RuntimeConfig> param) {
   node   = nh;
   param_ = param;
 

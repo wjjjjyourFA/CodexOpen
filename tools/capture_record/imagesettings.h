@@ -1,4 +1,3 @@
-
 #ifndef IMAGESETTINGS_H
 #define IMAGESETTINGS_H
 

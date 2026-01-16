@@ -1,19 +1,20 @@
-#include "modules/perception/common/camera/parameter/read_camera_params.h"
+#include "modules/perception/common/camera/params/camera_params.h"
 #include "modules/perception/common/camera/common/undistortion_handler_legacy.h"
 
 using namespace jojo::perception::camera;
+namespace cfg = jojo::perception::config;
 
 int main(int argc, char** argv) {
   // 读取 标定参数
   auto camera_params = std::make_shared<CameraParams>();
-  camera_params->ReadCameraParaBase("kk.ini");
+  camera_params->LoadFromFile("kk.ini");
   auto matrix = camera_params->GetMatrixVector();
 
   // 初始化 去畸变器
   auto camera_undistort = std::make_shared<UndistortionHandler>();
   Eigen::VectorXf params(17);
   params =
-      IntrinsicParamsToVector(matrix.at(0)->camera_matrix->intrinsic_matrix,
+      cfg::IntrinsicParamsToVector(matrix.at(0)->camera_matrix->intrinsic_matrix,
                               matrix.at(0)->camera_matrix->distortion_params);
 
   cv::Mat src_img = cv::imread("test.jpg");

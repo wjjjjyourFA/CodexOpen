@@ -71,7 +71,7 @@ bool SensorExtrinsics::LoadFromFileBase(const char* filename,
 bool SensorExtrinsics::ReadFileWrapper(const std::string& sensor_file) {
   auto transf_i = std::make_shared<ExtrinsicMatrix>();
 
-  auto extrinsic_matrix = &transf_i->matrix;
+  auto extrinsic_matrix = &transf_i->extrinsic_matrix;
 
   char filename[256];
   std::snprintf(filename, sizeof(filename), "%s", sensor_file.c_str());

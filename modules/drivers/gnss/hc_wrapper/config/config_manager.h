@@ -1,23 +1,19 @@
-#ifndef GMSL_CAMERA_PARAMS_H
-#define GMSL_CAMERA_PARAMS_H
+#ifndef GNSS_PARAMS_H
+#define GNSS_PARAMS_H
 
 #pragma once
 
 #include <iostream>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/ini_parser.hpp>
-#include <boost/optional.hpp>
 
 #include "modules/common/config/config_file_base.h"
 #include "modules/drivers/gnss/hc_wrapper/config/vehicle_model_config.h"
 
 namespace jojo {
-namespace drivers { 
-namespace config = jojo::common::config;
+namespace drivers {
 
-class ConfigManager : public config::ConfigFileBase {
+class ConfigManager : public jojo::common::config::ConfigFileBase {
  public:
-  using config::ConfigFileBase::ConfigFileBase;
+  using jojo::common::config::ConfigFileBase::ConfigFileBase;
 
   void LoadConfig(const std::string& config_path) override;
 
@@ -29,7 +25,7 @@ class ConfigManager : public config::ConfigFileBase {
   }
 };
 
-}  // namespace tools
+}  // namespace drivers
 }  // namespace jojo
 
-#endif  // DATA_PROCESSOR_PARAMS_H
+#endif  // GNSS_PARAMS_H

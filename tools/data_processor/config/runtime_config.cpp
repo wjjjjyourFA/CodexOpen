@@ -76,6 +76,7 @@ void RuntimeConfig::LoadConfig(const std::string& config_path) {
     std::cout << "b_save_data: " << b_save_data << std::endl;
     std::cout << "save_path: " << save_path << std::endl;
     // std::cout << "Lpose: " << b_local_pose << std::endl;
+
     // 打印其他参数...
     // clang-format on
   } catch (const std::exception& e) {

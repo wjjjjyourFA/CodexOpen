@@ -1,5 +1,5 @@
-#ifndef READ_BASE_PARAMS_H
-#define READ_BASE_PARAMS_H
+#ifndef READ_SENSOR_PARAMS_H
+#define READ_SENSOR_PARAMS_H
 
 #pragma once
 
@@ -20,12 +20,12 @@ class ExtrinsicMatrix {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-  ExtrinsicMatrix() { matrix = Eigen::Matrix4f::Identity(); }
+  ExtrinsicMatrix() { extrinsic_matrix = Eigen::Matrix4f::Identity(); }
   ~ExtrinsicMatrix() {}
 
-  Eigen::Matrix4f matrix;  // RT
+  Eigen::Matrix4f extrinsic_matrix;  // RT
 
-  void SetZero() { matrix.setZero(); }
+  void SetZero() { extrinsic_matrix.setZero(); }
 };
 
 class SensorExtrinsics {

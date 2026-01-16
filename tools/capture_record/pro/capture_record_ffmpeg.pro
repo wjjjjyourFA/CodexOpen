@@ -30,7 +30,7 @@ UI_DIR  = $$SELF_PATH/pro/ui
 MOC_DIR = $$CODEX_PATH/tools/capture_record/moc
 RCC_DIR = $$CODEX_PATH/tools/capture_record/rcc
 
-SOURCES = \
+SOURCES += \
   $$CODEX_PATH/cyber/binary.cc \
   $$PREFIX/camera/usb_cam_cv.cpp \
   $$PREFIX/camera/proto/config.pb.cc \
@@ -42,7 +42,7 @@ SOURCES = \
   $$SELF_PATH/ffmpeg/camera_device.cpp \
   $$SELF_PATH/ffmpeg/ffmpeg_writer.cpp \
 
-HEADERS = \
+HEADERS += \
   $$CODEX_PATH/cyber/binary.h \
   $$CODEX_PATH/cyber/common/log.h \
   $$PREFIX/camera/usb_cam_cv.h \

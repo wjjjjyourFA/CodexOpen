@@ -10,11 +10,8 @@
 #include "localization_msgs/Imu.h"
 
 #include "modules/common/math/unit_converter.h"
+#include "modules/drivers/gnss/hc_wrapper/config/runtime_config.h"
 #include "common/tcp_interface.h"
-#include "params/params.h"
-
-namespace drivers = jojo::drivers;
-namespace math = jojo::common::math;
 
 class MfgiReceiver : public TcpClient {
  public:
@@ -22,12 +19,12 @@ class MfgiReceiver : public TcpClient {
   ~MfgiReceiver();
 
   bool InitRos(ros::NodeHandle& nh, ros::NodeHandle& private_nh,
-               std::shared_ptr<drivers::ParamSimple> param);
+               std::shared_ptr<jojo::drivers::RuntimeConfig> param);
 
  protected:
   void Resolve(const char* const buf, int n);
 
-  std::shared_ptr<drivers::ParamSimple> param_ /*param_manager_*/;
+  std::shared_ptr<jojo::drivers::RuntimeConfig> param_ /*param_manager_*/;
 
  private:
   ros::NodeHandle nh_;

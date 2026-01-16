@@ -70,6 +70,7 @@ HEADERS += \
 INCLUDEPATH += \
   $$CODEX_PATH \
   $$SELF_PATH/ros2_message \
+  $$SELF_PATH/ros2_message/version_1.0 \
 
 INCLUDEPATH += \
   /usr/include/eigen3 \

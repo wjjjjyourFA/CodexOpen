@@ -110,7 +110,7 @@ class Ros1Convert {
   // clang-format on
 
  private:
-  std::shared_ptr<RuntimeConfig> param_ /*param_simple*/;
+  std::shared_ptr<RuntimeConfig> param_ /*runtime_config*/;
 
   ros::NodeHandle nh_, private_nh_;
 

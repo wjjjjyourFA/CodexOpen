@@ -58,6 +58,7 @@ SOURCES       = ../../../cyber/binary.cc \
 		../../common/utils/rosbag_utils.cpp \
 		../../../modules/perception/common/base/camera.cc \
 		../../../modules/perception/common/base/distortion_model.cc \
+		../../../modules/perception/common/base/pcl_extra/pcl_eigen.cpp \
 		../../../modules/perception/common/base/pcl_extra/pcl_viewer.cpp \
 		../../../modules/perception/common/base/opencv_extra/cv_colors.cpp \
 		../../../modules/perception/common/camera/common/undistortion_handler_legacy.cc \
@@ -81,6 +82,7 @@ OBJECTS       = ../../../build/Release/workspaces/CodexOpen/cyber/binary.o \
 		../../../build/Release/workspaces/CodexOpen/tools/common/utils/rosbag_utils.o \
 		../../../build/Release/workspaces/CodexOpen/modules/perception/common/base/camera.o \
 		../../../build/Release/workspaces/CodexOpen/modules/perception/common/base/distortion_model.o \
+		../../../build/Release/workspaces/CodexOpen/modules/perception/common/base/pcl_extra/pcl_eigen.o \
 		../../../build/Release/workspaces/CodexOpen/modules/perception/common/base/pcl_extra/pcl_viewer.o \
 		../../../build/Release/workspaces/CodexOpen/modules/perception/common/base/opencv_extra/cv_colors.o \
 		../../../build/Release/workspaces/CodexOpen/modules/perception/common/camera/common/undistortion_handler_legacy.o \
@@ -195,6 +197,7 @@ DIST          = /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/spec_pre.prf \
 		/workspaces/CodexOpen/tools/data_processor/pro/../../../../CodexOpen/modules/perception/common/base/distortion_model.h \
 		/workspaces/CodexOpen/tools/data_processor/pro/../../../../CodexOpen/modules/perception/common/base/frame_extra.h \
 		/workspaces/CodexOpen/tools/data_processor/pro/../../../../CodexOpen/modules/perception/common/base/pcl_extra/common.h \
+		/workspaces/CodexOpen/tools/data_processor/pro/../../../../CodexOpen/modules/perception/common/base/pcl_extra/pcl_eigen.h \
 		/workspaces/CodexOpen/tools/data_processor/pro/../../../../CodexOpen/modules/perception/common/base/pcl_extra/pcl_viewer.h \
 		/workspaces/CodexOpen/tools/data_processor/pro/../../../../CodexOpen/modules/perception/common/base/pcl_extra/point_types.h \
 		/workspaces/CodexOpen/tools/data_processor/pro/../../../../CodexOpen/modules/perception/common/base/opencv_extra/cv_colors.h \
@@ -221,6 +224,7 @@ DIST          = /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/spec_pre.prf \
 		../../common/utils/rosbag_utils.cpp \
 		../../../modules/perception/common/base/camera.cc \
 		../../../modules/perception/common/base/distortion_model.cc \
+		../../../modules/perception/common/base/pcl_extra/pcl_eigen.cpp \
 		../../../modules/perception/common/base/pcl_extra/pcl_viewer.cpp \
 		../../../modules/perception/common/base/opencv_extra/cv_colors.cpp \
 		../../../modules/perception/common/camera/common/undistortion_handler_legacy.cc \
@@ -500,6 +504,13 @@ compiler_clean:
 		../../../../CodexOpen/cyber/binary.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o ../../../build/Release/workspaces/CodexOpen/modules/perception/common/base/distortion_model.o ../../../modules/perception/common/base/distortion_model.cc
 
+../../../build/Release/workspaces/CodexOpen/modules/perception/common/base/pcl_extra/pcl_eigen.o: ../../../modules/perception/common/base/pcl_extra/pcl_eigen.cpp ../../../../CodexOpen/modules/perception/common/base/pcl_extra/pcl_eigen.h \
+		../../../../CodexOpen/modules/common/math/math_utils.h \
+		../../../../CodexOpen/modules/common/math/vec2d.h \
+		../../../../CodexOpen/modules/common/math/math_utils_extra.h \
+		../../../../CodexOpen/modules/common_struct/basic_msgs/EulerAngles.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o ../../../build/Release/workspaces/CodexOpen/modules/perception/common/base/pcl_extra/pcl_eigen.o ../../../modules/perception/common/base/pcl_extra/pcl_eigen.cpp
+
 ../../../build/Release/workspaces/CodexOpen/modules/perception/common/base/pcl_extra/pcl_viewer.o: ../../../modules/perception/common/base/pcl_extra/pcl_viewer.cpp ../../../../CodexOpen/modules/perception/common/base/pcl_extra/pcl_viewer.h \
 		../../../../CodexOpen/modules/perception/common/base/opencv_extra/cv_colors.h \
 		../../../../CodexOpen/modules/perception/common/lidar/convert/robosense.h \
@@ -712,12 +723,12 @@ compiler_clean:
 		../../../../CodexOpen/cyber/common/log.h \
 		../../../../CodexOpen/cyber/binary.h \
 		../../../../CodexOpen/modules/perception/common/base/pcl_extra/pcl_viewer.h \
+		../../../../CodexOpen/modules/perception/common/config/utils.h \
 		../../../../CodexOpen/modules/perception/common/camera/common/undistortion_handler_legacy.h \
 		../../../../CodexOpen/modules/perception/common/base/distortion_model.h \
 		../../../../CodexOpen/modules/perception/common/base/camera.h \
 		../../../../CodexOpen/modules/perception/common/base/fisheye_model.h \
 		../../../../CodexOpen/modules/perception/common/camera/params/camera_params.h \
-		../../../../CodexOpen/modules/perception/common/config/utils.h \
 		../../../../CodexOpen/modules/perception/common/lidar/convert/rs_sort_map.h \
 		../../../../CodexOpen/tools/common/utils/rosbag_utils.h \
 		../../../../CodexOpen/tools/data_processor/config/runtime_config.h \
@@ -734,12 +745,12 @@ compiler_clean:
 		../../../../CodexOpen/modules/perception/common/base/opencv_extra/cv_colors.h \
 		../../../../CodexOpen/modules/perception/common/lidar/convert/robosense.h \
 		../../../../CodexOpen/modules/perception/common/base/pcl_extra/point_types.h \
+		../../../../CodexOpen/modules/perception/common/config/utils.h \
 		../../../../CodexOpen/modules/perception/common/camera/common/undistortion_handler_legacy.h \
 		../../../../CodexOpen/modules/perception/common/base/distortion_model.h \
 		../../../../CodexOpen/modules/perception/common/base/camera.h \
 		../../../../CodexOpen/modules/perception/common/base/fisheye_model.h \
 		../../../../CodexOpen/modules/perception/common/camera/params/camera_params.h \
-		../../../../CodexOpen/modules/perception/common/config/utils.h \
 		../../../../CodexOpen/modules/perception/common/lidar/convert/rs_sort_map.h \
 		../../../../CodexOpen/tools/common/utils/rosbag_utils.h \
 		../../../../CodexOpen/tools/data_processor/config/runtime_config.h \
@@ -907,12 +918,12 @@ compiler_clean:
 		../../../../CodexOpen/cyber/common/log.h \
 		../../../../CodexOpen/cyber/binary.h \
 		../../../../CodexOpen/modules/perception/common/base/pcl_extra/pcl_viewer.h \
+		../../../../CodexOpen/modules/perception/common/config/utils.h \
 		../../../../CodexOpen/modules/perception/common/camera/common/undistortion_handler_legacy.h \
 		../../../../CodexOpen/modules/perception/common/base/distortion_model.h \
 		../../../../CodexOpen/modules/perception/common/base/camera.h \
 		../../../../CodexOpen/modules/perception/common/base/fisheye_model.h \
 		../../../../CodexOpen/modules/perception/common/camera/params/camera_params.h \
-		../../../../CodexOpen/modules/perception/common/config/utils.h \
 		../../../../CodexOpen/modules/perception/common/lidar/convert/rs_sort_map.h \
 		../../../../CodexOpen/tools/common/utils/rosbag_utils.h \
 		../../../../CodexOpen/tools/data_processor/config/runtime_config.h \

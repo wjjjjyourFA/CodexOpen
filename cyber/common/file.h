@@ -146,7 +146,7 @@ std::string GetAbsolutePath(const std::string &prefix,
  */
 bool PathExists(const std::string &path);
 
-bool FileExists(const std::string &path);
+bool FileExists(const std::string &file_path);
 
 bool PathIsAbsolute(const std::string &path);
 
@@ -262,6 +262,8 @@ bool DeleteFile(const std::string &filename);
 bool GetType(const std::string &filename, FileType *type);
 
 bool CreateDir(const std::string &dir);
+
+bool CreateFile(const std::string &file_path);
 
 template <typename T>
 bool LoadConfig(const std::string &relative_path, T *config) {

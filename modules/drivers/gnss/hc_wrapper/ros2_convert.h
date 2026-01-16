@@ -11,7 +11,8 @@
 #include "monitor_msgs/msg/heart_beat.hpp"
 
 #include "modules/drivers/gnss/hc_wrapper/rac_gnss_receiver.h"
-#include "modules/drivers/gnss/hc_wrapper/params/params.h"
+#include "modules/drivers/gnss/hc_wrapper/config/runtime_config.h"
+#include "modules/drivers/gnss/hc_wrapper/config/config_manager.h"
 
 namespace drivers = jojo::drivers;
 namespace math = jojo::common::math;
@@ -29,7 +30,7 @@ class DrvierWrapper {
   rclcpp::Publisher<monitor_msgs::msg::HeartBeat>::SharedPtr hb_puber;  // heartbeat
   // clang-format on
 
-  drivers::ParamSimple conf;
+  drivers::RuntimeConfig conf;
 
   custom_sensor_msgs::msg::Gnss gnss_msg;
   custom_sensor_msgs::msg::Imu imu_msg;
@@ -49,7 +50,7 @@ class Ros2Convert {
   ~Ros2Convert();
 
   bool Init(std::shared_ptr<rclcpp::Node> nh,
-            std::shared_ptr<drivers::ParamManager> param);
+            std::shared_ptr<drivers::ConfigManager> param);
   void Run();
 
  protected:
@@ -57,7 +58,7 @@ class Ros2Convert {
   void MultiChannel();
 
  private:
-  std::shared_ptr<drivers::ParamManager> param_;
+  std::shared_ptr<drivers::ConfigManager> param_;
 
   std::shared_ptr<rclcpp::Node> node;
   std::string ns;

@@ -36,7 +36,7 @@ set(SOURCES
     ${CMAKE_SOURCE_DIR}/modules/perception/common/base/camera.cc
     ${CMAKE_SOURCE_DIR}/modules/perception/common/base/distortion_model.cc
     ${CMAKE_SOURCE_DIR}/modules/perception/common/base/parameter/utils.cpp
-    ${CMAKE_SOURCE_DIR}/modules/perception/common/camera/common/undistortion_handler_simple.cc
+    ${CMAKE_SOURCE_DIR}/modules/perception/common/camera/common/undistortion_handler_legacy.cc
     ${CMAKE_SOURCE_DIR}/modules/perception/common/camera/parameter/read_camera_params.cpp
     ${CMAKE_SOURCE_DIR}/modules/perception/tools/common/colors.cpp
     ${CMAKE_SOURCE_DIR}/modules/perception/tools/common/show_data_2d.cpp

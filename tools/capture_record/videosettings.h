@@ -1,4 +1,3 @@
-
 #ifndef VIDEOSETTINGS_H
 #define VIDEOSETTINGS_H
 

@@ -17,7 +17,7 @@ CXX           = g++
 DEFINES       = 
 CFLAGS        = -pipe -O2 -Wall -W -fPIC $(DEFINES)
 CXXFLAGS      = -pipe -O3 -O2 -std=gnu++1y -Wall -W -fPIC $(DEFINES)
-INCPATH       = -I. -I/workspaces/CodexOpen -isystem /usr/include/eigen3 -isystem /usr/include/opencv4 -I/opt/ros/$(ROS_DISTRO)/include -I/opt/ros/melodic/include -I/opt/ros/noetic/include -I/workspaces/CodexOpen/modules/drivers/camera/pro/../../../../../CodexOpen/ros1/devel/include -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++
+INCPATH       = -I. -I/workspaces/CodexOpen -isystem /usr/include/eigen3 -isystem /usr/include/opencv4 -I/opt/ros/$(ROS_DISTRO)/include -I/opt/ros/melodic/include -I/opt/ros/noetic/include -I../../../../ros1/devel/include -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++
 QMAKE         = /usr/lib/qt5/bin/qmake
 DEL_FILE      = rm -f
 CHK_DIR_EXISTS= test -d

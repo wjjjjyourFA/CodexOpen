@@ -4,20 +4,16 @@
 #pragma once
 
 #include <iostream>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/ini_parser.hpp>
-#include <boost/optional.hpp>
 
 #include "modules/common/config/config_file_base.h"
 #include "modules/drivers/camera/config/vehicle_model_config.h"
 
 namespace jojo {
 namespace drivers {
-namespace config = jojo::common::config;
 
-class ConfigManager : public config::ConfigFileBase {
+class ConfigManager : public jojo::common::config::ConfigFileBase {
  public:
-  using config::ConfigFileBase::ConfigFileBase;
+  using jojo::common::config::ConfigFileBase::ConfigFileBase;
 
   void LoadConfig(const std::string& config_path) override;
 

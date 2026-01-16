@@ -10,6 +10,7 @@
 
 #include "cyber/common/file.h"
 #include "modules/perception/common/base/pcl_extra/pcl_viewer.h"
+#include "modules/perception/common/config/utils.h"
 #include "modules/perception/common/camera/common/undistortion_handler_legacy.h"
 #include "modules/perception/common/camera/params/camera_params.h"
 #include "modules/perception/common/lidar/convert/rs_sort_map.h"
@@ -21,9 +22,6 @@
 namespace jojo {
 namespace tools {
 using namespace std;
-namespace camera = jojo::perception::camera;
-namespace cfg = jojo::perception::config;
-namespace common = apollo::cyber::common;
 
 class DataProcessor {
  public:
@@ -70,13 +68,14 @@ class DataProcessor {
   bool b_first_grab = true, b_grab = false;
 
  private:
-  std::shared_ptr<RuntimeConfig> param_ /*param_simple*/;
+  std::shared_ptr<RuntimeConfig> param_ /*runtime_config*/;
 
-  std::shared_ptr<camera::CameraParams> camera_params;
-  // std::vector<std::shared_ptr<camera::CameraParams>> camera_params_vector;
-  std::vector<std::shared_ptr<camera::UndistortionHandler>>
-      undistort_vector;
+  // clang-format off
+  std::shared_ptr<jojo::perception::camera::CameraParams> camera_params;
+  // std::vector<std::shared_ptr<jojo::perception::camera::CameraParams>> camera_params_vector;
+  std::vector<std::shared_ptr<jojo::perception::camera::UndistortionHandler>> undistort_vector;
   std::vector<bool> undistort_init;
+  // clang-format on
 
  private:
   std::string prefix;

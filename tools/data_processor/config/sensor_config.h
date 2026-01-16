@@ -26,4 +26,5 @@ extern std::map<string, int> RadarTypeParam;
 extern std::map<string, int> Radar4DTypeParam;
 
 extern std::map<string, int> LidarTypeParam;
+
 #endif  // __CONFIG_H

@@ -117,7 +117,7 @@ void CameraDevice::open() {
     emit cameraState(devKey, ready);
     return;
   }
-  // v4l2_device->SimpleDebug();
+  // v4l2_device->DebugInfo();
   // qDebug() << "[CameraDevice] open() Config fps:" << config_->frame_rate();
 
   // ==> v4l2_device->start_capturing();

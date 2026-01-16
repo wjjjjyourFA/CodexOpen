@@ -75,7 +75,7 @@ bool Ros2Convert::Init(std::shared_ptr<rclcpp::Node> nh,
     // init camera_device
     driver.camera_device = std::make_shared<camera::UsbCamCv>();
     driver.camera_device->init(driver.conf);
-    driver.camera_device->SimpleDebug();
+    driver.camera_device->DebugInfo();
     driver.index = num++;
 
     // init ros pub

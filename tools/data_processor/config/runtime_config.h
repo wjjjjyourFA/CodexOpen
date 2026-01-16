@@ -11,12 +11,10 @@
 
 namespace jojo {
 namespace tools {
-// using namespace jojo::common::config;
-namespace config = jojo::common::config;
 
-class RuntimeConfig : public config::ConfigFileBase {
+class RuntimeConfig : public jojo::common::config::ConfigFileBase {
  public:
-  using config::ConfigFileBase::ConfigFileBase;
+  using jojo::common::config::ConfigFileBase::ConfigFileBase;
 
   void LoadConfig(const std::string& config_path) override;
 

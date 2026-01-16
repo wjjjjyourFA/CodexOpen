@@ -2,6 +2,7 @@
 
 namespace jojo {
 namespace drivers {
+namespace cfg = jojo::common::config;
 
 std::string remove_filename_from_path(const std::string& path) {
   // 查找最后一个 '/' 或 '\'

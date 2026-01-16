@@ -19,9 +19,9 @@ int main(int argc, char** argv) {
     config_path = argv[1];
   }
 
-  auto param_simple = std::make_shared<RuntimeConfig>();
-  param_simple->set_name(name);
-  param_simple->LoadConfig(config_path);
+  auto runtime_config = std::make_shared<RuntimeConfig>();
+  runtime_config->set_name(name);
+  runtime_config->LoadConfig(config_path);
 
 #if defined(ENABLE_ROS1)
   ROS_INFO("\033[1;32m----> DataProcessor Started (auto version).\033[0m");
@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
   ros::NodeHandle private_nh("~");
 
   auto _pRos1Convert = std::make_shared<Ros1Convert>();
-  _pRos1Convert->Init(nh, private_nh, param_simple);
+  _pRos1Convert->Init(nh, private_nh, runtime_config);
 
   // _pRos1Convert->Run();
 
@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
   auto nh = std::make_shared<rclcpp::Node>(name);
 
   auto _pRos2Convert = std::make_shared<Ros2Convert>();
-  _pRos2Convert->Init(nh, param_simple);
+  _pRos2Convert->Init(nh, runtime_config);
 
   // _pRos2Convert->Run();
 

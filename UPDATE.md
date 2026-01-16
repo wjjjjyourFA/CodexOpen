@@ -6,25 +6,28 @@
 - [ ] `ROS` 通信接口更新 `neotic` && `foxy` ==> `humble`
 
 ### docker 镜像
+
 - [ ] docker 完善、镜像优化：
   - [ ] `Dockerfile` 的完善、`installers`安装脚本的完善
   - [ ] 时间切换到东八区 `UTC-8`
 
 ### modules-driver 模块
+
 - [x] 完成 `driver-camera` | `driver-lidar` 的程序归纳 
   - [x] `drivers/camera` 更改为使用 `opencv -- cv::Mat`
 
 ### modules-perception 模块
+
 - [x] 冻结坐标系
   - [x] 数据关联队列
   - [ ] 基于`odom`的线性插值变换
   - [x] 提供函数实现`odom` 和 `gnss` 的坐标变换 （2D）
 
 - [ ] 添加 `MetaDataPreprocess` 多种传感器数据的多线程预处理
-  - [ ] 
+  - [ ] 将相机检测的目标与雷达数据进行匹配，通常通过空间校准（如对齐到同一坐标系）和数据关联算法（如匈牙利算法或卡尔曼滤波）实现。
   
-- [ ] 相机图像去畸变
-- [ ] 点云投影图像
+- [x] 相机图像去畸变
+- [x] 点云投影图像
 
 - [x] 添加 图像目标检测 ` [camera_detection_single_stage](modules/perception/camera_detection_single_stage) `
   - [x] 图像 目标检测器（YOLOV5、YOLOV8）
@@ -36,7 +39,7 @@
 - [ ] 添加 图像语义分割
 
 - [ ] 360影像 || 540全景环视；
-  - [ ] COLORMAP；
+  - [ ] ColorMap；
   - [ ] 图像到图像的单应性变换 ==> bev 图
   - [ ] 可见光图像 和 红外图像的 叠加 ==> 双光相机标定
 
@@ -73,6 +76,7 @@
   - [ ] 地图变化检测、增量更新
 
 ### modules-tools 模块
+
 - [ ] 相机标定
   - [x] 鱼眼相机标定（K1K2K3K4）
   - [x] 输出等效针孔模型内参数（强制保持相机原始物理参数）
@@ -86,7 +90,9 @@
   - [ ] 将网络模型等大数据，放在 install 文件夹中，方便随时剔除；
   
 ### tools 模块
+
 #### data_label 模块
+
 - [x] 添加基于`ostrack`的跟踪类自动标注工具  `[auto_label](tools/data_label/auto_label)`
   - [x] ostrack 的跟踪输入切换为**图片**，输出切换为**时间戳文件**
   - [x] 添加序列指示器，优化画框指令、标注操作流程
@@ -98,9 +104,18 @@
 - [ ] 添加 BEV视角下的自动跟踪标注工具 
 
 #### az_toolkit 模块
+
 - [x] 基础定义 `az_toolkit` 数据库分析工具包
 - [x] **az_toolkit** `python`打包 | `github` 更新
 - [x] 基于跟踪的自动标注工具  `[auto_label](tools/data_label/auto_label)`
+
+### third_tools 模块
+
+#### OpenMMLab 模块
+
+- [ ] openmmlab 环境的升级：pytorch 1.13 ==> 2.0.1
+- [ ] mmpose 引入 yolo 的目标检测，放弃 rtmdet 模型；
+- [ ] mmaction 引入 yolo 的目标检测
 
 ### 数据集构建
 - [ ] 数据集定义，专注于越野场景
@@ -123,12 +138,13 @@
     - 每个点的属性
 
 - [x] 添加 数据解析工具 ` [data_processor](tools/data_processor) ` 
-  - [ ] 支持离线通信接口调试： ROS1、ROS2、DDS
+  - [x] 支持离线通信接口调试： ROS1、ROS2、DDS
 - [x] 添加 数据回放工具  ` [data_loader](tools/data_loader) `
-  - [ ] 支持离线单步调试
-  - [ ] 支持离线通信接口调试： ROS1、ROS2、DDS
+  - [x] 支持离线单步调试
+  - [x] 支持离线通信接口调试： ROS1、ROS2、DDS
 
 #### 评测代码
+
 - [ ] 里程计：相对位姿精度 绝对位姿精度
 - [ ] 目标检测：雷达ap([x]waymo)
 - [ ] 语义分割：miou

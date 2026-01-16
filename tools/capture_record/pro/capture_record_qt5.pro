@@ -30,14 +30,14 @@ UI_DIR  = $$SELF_PATH/pro/ui
 MOC_DIR = $$CODEX_PATH/tools/capture_record/moc
 RCC_DIR = $$CODEX_PATH/tools/capture_record/rcc
 
-SOURCES = \
+SOURCES += \
   $$SELF_PATH/main.cpp \
   $$SELF_PATH/imagesettings.cpp \
   $$SELF_PATH/videosettings.cpp \
   $$SELF_PATH/qt5/mainwindow_qt5.cpp \
   $$SELF_PATH/qt5/camera_device.cpp \
 
-HEADERS = \
+HEADERS += \
   $$SELF_PATH/imagesettings.h \
   $$SELF_PATH/videosettings.h \
   $$SELF_PATH/qt5/mainwindow_qt5.h \

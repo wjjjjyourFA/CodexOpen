@@ -83,7 +83,7 @@ Ros2Convert::~Ros2Convert() {
 }
 
 bool Ros2Convert::Init(std::shared_ptr<rclcpp::Node> nh,
-                       std::shared_ptr<drivers::ParamManager> param) {
+                       std::shared_ptr<drivers::ConfigManager> param) {
   node  = nh;
   param_ = param;
 
@@ -100,7 +100,7 @@ bool Ros2Convert::Init(std::shared_ptr<rclcpp::Node> nh,
     DrvierWrapper driver;
     driver.node = node;
     driver.conf.vehicle_name = param_->GetVehicleName();
-    driver.conf.ReadParam(config.config_file);
+    driver.conf.LoadConfig(config.config_file);
 
     std::string topic = "/" + ns + driver.conf.channel_name;
 

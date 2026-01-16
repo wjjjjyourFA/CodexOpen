@@ -48,12 +48,12 @@
 #include <boost/asio/post.hpp>
 #include <boost/asio/thread_pool.hpp>
 
-#include "cyber/common/environment_conf.h"
+#include "modules/common/environment_conf.h"
 #include "modules/common/math/math_utils_extra.h"
-#include "modules/perception/common/lidar/third_party/convert/robosense.h"
-#include "modules/perception/common/radar/third_party/convert/ars408.h"
-#include "modules/perception/common/radar/third_party/convert/ars548.h"
-#include "modules/perception/common/radar/third_party/convert/hugin.h"
+#include "modules/perception/common/lidar/convert/robosense.h"
+#include "modules/perception/common/radar/convert/ars408.h"
+#include "modules/perception/common/radar/convert/ars548.h"
+#include "modules/perception/common/radar/convert/hugin.h"
 
 #include "tools/data_processor/data_processor.h"
 
@@ -84,7 +84,7 @@ class Ros2Convert {
   virtual ~Ros2Convert();
 
   void Init(std::shared_ptr<rclcpp::Node> nh,
-            std::shared_ptr<ParamSimple> param);
+            std::shared_ptr<RuntimeConfig> param);
 
   void Run();
 
@@ -127,7 +127,7 @@ class Ros2Convert {
   // clang-format on
 
  private:
-  std::shared_ptr<ParamSimple> param_ /*param_simple*/;
+  std::shared_ptr<RuntimeConfig> param_ /*runtime_config*/;
 
   std::shared_ptr<rclcpp::Node> node;
 

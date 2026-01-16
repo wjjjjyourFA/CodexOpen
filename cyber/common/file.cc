@@ -202,9 +202,9 @@ bool PathExists(const std::string &path) {
   return stat(path.c_str(), &info) == 0;
 }
 
-bool FileExists(const std::string &path) {
+bool FileExists(const std::string &file_path) {
   struct stat info;
-  if (stat(path.c_str(), &info) != 0) {
+  if (stat(file_path.c_str(), &info) != 0) {
     return false;
   }
   return S_ISREG(info.st_mode);
@@ -340,16 +340,16 @@ bool EnsureDirectory(const std::string &directory_path) {
 }
 */
 
-bool EnsureDirectory(const std::string& dir, mode_t mode) {
-  if (dir.empty()) return false;
+bool EnsureDirectory(const std::string& directory_path, mode_t mode) {
+  if (directory_path.empty()) return false;
 
   std::string current;
-  current.reserve(dir.size());
+  current.reserve(directory_path.size());
 
-  for (size_t i = 0; i < dir.size(); ++i) {
-    current.push_back(dir[i]);
+  for (size_t i = 0; i < directory_path.size(); ++i) {
+    current.push_back(directory_path[i]);
 
-    if (dir[i] == '/' || i == dir.size() - 1) {
+    if (directory_path[i] == '/' || i == directory_path.size() - 1) {
       struct stat st;
       if (::stat(current.c_str(), &st) == 0) {
         if (!S_ISDIR(st.st_mode)) {
@@ -590,13 +590,40 @@ bool DeleteFile(const string &filename) {
   return true;
 }
 
+// 如果路径已经存在，不会返回 false
 bool CreateDir(const string &dir) {
+  if (dir.empty()) return false;
+
   int ret = mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IRWXO);
   if (ret != 0) {
+    if (errno == EEXIST) {
+      // 路径存在，但不保证它是目录
+      return true;
+    }
     AWARN << "failed to create dir. [dir: " << dir
           << "] [err: " << strerror(errno) << "]";
     return false;
   }
+  return true;
+}
+
+bool CreateFile(const std::string &file_path) {
+  if (file_path.empty()) return false;
+
+  int fd = ::open(file_path.c_str(),
+                  O_CREAT | O_WRONLY,
+                  S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+  if (fd < 0) {
+    if (errno == EEXIST) {
+      // 文件已存在，不视为失败
+      return true;
+    }
+    AWARN << "failed to create file. [file: " << file_path
+          << "] [err: " << strerror(errno) << "]";
+    return false;
+  }
+
+  ::close(fd);
   return true;
 }
 

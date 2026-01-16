@@ -3,12 +3,11 @@
 #include "modules/common/config/config_file_base.h"
 
 namespace jojo {
-namespace drivers { 
-namespace config = jojo::common::config;
+namespace drivers {
 
-class RuntimeConfig : public config::ConfigFileBase {
+class RuntimeConfig : public jojo::common::config::ConfigFileBase {
  public:
-  using config::ConfigFileBase::ConfigFileBase;
+  using jojo::common::config::ConfigFileBase::ConfigFileBase;
 
   void LoadConfig(const std::string& config_path) override;
 
@@ -32,5 +31,5 @@ class RuntimeConfig : public config::ConfigFileBase {
   bool save;
 };
 
-}  // namespace tools
+}  // namespace drivers
 }  // namespace jojo

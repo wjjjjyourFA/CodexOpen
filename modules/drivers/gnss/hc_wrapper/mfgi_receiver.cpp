@@ -1,5 +1,8 @@
 #include "modules/drivers/gnss/hc_wrapper/mfgi_receiver.h"
 
+namespace drivers = jojo::drivers;
+namespace math = jojo::common::math;
+
 MfgiReceiver::MfgiReceiver() {
   SetResolveFunc(std::bind(&MfgiReceiver::Resolve, this, std::placeholders::_1,
                            std::placeholders::_2));
@@ -8,7 +11,7 @@ MfgiReceiver::MfgiReceiver() {
 MfgiReceiver::~MfgiReceiver() {}
 
 void MfgiReceiver::InitRos(ros::NodeHandle& nh, ros::NodeHandle& private_nh,
-                           std::shared_ptr<drivers::ParamSimple> param) {
+                           std::shared_ptr<drivers::RuntimeConfig> param) {
   nh_         = nh;
   private_nh_ = private_nh;
   param_      = param;

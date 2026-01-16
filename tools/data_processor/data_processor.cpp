@@ -4,6 +4,9 @@
 
 namespace jojo {
 namespace tools {
+namespace common = apollo::cyber::common;
+namespace camera = jojo::perception::camera;
+namespace cfg = jojo::perception::config;
 
 DataProcessor::DataProcessor() {}
 
@@ -266,7 +269,7 @@ void DataProcessor::ProcessCameraImage(cv::Mat& image, uint64_t filename,
       /*  // way 1
       auto matrix = camera_params_vector.at(index)->GetMatrixVector();
 
-      params = IntrinsicParamsToVector(
+      params = cfg::IntrinsicParamsToVector(
           matrix.at(0)->camera_matrix->intrinsic_matrix,
           matrix.at(0)->camera_matrix->distortion_params);
       */
@@ -278,7 +281,7 @@ void DataProcessor::ProcessCameraImage(cv::Mat& image, uint64_t filename,
       auto distortion_params =
           matrix_vector.at(index)->camera_matrix->distortion_params;
 
-      params = IntrinsicParamsToVector(intrinsic_matrix, distortion_params);
+      params = cfg::IntrinsicParamsToVector(intrinsic_matrix, distortion_params);
       */
       // /*
       auto& matrix_vector = camera_params->GetMatrixVector();
