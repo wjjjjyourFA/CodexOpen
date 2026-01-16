@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+    <!-- hc_cgi_protocol_process_node -->
+    <node pkg="chcnav" type="hc_cgi_protocol_process_node" name="" output="screen"/>
+    
+    <!-- hc_msg_parser_launch_node -->
+    <node pkg="chcnav" type="hc_msg_parser_launch_node" name="" output="screen"/>
+</launch>

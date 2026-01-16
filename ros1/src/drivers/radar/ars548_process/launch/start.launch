@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+    <node pkg="ars548_process" type="ars548_process_node" name="" output="screen">
+    </node>
+    <!-- <node pkg="ars548_process" type="test_radar_input_node" name="sensor_ars548_radar_input_node">
+    </node> -->
+    <node pkg="ars548_process" type="info_convert_node" name="">
+    </node>
+     <!-- rviz -->
+    <!--node pkg="rviz" type="rviz" name="rviz" output="screen" args="-d $(find ars548_process)/launch/ars548_display.rviz" /-->
+</launch>

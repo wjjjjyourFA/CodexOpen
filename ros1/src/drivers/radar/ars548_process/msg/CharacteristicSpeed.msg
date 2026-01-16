@@ -1,0 +1,5 @@
+std_msgs/Header header
+
+uint8 characteristic_speed_err_amp
+uint8 qualifier_characteristic_speed
+uint8 characteristic_speed
