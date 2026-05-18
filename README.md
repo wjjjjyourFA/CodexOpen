@@ -30,11 +30,13 @@ The docker image is not available as `Dockerfile` yet, so you need to build it y
   <img src="assets/images/2026-05-15_155944_989.png" width="300">
   <img src="assets/images/2026-05-15_160002_353.png" width="300">
 </div>
+
   - [x] 鱼眼相机
 <div style="display:flex; justify-content:center; align-items:center; gap:10px;">
   <img src="assets/images/2026-05-15_160157_377.png" width="300">
   <img src="assets/images/2026-05-15_160314_489.png" width="300">
 </div>
+
   - [x] LSD 点集线性度分析校验
 <div style="display:flex; justify-content:center; align-items:center; gap:10px;">
   <img src="assets/images/edge_points.jpg" width="300">
@@ -58,6 +60,7 @@ The docker image is not available as `Dockerfile` yet, so you need to build it y
   <img src="assets/images/detector.gif" width="300">
   <img src="assets/images/tracking-locator.gif" width="300">
 </div>
+
   - [ ] global 轨迹跟踪
 <div style="display:flex; justify-content:center; align-items:center; gap:10px;">
   <img src="assets/images/3.jpg" width="400">
