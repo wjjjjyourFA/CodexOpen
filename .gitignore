@@ -1,0 +1,36 @@
+
+## 忽略 vscode 
+.vscode/
+
+**/build/
+
+# install/bin
+# install/common
+# install/log
+# install/map
+# install/
+
+/ros1/
+/ros2/
+
+third_party/
+third_tools/
+
+modules/drivers/lidar/
+modules/drivers/rgbd/
+
+modules/tools/camera_calibration/
+
+tools/common/
+tools/az_toolkit/
+tools/waymo_toolkit/
+tools/data_label/
+
+tools/capture_record/moc/
+tools/capture_record/pro/ui/
+tools/capture_record/rm1000/
+tools/mmpose_inference_gui/moc/
+tools/mmpose_inference_gui/pro/ui/
+
+tools/data_processor/ros1_message/
+tools/data_processor/ros2_message/

@@ -1,0 +1,7 @@
+map_file_path: /workspaces/CodexOpenExtraData/DataSet/2024-12-16/2024-12-16-11-19-11-O/map_data/map2d/normal_map.png
+
+init:
+  # 先验地图：false ; 构建地图：true
+  b_use_pose_center: false
+
+  map_info_file: "map_info"

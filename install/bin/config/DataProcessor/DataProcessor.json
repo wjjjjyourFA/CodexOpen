@@ -1,0 +1,101 @@
+{
+  "general": {
+    "rosbag_path": "/workspaces/CodexOpenExtraData/FH/raw_data/miluo",
+    "rosbag_name": "2026-01-28-09-31-37",
+    "b_save_data": true,
+    "save_path": "/workspaces/CodexOpenExtraData/DataSet",
+    "b_compensation_cloud": false,
+    "b_lt_none_rt": 1,
+    "b_bin_or_pcd": true,
+    "b_jpg_or_png": 0,
+    "b_txt_or_pcd": false,
+    "prepare_data_num": -1,
+    "sample_interval": 12,
+    "useless_time": 1
+  },
+
+  "sensors": {
+    "LocalPose": true,
+    "GlobalPose": true,
+    "ImuData": true,
+    "Camera": 3,
+    "Infra": 3,
+    "Star": 0,
+    "Radar": 0,
+    "Radar4D": 3,
+    "Lidar": true
+  },
+
+  "topics": {
+    "global_pose": "/self_state/GlobalPose",
+    "local_pose": "/self_state/LocalPose",
+    "imu_data": "/sensor/Imu",
+
+    "lidar": {
+      "b_difop": true,
+      "ori": "/sensor/RS128Packets_tztek",
+      "difop": "/sensor/RS128Packets_tztek_difop",
+      "points": "/rslidar_points"
+    },
+
+    "b_compressed": true,
+    "b_do_undistort": true,
+
+    "camera": {
+      "topics": [
+        "/sensor/image/ar0231_front/compressed",
+        "/sensor/image/ar0231_frontleft/compressed",
+        "/sensor/image/ar0231_frontright/compressed"
+      ]
+    },
+
+    "infra": {
+      "topics": [
+        "/sensor/infra/ir_front/compressed",
+        "/sensor/infra/ir_leftfront/compressed",
+        "/sensor/infra/ir_rightfront/compressed"
+      ]
+    },
+
+    "star": {
+      "topics": [
+        "/sensor/image/ar0231_right/compressed"
+      ]
+    },
+
+    "radar": {
+      "topic": "/sensor/ESR_Radar_objects"
+    },
+
+    "radar4d": {
+      "topics": [
+        "/GreenMengShi193/sensor/radar/ars548/front/detection_list",
+        "/GreenMengShi193/sensor/radar/ars548/front_left/detection_list",
+        "/GreenMengShi193/sensor/radar/ars548/front_right/detection_list"
+      ]
+    }
+  },
+
+  "calibration": {
+    "calib_file_dir": "/workspaces/CodexOpen/install/common/GreenMengShi193/calib"
+  },
+
+  "device_names": {
+    "LidarType": "rs128",
+    "CameraName": [
+      "ar0231_front",
+      "ar0231_left_front",
+      "ar0231_right_front"
+    ],
+    "InfraName": [
+      "p12_front",
+      "p12_left_front",
+      "p12_right_front"
+    ],
+    "StarName": [
+      "ar0231_front_120"
+    ],
+    "RadarType": "esr",
+    "Radar4DType": "ars548"
+  }
+}

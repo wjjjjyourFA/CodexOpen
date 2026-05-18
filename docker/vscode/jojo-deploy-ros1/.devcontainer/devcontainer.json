@@ -1,0 +1,90 @@
+// See https://aka.ms/vscode-remote/devcontainer.json for format details.
+{
+	// 基础配置层，会生成第一个镜像
+	"name": "jojo-container-ros1-deploy",
+	// "workspaceMount": "source=/home/jojo/CodexOpen,target=/workspaces/CodexOpen,type=bind",
+	"workspaceMount": "source=/media/jojo/AQiDePan/CodexOpen,target=/workspaces/CodexOpen,type=bind",
+	"workspaceFolder": "/workspaces/CodexOpen",
+	// way 2 原地临时构建容器，具体步骤见 dockerfile
+	"build": {
+		"dockerfile": "ros1.Dockerfile",
+		// "dockerfile": "ros2.Dockerfile",
+		"args": {
+			// 直接用本地镜像，不拉远程
+			"_DEV_CONTAINERS_BASE_IMAGE": "jojo/ros:noetic",
+			// 强制设定容器内工作目录
+			// "workspaceMount": "none",
+			// 容器内的 CodexOpen 工作目录路径
+			"WORKSPACE": "/workspaces/CodexOpen",
+			// 容器内的 ros1 工作目录路径
+			"ROS1WORKSPACE": "/workspaces/CodexOpen/ros1"
+		},
+		"options": ["--pull=false"]
+	},
+	"runArgs": [
+		"--name=jojo_container_ros1_deploy",
+		"--network=host",
+		"--cap-add=SYS_PTRACE",
+		"--cap-add=NET_ADMIN", // CAN
+		"--security-opt=seccomp:unconfined",
+		"--security-opt=apparmor:unconfined",
+		// X11 host
+		"--volume=/tmp/.X11-unix:/tmp/.X11-unix",
+		// Wayland host
+		"--volume=/mnt/wslg:/mnt/wslg",
+		// vscode 自动挂载映射 /workspaces/<你的工程名>
+		// path to your host CodexOpen
+		// "--volume=/path/CodexOpen:${containerWorkspaceFolder}",
+		"--volume=/home/jojo/Workspace/CodexOpenExtra:/workspaces/CodexOpenExtra",
+		"--volume=/home/jojo/Workspace/CodexOpenData:/workspaces/CodexOpenData",
+		"--volume=/media/jojo/WorkStation/test:/workspaces/CodexOpenExtraData",
+		// "--volume=/media/jojo/620E-3E25/wj/2023ALS_KYXZ:/workspaces/CodexOpenExtraData",
+		// other volume
+		"--ipc=host",
+		"--group-add=video",
+		// 手动选择 V4L2 设备
+		// "--device=/dev/video0:/dev/video0",
+		// "--device=/dev/video1:/dev/video1",
+		"--device-cgroup-rule=c 4:* rmw", // ttyS*
+		// 放行 所有 V4L2 摄像头设备
+		"--device-cgroup-rule=c 81:* rmw", // V4L2
+		"--device-cgroup-rule=c 166:* rmw", // ttyACM
+		// 串口 USB
+		"--device-cgroup-rule=c 188:* rmw", // ttyUSB
+		"--device-cgroup-rule=c 189:* rmw", // 原生USB
+		"--volume=/dev:/dev",
+		// "--volume=/dev/bus/usb:/dev/bus/usb",
+		"--group-add=dialout",
+		// uncomment to use intel iGPU
+		// "--device=/dev/dri"
+		// Share user run time settings
+		// 共享运行时（X11/pipewire等）
+		"--volume=/run/user/1000:/run/user/1000", // Change 1000 to match your UID
+		// uncomment to use Nvidia GPU with Linux, https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html
+		"--runtime=nvidia",
+		// uncomment to use Nvidia GPU with Windows WSL2
+		// "--volume=/usr/lib/wsl:/usr/lib/wsl",
+		// "--device=/dev/dxg",
+		// "--device=/dev/dri/card0",
+		// "--device=/dev/dri/renderD128",
+		"--gpus=all"
+	],
+	// way 3 直接复用已存在的容器
+	// "dockerContainer": "jojo_container_ros1_deploy",
+	"updateRemoteUserUID": true,
+	"overrideCommand": true,
+	// 前置 base 镜像配置的 ros 用户
+	"remoteUser": "ros",
+	"containerEnv": {
+		"DISPLAY": "${localEnv:DISPLAY}", // Needed for GUI try ":0" for windows
+		// For Wayland
+		"WAYLAND_DISPLAY": "${localEnv:WAYLAND_DISPLAY}",
+		"XDG_RUNTIME_DIR": "${localEnv:XDG_RUNTIME_DIR}",
+		// For audio
+		"PULSE_SERVER": "${localEnv:PULSE_SERVER}",
+		"LIBGL_ALWAYS_SOFTWARE": "1", // Needed for software rendering of opengl
+		"QT_X11_NO_MITSHM": "1"
+		// uncomment to force Wayland
+		// "QT_QPA_PLATFORM": "wayland"
+	}
+}

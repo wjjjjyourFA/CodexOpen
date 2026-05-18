@@ -1,0 +1,45 @@
+
+# map_file_path: /workspaces/CodexOpen/install/map/MiLuo/cloud_merged.pcd
+map_file_path: /workspaces/CodexOpenExtraData/DataSet/2026-01-28/2026-01-28-09-31-37/uav/map/cloud_merged.pcd
+
+init:
+  # 0: chaos  1:GNSS  2:Handle  3:config  4:fusion
+  init_method: 3
+  # method : 1
+  # 20260418：only z axis degree
+  # 逆时针为正
+  map_center: [5736.75, 48576.95, 180.5]
+  yaw_offset_euler: 57.5
+  # method : 2 直接设置初始点的位姿
+  hand_init_pose: [-287780.098319, 1382586.597213, 1076.93120000, 0.145901, -0.212591, 150.482438]
+  # method : 3 自动从 map_file_path 的 map_info.json 中读取
+  map_info_file: "map_info"
+
+  b_init_twice: true
+  b_display_init: false
+
+filter_size_surf: 0.5
+filter_size_map: 0.5
+cube_side_length: 1000
+
+point_filter_num: 3
+feature_extract_enable: false
+
+mapping:
+  max_iteration: 5
+  det_range: 100.0
+  gyr_cov: 0.1
+  acc_cov: 0.1
+  b_gyr_cov: 0.0001
+  b_acc_cov: 0.0001
+  # true: enable the online estimation of IMU-LiDAR extrinsic
+  extrinsic_est_en: false
+
+preprocess:
+  lidar_type: 5
+  blind: 5
+  scan_line: 128
+  # the unit of time/t field in the PointCloud2 rostopic:
+  # 0-second, 1-milisecond, 2-microsecond, 3-nanosecond.
+  timestamp_unit: 0
+  scan_rate: 10
