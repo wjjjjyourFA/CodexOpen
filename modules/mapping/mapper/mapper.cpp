@@ -58,18 +58,18 @@ void Mapper::Run(const pcl::PointCloud<pcl::PointXYZI>::Ptr& frame,
   std::cout << "frame size: " << frame->points.size() << std::endl;
 
   // ==> pose_center
-  Eigen::Matrix4f curr_pose = in_pose;
+  Eigen::Matrix4f cur_pose = in_pose;
   if (sparam_->b_use_pose_center) {
-    curr_pose.block<3, 1>(0, 3) -= pose_center.cast<float>();
+    cur_pose.block<3, 1>(0, 3) -= pose_center.cast<float>();
   }
 
   // 依据 位移量 判断是否需要更新地图
   double distance =
-      (curr_pose.block<3, 1>(0, 3) - last_pose.block<3, 1>(0, 3)).norm();
+      (cur_pose.block<3, 1>(0, 3) - last_pose.block<3, 1>(0, 3)).norm();
 
   // 依据 旋转量 判断是否需要更新地图
   Eigen::Matrix3f R_last = last_pose.block<3, 3>(0, 0);
-  Eigen::Matrix3f R_curr = curr_pose.block<3, 3>(0, 0);
+  Eigen::Matrix3f R_curr = cur_pose.block<3, 3>(0, 0);
   Eigen::Matrix3f R_diff = R_last.transpose() * R_curr;
   // rad
   float angle = Eigen::AngleAxisf(R_diff).angle();
@@ -86,7 +86,7 @@ void Mapper::Run(const pcl::PointCloud<pcl::PointXYZI>::Ptr& frame,
     return;
   }
 
-  last_pose = curr_pose;
+  last_pose = cur_pose;
 
   if (rparam_->b_realtime_show) {
     static bool vis_frame_init = false;
@@ -99,8 +99,8 @@ void Mapper::Run(const pcl::PointCloud<pcl::PointXYZI>::Ptr& frame,
   }
 
   // 先把 4x4 pose 拆成 R / T（避免每点做4x4乘法）
-  const Eigen::Matrix3f R = curr_pose.block<3, 3>(0, 0);
-  const Eigen::Vector3f T = curr_pose.block<3, 1>(0, 3);
+  const Eigen::Matrix3f R = cur_pose.block<3, 3>(0, 0);
+  const Eigen::Vector3f T = cur_pose.block<3, 1>(0, 3);
 
   // frame ==> map coords
   for (size_t i = 0; i < frame->points.size(); i++) {

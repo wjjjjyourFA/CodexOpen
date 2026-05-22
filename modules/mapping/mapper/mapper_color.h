@@ -4,10 +4,11 @@
 #include "modules/common/math/math_utils.h"
 
 #include "modules/common_struct/basic_msgs/Pose6D.h"
+#include "modules/perception/common/camera/params/camera_params.h"
 #include "modules/perception/common/config/sensor_extrinsics.h"
-#include "toolz/data_loader/group_convert.h"
-
 #include "modules/mapping/mapper/mapper.h"
+
+#include "toolz/data_loader/group_convert.h"
 
 using namespace std;
 using namespace cv;

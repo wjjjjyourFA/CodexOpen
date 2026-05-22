@@ -73,11 +73,17 @@ The docker image is not available as `Dockerfile` yet, so you need to build it y
 </div>
 
 - [ ] 点云地图：
-<div style="display:flex; justify-content:center; align-items:center; gap:10px;">
-  <img src="assets/images/mapper.gif" width="400">
-  <img src="assets/images/map_visualization.gif" width="300">
-</div>
+  - [x] 三位建图、彩色建图与道路边缘表征
+    <div style="display:flex; justify-content:center; align-items:center; gap:10px;">
+      <img src="assets/images/mapper.gif" width="400">
+      <img src="assets/images/mapper_color.gif" width="400">
+      <img src="assets/images/map_visualization.gif" width="300">
+    </div>
 
+  - [x] Stanford Rolling Map
+    <div style="display:flex; justify-content:center; align-items:center; gap:10px;">
+      <img src="assets/images/color_map_rot.gif" width="400">
+    </div>
 ---
 
 - 实装列表详细见 [CHECKLIST](./CHECKLIST.md) ，短横线之前的模块。

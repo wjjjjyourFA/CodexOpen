@@ -40,6 +40,7 @@ void MapperColor::Reset() {
   4. 获取 color frame
   5. create color map
 */
+// TODO：添加多视角相机，以及多线程支持
 void MapperColor::Run(
     std::shared_ptr<const jojo::tools::MeasureGroupDataSet> Measures) {
   // !! 对于 硬触发相机，图像数据和点云数据已经是同步了的，不需要再插值
@@ -56,16 +57,16 @@ void MapperColor::Run(
   // std::cout << "frame size: " << frame->size() << std::endl;
   // std::cout << "v_pose size: " << v_pose.size() << std::endl;
 
-  Eigen::Matrix4f curr_pose = in_pose;
+  Eigen::Matrix4f cur_pose = in_pose;
   if (sparam_->b_use_pose_center) {
-    curr_pose.block<3, 1>(0, 3) -= pose_center.cast<float>();
+    cur_pose.block<3, 1>(0, 3) -= pose_center.cast<float>();
   }
 
   double distance =
-      (curr_pose.block<3, 1>(0, 3) - last_pose.block<3, 1>(0, 3)).norm();
+      (cur_pose.block<3, 1>(0, 3) - last_pose.block<3, 1>(0, 3)).norm();
 
   Eigen::Matrix3f R_last = last_pose.block<3, 3>(0, 0);
-  Eigen::Matrix3f R_curr = curr_pose.block<3, 3>(0, 0);
+  Eigen::Matrix3f R_curr = cur_pose.block<3, 3>(0, 0);
   Eigen::Matrix3f R_diff = R_last.transpose() * R_curr;
   // rad
   float angle = Eigen::AngleAxisf(R_diff).angle();
@@ -75,9 +76,9 @@ void MapperColor::Run(
     return;
   }
 
-  last_pose = curr_pose;
+  last_pose = cur_pose;
   // std::cout << "in_pose: \n" << in_pose << std::endl;
-  // std::cout << "curr_pose: \n" << curr_pose << std::endl;
+  // std::cout << "cur_pose: \n" << cur_pose << std::endl;
 
   if (rparam_->b_realtime_show) {
     static bool vis_frame_init = false;
@@ -119,13 +120,13 @@ void MapperColor::Run(
 
     // 计算新的 变换矩阵、投影矩阵
     /* 参数解释：
-    curr_pose: lidar_pose to world
+    cur_pose: lidar_pose to world
     pose_out: image_pose to world
     lidar2image 外参: matrix.extrinsic_matrix RT
     image 内参: matrix.camera_matrix->intrinsic_matrix K
     */
     // lidar pose ==> image pose
-    Eigen::Matrix4f T_delta = pose_out.inverse().cast<float>() * curr_pose;
+    Eigen::Matrix4f T_delta = pose_out.inverse().cast<float>() * cur_pose;
     // std::cout << "T_delta: \n" << T_delta << std::endl;
 
     // lidar to cur image
@@ -141,9 +142,10 @@ void MapperColor::Run(
   }
 
   // 使用 map 内存进行优化，避免多次 frame 拷贝；因此手动实现投影过程，不调用 fusion 模块
-  const Eigen::Matrix3f R = curr_pose.block<3, 3>(0, 0);
-  const Eigen::Vector3f T = curr_pose.block<3, 1>(0, 3);
+  const Eigen::Matrix3f R = cur_pose.block<3, 3>(0, 0);
+  const Eigen::Vector3f T = cur_pose.block<3, 1>(0, 3);
 
+  // TODO：使用 未去畸变的图像，实现这一过程，增大 FOV
   // 转换为图像范围点并过滤
   for (int i = 0; i < frame->points.size(); ++i) {
     const auto& point = frame->points[i];
