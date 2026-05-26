@@ -1,0 +1,54 @@
+vehicle_model:
+  name: "iRobot193"
+  manufacturer: "jojo"
+  model: "iRobot193"
+
+sensors:
+  lidar:
+    num: 1
+    lidar_1:
+      config_file: "rslidar.yaml"
+      calibration_file: "calib/rslidar.ini"
+
+  camera:
+    compress_ratio: 50
+    num: 3
+    camera_1:
+      resize: [1920, 1536]
+      config_file: "camera_front.pb.txt"
+      calibration_file: "calib/camera_front.ini"
+    camera_2:
+      resize: [1920, 1536]
+      config_file: "camera_front_left.pb.txt"
+      calibration_file: "calib/camera_front_left.ini"
+    camera_3:
+      resize: [1920, 1536]
+      config_file: "camera_front_right.pb.txt"
+      calibration_file: "calib/camera_front_right.ini"
+
+  imu:
+    num: 1
+    imu_1:
+      config_file: "imu_test.pb.txt"
+      calibration_file: "calib/imu_test.ini"
+
+  gnss:
+    num: 1
+    gnss_1:
+      config_file: "hc410_test.ini"
+      calibration_file: "calib/hc410_test.ini"
+      
+  radar:
+    num: 2
+    radar_1:
+      config_file: "ars548_test1.ini"
+      calibration_file: "calib/ars548_test1.ini"
+    radar_2:
+      config_file: "ars548_test2.ini"
+      calibration_file: "calib/ars548_test2.ini"
+
+config_paths:
+  sensor_fusion: "sensor_fusion.pb.txt"
+  vehicle_dynamics: "vehicle_dynamics.pb.txt"
+  control_parameters: "control_parameters.pb.txt"
+
