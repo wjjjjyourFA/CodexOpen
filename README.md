@@ -8,13 +8,34 @@ An engineering project by XXXX
 详细介绍：[CodexOpen](./docs/02_Quick_Start/02_Quick_Start.md)
 
 ## Quick Install
-The docker image is not available as `Dockerfile` yet, so you need to build it yourself. or use the prebuilt Docker image instead.  - [QuakPanLink](https://pan.quark.cn/s/bae27437d0af) && 提取码: KV1x
+The docker image is not available as `Dockerfile` yet, so you need to build it yourself. or use the prebuilt Docker image instead.  - [QuakPanLink](https://pan.quark.cn/s/bae27437d0af) && 提取码： KV1x 
+
+### Use JOJO's Docker Image
+1. Install `VsCode` && `Dev Containers` plugins
+2. Open `CodexOpen/docker/vscode/jojo-deploy-ros1` in VsCode, for ros2 using `jojo-deploy-ros2`.
+3. Edit `.devcontainer/devcontainer.json`, taking into account your own machine environment :
+```JSON
+...
+"workspaceMount": "source=/media/jojo/AQiDePan/CodexOpen,target=/workspaces/CodexOpen,type=bind",
+...
+
+  "--volume=/home/jojo/Workspace/CodexOpenExtra:/workspaces/CodexOpenExtra",
+  "--volume=/home/jojo/Workspace/CodexOpenData:/workspaces/CodexOpenData",
+  "--volume=/media/jojo/WorkStation/test:/workspaces/CodexOpenExtraData",
+...
+  "--runtime=nvidia",
+  "--gpus=all"
+...
+```
+4. `Ctrl + Shift + P`, `Dev Containers: Rebuild and Reopen in Container`
 
 ### Docker build this project
-详细介绍：[工程安装说明](./docs/安装指南/工程安装说明.md)
+If you want to compile the image yourself, please refer to the "Image Building" related documentation.
+详细介绍：
+- [工程安装说明](./docs/安装指南/工程安装说明.md)
+- [docker构建](./docs/安装指南/docker/docker_CodexOpen.md)
 
 ### Diff to Apollo
-
 **把 Apollo 从“一体化系统”降级为“算法库”**；转向 **ROS2**；
 
 ## Features
@@ -86,8 +107,8 @@ The docker image is not available as `Dockerfile` yet, so you need to build it y
     </div>
 ---
 
-- 实装列表详细见 [CHECKLIST](./CHECKLIST.md) ，短横线之前的模块。
-- 更新计划详细见 [UPDATE](./UPDATE.md)
+- 实装列表详细见 [CHECKLIST](./docs/CHECKLIST.md) ，短横线之前的模块。
+- 更新计划详细见 [UPDATE](./docs/UPDATE.md)
 
 ---
 
