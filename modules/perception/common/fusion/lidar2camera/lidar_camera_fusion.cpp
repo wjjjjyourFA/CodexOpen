@@ -55,6 +55,9 @@ void LidarCameraFusion::fuse(int mode, bool is_mask, bool color) {
     case 2:
       project_lidar_to_camera_fast(cloud_, projection_matrix_, image_, mask_, color);
       break;
+    case 3:
+      // project_lidar_to_camera_raw(cloud_, projection_matrix_, image_, mask_, color);
+      break;
     default:
       std::cout << name_ + "CameraFusion mode set error" << std::endl;
       break;
@@ -245,6 +248,15 @@ void LidarCameraFusion::project_lidar_to_camera_fast_impl(
   // cv::imshow("projected_image", mask);
 }
 
+/*
+void project_lidar_to_camera_raw(
+    const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud,
+    const Eigen::Matrix<float, 3, 4>& extrinsic_matrix, const cv::Mat& image,
+    cv::Mat& mask, bool color = false) {
+      
+    }
+*/
+
 void LidarCameraFusion::show_lidar_color_cloud() {
   // clang-format off
   cloud_color_ = 
@@ -315,6 +327,12 @@ void LidarCameraFusion::SetProjectionMatrix(
     const Eigen::Matrix<float, 3, 4>& projection_matrix) {
   std::lock_guard<std::mutex> lock(data_mutex_);
   projection_matrix_ = projection_matrix;
+}
+
+void LidarCameraFusion::SetL2CMatrix(
+    std::shared_ptr<jojo::perception::camera::Lidar2CameraMatrix> l2c_matrix) {
+  std::lock_guard<std::mutex> lock(data_mutex_);
+  l2c_matrix_ = l2c_matrix;
 }
 
 void LidarCameraFusion::SetLidarPointCloud(

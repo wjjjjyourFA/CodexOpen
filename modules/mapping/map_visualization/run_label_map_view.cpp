@@ -88,6 +88,7 @@ int main(int argc, char** argv) {
       if (!init_flag) {
         // std::cout << src_img.rows << std::endl;
         // std::cout << params.size() << std::endl;
+        camera_undistort->InitModel(CameraDistortionModel::Brown);
         camera_undistort->InitParams(src_img.cols, src_img.rows, params);
         camera_undistort->Init("camera");
         init_flag = true;

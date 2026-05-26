@@ -20,6 +20,7 @@ int main(int argc, char** argv) {
   cv::Mat src_img = cv::imread("test.jpg");
   cv::Mat dst_img = cv::Mat::zeros(src_img.rows, src_img.cols, CV_8UC3);
 
+  camera_undistort->InitModel(CameraDistortionModel::Brown);
   camera_undistort->InitParams(src_img.cols, src_img.rows, params);
   camera_undistort->Init("camera");
   camera_undistort->Handle(src_img, &dst_img);

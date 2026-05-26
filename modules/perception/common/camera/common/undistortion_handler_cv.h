@@ -19,9 +19,7 @@ class UndistortionHandlerCv : public UndistortionHandler {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   // 默认使用 Brown 模型，也可以传参
-  explicit UndistortionHandlerCv(
-      CameraDistortionModel mode = CameraDistortionModel::Brown)
-      : UndistortionHandler(mode) {
+  explicit UndistortionHandlerCv() {
     std::cout << " use opencv undistortion " << std::endl;
   }
 

@@ -30,27 +30,29 @@ void DataProcessor::InitUndistortion() {
     camera_params->LoadFromName(param_->camera_name.at(i));
 
     // clang-format off
+    auto camera_undistort = std::make_shared<camera::UndistortionHandler>();
     // pinhole
-    auto camera_undist = std::make_shared<camera::UndistortionHandler>();
+    camera_undistort->InitModel(camera::CameraDistortionModel::Brown);
     // fisheye
-    // auto camera_undist = std::make_shared<camera::UndistortionHandler>(camera::CameraDistortionModel::Kannala);
+    // camera_undistort->InitModel(camera::CameraDistortionModel::Kannala);
     // clang-format on
-
-    undistort_vector.push_back(camera_undist);
+    undistort_vector.push_back(camera_undistort);
   }
 
   for (int i = 0; i < param_->b_infra; i++) {
     camera_params->LoadFromName(param_->infra_name.at(i));
 
-    auto camera_undist = std::make_shared<camera::UndistortionHandler>();
-    undistort_vector.push_back(camera_undist);
+    auto camera_undistort = std::make_shared<camera::UndistortionHandler>();
+    camera_undistort->InitModel(camera::CameraDistortionModel::Brown);
+    undistort_vector.push_back(camera_undistort);
   }
 
   for (int i = 0; i < param_->b_star; i++) {
     camera_params->LoadFromName(param_->star_name.at(i));
 
-    auto camera_undist = std::make_shared<camera::UndistortionHandler>();
-    undistort_vector.push_back(camera_undist);
+    auto camera_undistort = std::make_shared<camera::UndistortionHandler>();
+    camera_undistort->InitModel(camera::CameraDistortionModel::Brown);
+    undistort_vector.push_back(camera_undistort);
   }
 
   // clang-format off

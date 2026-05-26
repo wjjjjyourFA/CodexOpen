@@ -34,6 +34,29 @@ namespace jojo {
 namespace perception {
 namespace camera {
 
+bool UndistortionHandler::InitModel(const CameraDistortionModel& sensor_type) {
+  // clang-format off
+  switch (sensor_type) {
+    case CameraDistortionModel::Brown:
+      distort_model = std::make_shared<apollo::perception::base::BrownCameraDistortionModel>();
+      type = CameraDistortionModel::Brown;
+      std::cout << "name : " << distort_model->name() << std::endl;
+      break;
+    case CameraDistortionModel::Kannala:
+      distort_model = std::make_shared<jojo::perception::base::KannalaCameraDistortionModel>();
+      type = CameraDistortionModel::Kannala;
+      std::cout << "name : " << distort_model->name() << std::endl;
+      break;
+    case CameraDistortionModel::Raw:
+      type = CameraDistortionModel::Raw;
+    default:
+      distort_model = nullptr;
+      type = CameraDistortionModel::None;
+      break;
+  }
+  // clang-format on
+}
+
 bool UndistortionHandler::InitParams(size_t width, size_t height, double k1,
                                      double k2, double k3, double p1, double p2,
                                      double fx, double fy, double cx,
@@ -146,6 +169,8 @@ bool UndistortionHandler::Init(const std::string& sensor_name) {
       
       UpdateFisheyeIntrinsicParams(distort_model->get_intrinsic_params(),
                                    distort_model->get_distort_params());
+      break;
+    case CameraDistortionModel::Raw:
       break;
     default:
       inited_ = false;

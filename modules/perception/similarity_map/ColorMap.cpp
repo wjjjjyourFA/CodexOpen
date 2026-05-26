@@ -32,9 +32,6 @@ void ColorMap::Init(std::shared_ptr<jojo::perception::RuntimeConfig> rparam) {
   show_mat.create(hps_.map_rows, hps_.map_cols, CV_8UC3);
   show_mat.setTo(cv::Scalar(0, 0, 0));
 
-  global_bev =
-      cv::Mat(hps_.map_rows, hps_.map_cols, CV_8UC3, cv::Scalar(0, 0, 0));
-
   auto camera_params = std::make_shared<CameraParams>();
   camera_params->LoadFromFile(rparam_->camera_calib_file_path);
   auto matrix = camera_params->GetMatrixVector();

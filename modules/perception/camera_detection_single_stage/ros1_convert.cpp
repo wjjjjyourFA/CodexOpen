@@ -99,6 +99,7 @@ void Ros1Convert::Run() {
           matrix.at(0)->camera_matrix->intrinsic_matrix,
           matrix.at(0)->camera_matrix->distortion_params);
 
+      camera_undistort->InitModel(CameraDistortionModel::Brown);
       camera_undistort->InitParams(img.cols, img.rows, params);
       camera_undistort->Init("camera");
 

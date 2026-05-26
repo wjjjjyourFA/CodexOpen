@@ -20,38 +20,19 @@ enum class CameraDistortionModel : uint {
   None    = 0,
   Brown   = 1,
   Kannala = 2,
+  Raw     = 3,  // 不做任何remap（原始图）
 };
 
 class UndistortionHandler {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-  UndistortionHandler(
-      CameraDistortionModel mode = CameraDistortionModel::Brown) {
-    inited_ = false;
-
-    // clang-format off
-    switch (mode) {
-      case CameraDistortionModel::Brown:
-        distort_model = std::make_shared<apollo::perception::base::BrownCameraDistortionModel>();
-        type = CameraDistortionModel::Brown;
-        std::cout << "name : " << distort_model->name() << std::endl;
-        break;
-      case CameraDistortionModel::Kannala:
-        distort_model = std::make_shared<jojo::perception::base::KannalaCameraDistortionModel>();
-        type = CameraDistortionModel::Kannala;
-        std::cout << "name : " << distort_model->name() << std::endl;
-        break;
-      default:
-        distort_model = nullptr;
-        break;
-    }
-    // clang-format on
-  }
-
+  UndistortionHandler() {}
   ~UndistortionHandler() { Release(); }
 
   // bool set_device(int device);
+
+  bool InitModel(const CameraDistortionModel& sensor_type);
 
   // clang-format off
   bool InitParams(size_t width, size_t height, double k1, double k2, double k3, double p1, double p2, 
@@ -62,7 +43,7 @@ class UndistortionHandler {
   // clang-format on
 
   // bool Init(const std::string &sensor_name, int device);
-  bool Init(const std::string& sensor_name);
+  bool Init(const std::string &sensor_name);
 
   // 整数映射表，不同于cv::initUndistortRectifyMap的浮点数映射表
   // 主要是为了加速运算，但无法再双线性差值，并且可能像素锯齿

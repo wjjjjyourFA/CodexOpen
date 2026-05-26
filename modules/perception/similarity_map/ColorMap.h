@@ -69,8 +69,6 @@ class ColorMap {
   std::shared_ptr<CLocalWindowMap<ColorCell>> color_grid_map;
   cv::Mat show_mat;
 
-  cv::Mat global_bev;
-
   pcl::CropBox<pcl::PointXYZRGB> boxFilter;
   void PreProcessEgoBev(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud);
   void PreProcessGlobalBev(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud,

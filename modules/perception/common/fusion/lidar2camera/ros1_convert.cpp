@@ -183,6 +183,7 @@ void Ros1Convert::Run() {
       fusion->SetProjectionMatrix(matrix.at(0)->projection_matrix);
 
       if (param_->b_do_undistort) {
+        camera_undistort->InitModel(CameraDistortionModel::Brown);
         camera_undistort->InitParams(img.cols, img.rows, params);
         camera_undistort->Init("camera");
       }

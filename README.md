@@ -8,7 +8,7 @@ An engineering project by XXXX
 详细介绍：[CodexOpen](./docs/02_Quick_Start/02_Quick_Start.md)
 
 ## Quick Install
-The docker image is not available as `Dockerfile` yet, so you need to build it yourself. or use the prebuilt Docker image instead.  - [QuakPanLink](https://pan.quark.cn/s/bae27437d0af) && [提取码](KV1x)
+The docker image is not available as `Dockerfile` yet, so you need to build it yourself. or use the prebuilt Docker image instead.  - [QuakPanLink](https://pan.quark.cn/s/bae27437d0af) && 提取码: KV1x
 
 ### Docker build this project
 详细介绍：[工程安装说明](./docs/安装指南/工程安装说明.md)
