@@ -101,9 +101,10 @@ If you want to compile the image yourself, please refer to the "Image Building" 
       <img src="assets/images/map_visualization.gif" width="300">
     </div>
 
-  - [x] Stanford Rolling Map
+  - [x] Rolling Map
     <div style="display:flex; justify-content:center; align-items:center; gap:10px;">
-      <img src="assets/images/color_map_rot.gif" width="400">
+      <img src="assets/images/color_map_rot.gif" width="300">
+      <img src="assets/images/ground_remove.gif" width="300">
     </div>
 ---
 

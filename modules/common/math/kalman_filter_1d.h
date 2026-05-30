@@ -17,7 +17,7 @@ namespace common {
 namespace math {
 
 // 一维数据 kalman 滤波，假设过程转换和观测转换均为1，且过程控制输入为0
-// !!! 目前专用于角度滤波，单位弧度，未扩展到多维数据
+// !! 目前专用于角度滤波，单位弧度，未扩展到多维数据
 template <typename T>
 class KalmanFilter1D {
  public:

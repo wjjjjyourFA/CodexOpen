@@ -59,10 +59,12 @@
 
 - [ ] 360影像 || 540全景环视；
   - [ ] 无人平台环视相机标定
-  - [x] ColorMap；SimilarityMap；
+  - [x] SimilarityMap；
+    - [x] ColorMap；
+    - [ ] AutoEncoder；==> libtorch inference
   - [ ] 图像到图像的单应性变换 ==> bev 图
   - [ ] 可见光图像 和 红外图像的 叠加 ==> 双光相机标定
-
+  
 - [x] 点云动态补偿
   - [x] 基于 IMU | POSE 的线性插值：涉及外参变换；
   - [x] 使用 fast-lio 的 IMU 预积分进行伪补偿；

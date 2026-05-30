@@ -33,9 +33,9 @@ namespace apollo {
 namespace common {
 namespace math {
 
-// !!! apollo 的 RAW 坐标系 与一般的数学坐标系不一样，这里需要特别注意
+// !! apollo 的 RAW 坐标系 与一般的数学坐标系不一样，这里需要特别注意
 
-// !!! 不要 与 jojo 的 UnitConverter 混淆
+// !! 不要 与 jojo 的 UnitConverter 混淆
 
 /**
  * @class Angle

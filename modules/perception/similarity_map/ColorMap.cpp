@@ -113,6 +113,7 @@ void ColorMap::UpdateColorGridMapEgoBev(
   // 更新每个 cell 的颜色、置信度
   for (auto& p : *cloud) {
     // 与默认输入保持一致 X 向右， Y向上
+    // CellType* 本质是返回已有对象的地址
     ColorCell* cell = color_grid_map->GetValueFromXY(p.x, p.y);
     // 将栅格图变换到 X 向上，Y 向左
     // ColorCell* cell = color_grid_map->GetValueFromXY(-p.y, p.x);

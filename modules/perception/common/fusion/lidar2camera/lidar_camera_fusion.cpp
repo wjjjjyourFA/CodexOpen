@@ -11,7 +11,7 @@ LidarCameraFusion::LidarCameraFusion(/* args */) {
   // cloud_color_ = boost::make_shared<pcl::PointCloud<pcl::PointXYZRGB>>();
   // clang-format on
 
-  inv_dist = 1.0 / dist_;
+  inv_dist_ = 1.0 / dist_;
 }
 
 LidarCameraFusion::~LidarCameraFusion() {}
@@ -20,7 +20,7 @@ void LidarCameraFusion::set_params(const std::string& name,
                                    int dist_threshold) {
   dist_ = dist_threshold;
   // 只算一次
-  inv_dist = 1.0 / dist_;
+  inv_dist_ = 1.0 / dist_;
 
   name_ = name;
 }
@@ -119,7 +119,7 @@ void LidarCameraFusion::project_lidar_to_camera(
           std::sqrt(point.x * point.x + point.y * point.y + point.z * point.z);
 
       // int mapped_color_index =
-      //     std::min(static_cast<int>((dist * inv_dist) * 640), 639);
+      //     std::min(static_cast<int>((dist * inv_dist_) * 640), 639);
 
       /* way 1 opencv bgr
       int type = mask_.type();

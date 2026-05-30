@@ -29,6 +29,7 @@ class ColorCell {
   void UpdateCellByAvg(const pcl::PointXYZRGB& p);
 
  protected:
+  // rgb
   uint32_t sum_[3];
 };
 

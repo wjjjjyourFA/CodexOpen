@@ -78,7 +78,7 @@ class LidarCameraFusion {
 
   // m
   int dist_ = 100;
-  float inv_dist;
+  float inv_dist_;
   std::string name_ = "Lidar";
 
  protected:  // <== private
