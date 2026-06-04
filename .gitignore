@@ -34,3 +34,8 @@ tools/mmpose_inference_gui/pro/ui/
 
 tools/data_processor/ros1_message/
 tools/data_processor/ros2_message/
+
+.pro.user
+.qtc_clangd
+.qmake.stash
+Makefile
