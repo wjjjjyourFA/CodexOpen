@@ -8,7 +8,7 @@ An engineering project by XXXX
 详细介绍：[CodexOpen](./docs/02_Quick_Start/02_Quick_Start.md)
 
 ## Quick Install
-The docker image is not available as `Dockerfile` yet, so you need to build it yourself. or use the prebuilt Docker image instead.  - [QuakPanLink](https://pan.quark.cn/s/bae27437d0af) && 提取码： KV1x 
+The docker image is not available as `Dockerfile` yet, so you need to build it yourself. or use the prebuilt Docker image instead.  - [QuakPanLink](https://pan.quark.cn/s/a6dc030c7b97) && 提取码：2PLZ
 
 ### Use JOJO's Docker Image
 1. Install `VsCode` && `Dev Containers` plugins

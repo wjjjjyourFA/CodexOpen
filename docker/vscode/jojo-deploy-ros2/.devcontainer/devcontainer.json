@@ -2,7 +2,8 @@
 {
 	// 基础配置层，会生成第一个镜像
 	"name": "jojo-container-ros2-deploy",
-	"workspaceMount": "source=/home/jojo/CodexOpen,target=/workspaces/CodexOpen,type=bind",
+	// "workspaceMount": "source=/home/jojo/CodexOpen,target=/workspaces/CodexOpen,type=bind",
+	"workspaceMount": "source=/media/jojo/AQiDePan/CodexOpen,target=/workspaces/CodexOpen,type=bind",
 	"workspaceFolder": "/workspaces/CodexOpen",
 	// way 2 原地临时构建容器，具体步骤见 dockerfile
 	"build": {
@@ -29,6 +30,7 @@
 		"--security-opt=apparmor:unconfined",
 		// X11 host
 		"--volume=/tmp/.X11-unix:/tmp/.X11-unix",
+		"--volume=${localEnv:HOME}/.Xauthority:/home/ros/.Xauthority",
 		// Wayland host
 		"--volume=/mnt/wslg:/mnt/wslg",
 		// vscode 自动挂载映射 /workspaces/<你的工程名>
@@ -36,8 +38,7 @@
 		// "--volume=/path/CodexOpen:${containerWorkspaceFolder}",
 		"--volume=/home/jojo/Workspace/CodexOpenExtra:/workspaces/CodexOpenExtra",
 		"--volume=/home/jojo/Workspace/CodexOpenData:/workspaces/CodexOpenData",
-		// "--volume=/media/jojo/WorkStation/test:/workspaces/CodexOpenExtraData",
-		"--volume=/media/jojo/620E-3E25/wj/2023ALS_KYXZ:/workspaces/CodexOpenExtraData",
+		"--volume=/media/jojo/WorkStation/test:/workspaces/CodexOpenExtraData",
 		// other volume
 		"--ipc=host",
 		"--group-add=video",
@@ -74,6 +75,7 @@
 	"overrideCommand": true,
 	// 前置 base 镜像配置的 ros 用户
 	"remoteUser": "ros",
+	// 把环境变量传进容器，但它不提供认证文件
 	"containerEnv": {
 		"DISPLAY": "${localEnv:DISPLAY}", // Needed for GUI try ":0" for windows
 		// For Wayland
@@ -82,8 +84,10 @@
 		// For audio
 		"PULSE_SERVER": "${localEnv:PULSE_SERVER}",
 		"LIBGL_ALWAYS_SOFTWARE": "1", // Needed for software rendering of opengl
-		"QT_X11_NO_MITSHM": "1"
+		"QT_X11_NO_MITSHM": "1",
 		// uncomment to force Wayland
 		// "QT_QPA_PLATFORM": "wayland"
+		"NVIDIA_VISIBLE_DEVICES": "all",
+		"NVIDIA_DRIVER_CAPABILITIES": "all"
 	}
 }

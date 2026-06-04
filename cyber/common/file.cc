@@ -51,7 +51,7 @@ bool SetProtoToASCIIFile(const google::protobuf::Message& message,
     return false;
   }
   ZeroCopyOutputStream* output = new FileOutputStream(file_descriptor);
-  bool success                 = TextFormat::Print(message, output);
+  bool success = TextFormat::Print(message, output);
   delete output;
   close(file_descriptor);
   return success;
@@ -101,7 +101,7 @@ bool GetProtoFromASCIIFile(const std::string& file_name,
   }
 
   ZeroCopyInputStream* input = new FileInputStream(file_descriptor);
-  bool success               = TextFormat::Parse(input, message);
+  bool success = TextFormat::Parse(input, message);
   if (!success) {
     AERROR << "Failed to parse file " << file_name << " as text proto.";
   }
@@ -415,7 +415,7 @@ std::vector<std::string> ListSubPaths(const std::string& directory_path,
 size_t FindPathByPattern(const std::string& base_path, const std::string& patt,
                          const unsigned char d_type, const bool recursive,
                          std::vector<std::string>* result_list) {
-  DIR* directory    = opendir(base_path.c_str());
+  DIR* directory = opendir(base_path.c_str());
   size_t result_cnt = 0;
   if (directory == nullptr) {
     AWARN << "cannot open directory " << base_path;
@@ -524,7 +524,7 @@ bool GetFilePathWithEnv(const std::string& path, const std::string& env_var,
   bool relative_path_exists = false;
   if (PathExists(path)) {
     // relative path exists
-    *file_path           = path;
+    *file_path = path;
     relative_path_exists = true;
   }
   if (path.front() == '.') {

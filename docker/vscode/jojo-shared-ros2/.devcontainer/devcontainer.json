@@ -2,6 +2,8 @@
 {
 	// 基础配置层，会生成第一个镜像
 	"name": "jojo-container-ros2-update",
+	// 强制设定容器内工作目录
+	// 告诉 VS Code：真正的 workspace 是 /workspaces/CodexOpen
 	"workspaceMount": "source=/home/jojo/CodexOpen,target=/workspaces/CodexOpen,type=bind",
 	"workspaceFolder": "/workspaces/CodexOpen",
 	// way 2 原地临时构建容器，具体步骤见 dockerfile

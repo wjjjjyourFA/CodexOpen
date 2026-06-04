@@ -87,23 +87,29 @@ RUN bash -c '\
 # ROS2 的 ament_cmake_lint / ament_cppcheck 用的环境变量
 ENV AMENT_CPPCHECK_ALLOW_SLOW_VERSIONS=1
 
-RUN cat << 'EOF' >> /home/$USERNAME/.bashrc
+ARG ENABLE_CUDA_ENV=1
 
-# CUDA
-export CUDA_HOME=/usr/local/cuda-12.6
-export PATH=${CUDA_HOME}/bin:$PATH
-export LD_LIBRARY_PATH=${CUDA_HOME}/lib64:$LD_LIBRARY_PATH
-export LD_LIBRARY_PATH=${CUDA_HOME}/extras/CUPTI/lib64:$LD_LIBRARY_PATH
-export C_INCLUDE_PATH=$C_INCLUDE_PATH:${CUDA_HOME}/include
-export CPLUS_INCLUDE_PATH=$CPLUS_INCLUDE_PATH:${CUDA_HOME}/include
-export LIBRARY_PATH=$LIBRARY_PATH:${CUDA_HOME}/lib64
+RUN if [ "$ENABLE_CUDA_ENV" = "1" ]; then \
+  echo "" >> /home/$USERNAME/.bashrc && \
+  echo "# CUDA" >> /home/$USERNAME/.bashrc && \
+  echo "export CUDA_HOME=/usr/local/cuda-12.6" >> /home/$USERNAME/.bashrc && \
+  echo 'export PATH=${CUDA_HOME}/bin:$PATH' >> /home/$USERNAME/.bashrc && \
+  echo 'export LD_LIBRARY_PATH=${CUDA_HOME}/lib64:$LD_LIBRARY_PATH' >> /home/$USERNAME/.bashrc && \
+  echo 'export LD_LIBRARY_PATH=${CUDA_HOME}/extras/CUPTI/lib64:$LD_LIBRARY_PATH' >> /home/$USERNAME/.bashrc && \
+  echo 'export C_INCLUDE_PATH=${CUDA_HOME}/include:$C_INCLUDE_PATH' >> /home/$USERNAME/.bashrc && \
+  echo 'export CPLUS_INCLUDE_PATH=${CUDA_HOME}/include:$CPLUS_INCLUDE_PATH' >> /home/$USERNAME/.bashrc && \
+  echo 'export LIBRARY_PATH=${CUDA_HOME}/lib64:$LIBRARY_PATH' >> /home/$USERNAME/.bashrc ; \
+fi
 
-# TensorRT
-export TRT_HOME=/opt/TensorRT-10.13.3.9
-export PATH=${TRT_HOME}/bin:$PATH
-export LIBRARY_PATH=$LIBRARY_PATH:${TRT_HOME}/lib
-export LD_LIBRARY_PATH=${TRT_HOME}/lib:$LD_LIBRARY_PATH
-export C_INCLUDE_PATH=$C_INCLUDE_PATH:${TRT_HOME}/include
-export CPLUS_INCLUDE_PATH=$CPLUS_INCLUDE_PATH:${TRT_HOME}/include
+ARG ENABLE_TRT_ENV=1
 
-EOF
+RUN if [ "$ENABLE_TRT_ENV" = "1" ]; then \
+  echo "" >> /home/$USERNAME/.bashrc && \
+  echo "# TensorRT in orin use default sys" >> /home/$USERNAME/.bashrc && \
+  echo "export TRT_HOME=/opt/TensorRT-10.13.3.9" >> /home/$USERNAME/.bashrc && \
+  echo 'export PATH=${TRT_HOME}/bin:$PATH' >> /home/$USERNAME/.bashrc && \
+  echo 'export LIBRARY_PATH=${TRT_HOME}/lib:$LIBRARY_PATH' >> /home/$USERNAME/.bashrc && \
+  echo 'export LD_LIBRARY_PATH=${TRT_HOME}/lib:$LD_LIBRARY_PATH' >> /home/$USERNAME/.bashrc && \
+  echo 'export C_INCLUDE_PATH=${TRT_HOME}/include:$C_INCLUDE_PATH' >> /home/$USERNAME/.bashrc && \
+  echo 'export CPLUS_INCLUDE_PATH=${TRT_HOME}/include:$CPLUS_INCLUDE_PATH' >> /home/$USERNAME/.bashrc ; \
+fi
