@@ -7,3 +7,12 @@
 [submodule "modules/drivers/lidar/Livox-SDK2-1.2.5"]
 	path = modules/drivers/lidar/Livox-SDK2-1.2.5
 	url = https://github.com/Livox-SDK/Livox-SDK2.git
+[submodule "ros2/src/drivers/lidar/livox_ros_driver2-1.2.4"]
+	path = ros2/src/drivers/lidar/livox_ros_driver2-1.2.4
+	url = https://github.com/Livox-SDK/livox_ros_driver2.git
+[submodule "modules/drivers/rgbd/librealsense-2.57.3"]
+	path = modules/drivers/rgbd/librealsense-2.57.3
+	url = https://github.com/realsenseai/librealsense.git
+[submodule "ros2/src/drivers/rgbd/realsense-ros-4.57.3"]
+	path = ros2/src/drivers/rgbd/realsense-ros-4.57.3
+	url = https://github.com/realsenseai/realsense-ros.git
