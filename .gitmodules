@@ -4,3 +4,6 @@
 [submodule "tools/data_processor/rs_driver/ros1/src/rslidar_sdk-1.3.2"]
 	path = tools/data_processor/rs_driver/ros1/src/rslidar_sdk-1.3.2
 	url = https://github.com/RoboSense-LiDAR/rslidar_sdk.git
+[submodule "modules/drivers/lidar/Livox-SDK2-1.2.5"]
+	path = modules/drivers/lidar/Livox-SDK2-1.2.5
+	url = https://github.com/Livox-SDK/Livox-SDK2.git
