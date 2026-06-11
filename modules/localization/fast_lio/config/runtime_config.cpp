@@ -20,6 +20,7 @@ void RuntimeConfig::LoadConfig(const std::string& config_path) {
 
     camera_calib_file_path = pt.get<std::string>("calibration.camera_calib_file_path", "");
     lidar_calib_file_path = pt.get<std::string>("calibration.lidar_calib_file_path", "");
+    gravity_imu_calib_file_path = pt.get<std::string>("calibration.gravity_imu_calib_file_path", "");
     vehicle_config_file_path = pt.get<std::string>("calibration.vehicle_config_file_path", "");
 
     // 打印其他参数...

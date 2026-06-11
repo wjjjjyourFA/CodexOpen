@@ -62,3 +62,14 @@ LidarType SensorRegistry::GetLidarType(const std::string& name) const {
   }
   return LidarType::UNKNOWN;
 }
+
+int SensorRegistry::GetDifopNum(LidarType type) const {
+  switch (type) {
+    case LidarType::M1P:
+      return 16 * 35;
+    case LidarType::RS128:
+      return 2;
+    default:
+      return 0;
+  }
+}

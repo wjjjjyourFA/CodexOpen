@@ -46,6 +46,7 @@ SOURCES += \
   $$CODEX_PATH/modules/common/transform/geometry/rotation_conversions.cpp \
   $$PREFIX/base/camera.cc \
   $$PREFIX/base/distortion_model.cc \
+  $$PREFIX/base/fisheye_model.cc \
   $$PREFIX/config/utils.cpp \
   $$PREFIX/config/sensor_extrinsics.cpp \
   $$PREFIX/config/vehicle_config.cpp \
@@ -70,6 +71,7 @@ HEADERS += \
   $$CODEX_PATH/modules/common/transform/geometry/rotation_conversions.h \
   $$PREFIX/base/camera.h \
   $$PREFIX/base/distortion_model.h \
+  $$PREFIX/base/fisheye_model.h \
   $$PREFIX/config/utils.h \
   $$PREFIX/config/sensor_extrinsics.h \
   $$PREFIX/config/vehicle_config.h \

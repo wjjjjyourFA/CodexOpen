@@ -81,7 +81,7 @@ HEADERS += \
   $$files($$PREFIX/common/radar/convert/*.h) \
   $$SELF_PATH/config/sensor_config.h \
   $$SELF_PATH/data_processor.h \
-  $$SELF_PATH/ros1_convert.h
+  $$SELF_PATH/ros1_convert.h \
   $$files($$SELF_PATH/config/*.h) \
 
 HEADERS -= \

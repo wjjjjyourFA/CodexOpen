@@ -104,10 +104,12 @@ function(codex_add_proto_library)
 
   # 安装 proto 生成的头文件（保持目录结构）
   install(
-    DIRECTORY ${ARG_OUT_DIR}/
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    DIRECTORY ${PROTO_TARGET_PATH}/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${ARG_PROTO_BASE}
     FILES_MATCHING
       PATTERN "*.pb.h"
+
+    PATTERN "CMakeFiles" EXCLUDE
   )
 endfunction()
 

@@ -26,10 +26,15 @@ int main(int argc, char** argv) {
   lidar_params->LoadFromFile(runtime_config->lidar_calib_file_path /*kk.ini*/);
   auto matrix1 = lidar_params->GetMatrixVector();
 
+  auto imu_params = std::make_shared<cfg::SensorExtrinsics>();
+  imu_params->LoadFromFile(runtime_config->gravity_imu_calib_file_path);
+  auto matrix2 = imu_params->GetMatrixVector();
+
   auto vehicle_params = std::make_shared<cfg::VehicleConfig>();
   vehicle_params->LoadFromFile(runtime_config->vehicle_config_file_path);
 
   std::shared_ptr<LidarOdometry> odometry = std::make_shared<LidarOdometry>();
+  odometry->SetGravityImuExtrinsicMatrix(matrix2.at(0)->extrinsic_matrix);
   odometry->SetExtrinsicMatrix(matrix1.at(0)->extrinsic_matrix);
   odometry->Init(runtime_config);
 
@@ -42,7 +47,7 @@ int main(int argc, char** argv) {
   auto group_convert = std::make_shared<GroupConvert>();
   group_convert->Init(dl_runtime_config);
 
-  std::cout << std::fixed << std::setprecision(0);
+  std::cout << std::fixed << std::setprecision(9);
 
   const auto& vp = vehicle_params;
   // const auto& vp = *vehicle_params;
@@ -62,7 +67,7 @@ int main(int argc, char** argv) {
       break;
     }
     std::cout << "Frame " << frame_idx
-              << ": Image Time = " << group->camera.at(0).time
+              // << ": Image Time = " << group->camera.at(0).time
               << ", Lidar Time = " << group->lidar.time
               << ", IMU Count = " << group->imu_vec.size() << std::endl;
     auto frame_start = omp_get_wtime();

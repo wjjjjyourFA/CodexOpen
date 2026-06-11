@@ -5,8 +5,11 @@
 
 #include <Eigen/Dense>
 
-#include <pcl/io/io.h>
+// 禁用（deprecated / 易炸）
+// #include <pcl/io/io.h>
 #include <pcl/io/pcd_io.h>
+#include <pcl/io/ply_io.h>
+#include <pcl/common/io.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/filters/filter.h>

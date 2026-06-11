@@ -17,8 +17,11 @@ class RuntimeConfig : public jojo::common::config::ConfigFileBase {
   void LoadConfig(const std::string& config_path) override;
 
  public:
-  float hanging_z      = 2.0;
+  // 地面参考高度
+  float ref_height = 0;
+  float hanging_z  = 2.0;
   // 车轮半高 <== 点云是车辆中心的坐标系，小于该值 认为是地面一下的点
+  // 主要用于设置偏移值
   float mean_z_thresh  = -0.55;
   float delta_z_thresh = 0.1;
 
@@ -36,7 +39,7 @@ class RuntimeConfig : public jojo::common::config::ConfigFileBase {
 
   std::string camera_calib_file_path = "";
 
-  bool b_use_legacy = false;
+  bool b_use_legacy   = false;
   bool b_use_gaussian = false;
 
   bool b_show_color_point = false;

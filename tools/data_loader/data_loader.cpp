@@ -19,6 +19,10 @@ void DataLoader::Init(std::shared_ptr<RuntimeConfigOffline> param) {
       InitUndistortion();
     }
   }
+
+  if (param_->b_imu_data){
+    // TODO：读取IMU的标定矩阵
+  }
 }
 
 void DataLoader::InitUndistortion() {

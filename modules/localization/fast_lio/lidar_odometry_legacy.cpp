@@ -376,7 +376,6 @@ void LidarOdometry::SetDataFolder() {
   common::CreateDir(path_lidar);
 
   path_pose = this->postfix + "/sensor_data/" + "pose" + ".txt";
-
   ofs_pose.open(path_pose, std::ios::out);
   if (!ofs_pose.is_open()) {
     std::cerr << "[save_result] Cannot clear " << path_pose << std::endl;
@@ -417,8 +416,8 @@ void LidarOdometry::save_result(bool b_save_pcd) {
     feats_undistort->height = 1;
 
     std::ostringstream oss_time;
-    oss_time << std::fixed << std::setprecision(13)
-             << uint64_t(lidar_end_time * 1000);
+    oss_time << std::setw(13) << std::setfill('0')
+         << static_cast<uint64_t>(lidar_end_time * 1000);
     std::string pcd_filename = path_lidar + "/" + oss_time.str() + ".pcd";
     pcl::io::savePCDFileBinary(pcd_filename, *feats_undistort);
     // std::cout << "Saving " << pcd_filename << std::endl;
@@ -435,7 +434,8 @@ void LidarOdometry::Show(bool b_pause) {
   std::string traj_name = "traj";
 
   if (vis == NULL) {
-    vis = new pcl::visualization::PCLVisualizer("vis pcd");
+    // vis = new pcl::visualization::PCLVisualizer("vis pcd");
+	vis.reset(new pcl::visualization::PCLVisualizer("vis pcd"));
     vis->setBackgroundColor(0, 0, 0);
     vis->initCameraParameters();
     vis->setCameraPosition(0, -20, 10, 0, 0, 1);
@@ -452,6 +452,7 @@ void LidarOdometry::Show(bool b_pause) {
   if (vis->contains(name)) {
     vis->removePointCloud(name);
   }
+
   pcl::visualization::PointCloudColorHandlerGenericField<PointType>
       color_handler(feats_down_world, "z");
   vis->addPointCloud<PointType>(feats_down_world, color_handler, name);

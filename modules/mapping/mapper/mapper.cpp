@@ -2,6 +2,7 @@
 
 namespace jojo {
 namespace mapping {
+namespace common = apollo::cyber::common;
 
 Mapper::Mapper() {
   world_point_cloud.reset(new pcl::PointCloud<pcl::PointXYZI>);
@@ -194,6 +195,9 @@ void Mapper::FlushBufferToMap() {
 void Mapper::SaveMap(const std::string& path) {
   // std::cout << ds_history_point_cloud->size() << " points!" << std::endl;
 
+  common::CreateDir(path);
+  common::CreateDir(path + "/map3d");
+
   std::string path_map = path + "/map3d/map_point_cloud.pcd";
   pcl::io::savePCDFileBinary(path_map, *ds_history_point_cloud);
 }
@@ -238,17 +242,19 @@ void Mapper::RealTimeShow(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_in) {
 
   vis_->addPointCloud<pcl::PointXYZI>(cloud, color, name);
   vis_->setPointCloudRenderingProperties(
-      pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "map");
+      pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, name);
 
   vis_chunks_.push_back(cloud);
 
   // 控制chunk数量
-  const int MAX_CHUNKS = 200;
+  const int MAX_CHUNKS = 5000;
   if (vis_chunks_.size() > MAX_CHUNKS) {
     // clang-format off
     int remove_id = vis_chunk_id_ - MAX_CHUNKS - 1;
     std::string remove_name = "map_" + std::to_string(remove_id);
-    vis_->removePointCloud(remove_name);
+    if (vis_->contains(remove_name)) {
+      vis_->removePointCloud(remove_name);
+    }
     vis_chunks_.erase(vis_chunks_.begin());
     // clang-format on
   }

@@ -191,7 +191,7 @@ void DataProcessor::SaveLidarData(pcl::PointCloud<pcl::PointXYZI>::Ptr Cloud,
                                   uint64_t filename) {
   char buff[500];
   if (param_->use_bin_or_pcd == 0) {
-    sprintf(buff, "%s/%ld.bin", path_lidar.c_str(), filename);
+    sprintf(buff, "%s/%013ld.bin", path_lidar.c_str(), filename);
     FILE* fp_lidar;
     fp_lidar = fopen(buff, "wb");
     if (fp_lidar == NULL) {
@@ -227,7 +227,7 @@ void DataProcessor::SaveLidarData(pcl::PointCloud<pcl::PointXYZI>::Ptr Cloud,
     }
     fclose(fp_lidar);
   } else {
-    sprintf(buff, "%s/%ld.pcd", path_lidar.c_str(), filename);
+    sprintf(buff, "%s/%013ld.pcd", path_lidar.c_str(), filename);
     /*
     pcl::io::savePCDFileASCII(buff, Cloud);
     */
@@ -241,7 +241,7 @@ void DataProcessor::SaveLidarData(pcl::PointCloud<pcl::PointXYZIRT>::Ptr Cloud,
   if (param_->use_bin_or_pcd == 0) {
     perror("Lidar PointCloud XYZIRT can't save as .bin file error!");
   } else {
-    sprintf(buff, "%s/%ld.pcd", path_lidar.c_str(), filename);
+    sprintf(buff, "%s/%013ld.pcd", path_lidar.c_str(), filename);
     pcl::io::savePCDFileBinary(buff, *Cloud);
   }
 }
@@ -253,13 +253,14 @@ void DataProcessor::ProcessCameraImage(cv::Mat& image, uint64_t filename,
   // 保存原始图像
   char file_image[300];
   switch (mode) {
+    // clang-format off
     case 1:
       index = id;
       name  = "camera";
       if (param_->use_jpg_or_png <= 0) {
-        sprintf(file_image, "%s/%ld.jpg", path_camera.at(id).c_str(), filename);
+        sprintf(file_image, "%s/%013ld.jpg", path_camera.at(id).c_str(), filename);
       } else {
-        sprintf(file_image, "%s/%ld.png", path_camera.at(id).c_str(), filename);
+        sprintf(file_image, "%s/%013ld.png", path_camera.at(id).c_str(), filename);
       }
       break;
 
@@ -267,9 +268,9 @@ void DataProcessor::ProcessCameraImage(cv::Mat& image, uint64_t filename,
       index = param_->b_camera + id;
       name  = "infra";
       if (param_->use_jpg_or_png <= 0) {
-        sprintf(file_image, "%s/%ld.jpg", path_infra.at(id).c_str(), filename);
+        sprintf(file_image, "%s/%013ld.jpg", path_infra.at(id).c_str(), filename);
       } else {
-        sprintf(file_image, "%s/%ld.png", path_infra.at(id).c_str(), filename);
+        sprintf(file_image, "%s/%013ld.png", path_infra.at(id).c_str(), filename);
       }
       break;
 
@@ -277,11 +278,12 @@ void DataProcessor::ProcessCameraImage(cv::Mat& image, uint64_t filename,
       index = param_->b_camera + param_->b_infra + id;
       name  = "star";
       if (param_->use_jpg_or_png <= 0) {
-        sprintf(file_image, "%s/%ld.jpg", path_star.at(id).c_str(), filename);
+        sprintf(file_image, "%s/%013ld.jpg", path_star.at(id).c_str(), filename);
       } else {
-        sprintf(file_image, "%s/%ld.png", path_star.at(id).c_str(), filename);
+        sprintf(file_image, "%s/%013ld.png", path_star.at(id).c_str(), filename);
       }
       break;
+    // clang-format on
 
     default:
       std::cout << "set mode error!" << std::endl;
@@ -343,38 +345,38 @@ void DataProcessor::ProcessCameraImage(cv::Mat& image, uint64_t filename,
     undistort_vector.at(index)->Handle(image, undistort_image);
     // std::cerr << " size : " << undistort_vector.size() << std::endl;
 
-    // clang-format off
     char file_image_u[300];
     switch (mode) {
+      // clang-format off
       case 1:
         if (param_->use_jpg_or_png <= 0) {
-          sprintf(file_image_u, "%s/%ld.jpg", path_camera_u.at(id).c_str(), filename);
+          sprintf(file_image_u, "%s/%013ld.jpg", path_camera_u.at(id).c_str(), filename);
         } else {
-          sprintf(file_image_u, "%s/%ld.png", path_camera_u.at(id).c_str(), filename);
+          sprintf(file_image_u, "%s/%013ld.png", path_camera_u.at(id).c_str(), filename);
         }
         break;
 
       case 2:
         if (param_->use_jpg_or_png <= 0) {
-          sprintf(file_image_u, "%s/%ld.jpg", path_infra_u.at(id).c_str(), filename);
+          sprintf(file_image_u, "%s/%013ld.jpg", path_infra_u.at(id).c_str(), filename);
         } else {
-          sprintf(file_image_u, "%s/%ld.png", path_infra_u.at(id).c_str(), filename);
+          sprintf(file_image_u, "%s/%013ld.png", path_infra_u.at(id).c_str(), filename);
         }
         break;
 
       case 3:
         if (param_->use_jpg_or_png <= 0) {
-          sprintf(file_image_u, "%s/%ld.jpg", path_star_u.at(id).c_str(), filename);
+          sprintf(file_image_u, "%s/%013ld.jpg", path_star_u.at(id).c_str(), filename);
         } else {
-          sprintf(file_image_u, "%s/%ld.png", path_star_u.at(id).c_str(), filename);
+          sprintf(file_image_u, "%s/%013ld.png", path_star_u.at(id).c_str(), filename);
         }
         break;
+      // clang-format on
 
       default:
         std::cout << "set mode error!" << std::endl;
         break;
     }
-    // clang-format on
 
     // cv::imwrite(file_image_u, undistort_image);
     cv::imwrite(file_image_u, undistort_image, param_->compress_params);

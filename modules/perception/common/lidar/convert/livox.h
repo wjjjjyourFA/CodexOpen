@@ -4,6 +4,7 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
+#include "modules/perception/tools/pcl/common.h"
 #include "modules/perception/tools/pcl/point_types.h"
 
 // clang-format off

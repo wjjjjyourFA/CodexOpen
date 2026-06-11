@@ -50,7 +50,8 @@ include(FindPkgConfig)
 
 # C++ standard and flags
 # 为了适配兼容性，所有代码修改到适配 C++14
-set(CMAKE_CXX_STANDARD 14)
+# 不再全局设置，而是子模块单独设置
+# set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # 可选：禁止 GNU 扩展，比如 -std=gnu++14 → -std=c++14
 set(CMAKE_CXX_EXTENSIONS OFF)  

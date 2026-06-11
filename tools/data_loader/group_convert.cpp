@@ -530,15 +530,18 @@ bool GroupConvert::LoadImuData(const std::string& file) {
       imu.gyro.z *= M_PI / 180.0;
       */
 
-      /* debug 
+      /* debug 雷达-IMU 非正装
       Eigen::Vector3d gyro(imu.gyro.x, imu.gyro.y, imu.gyro.z);
       Eigen::Vector3d acc(imu.acc.x, imu.acc.y, imu.acc.z);
 
       // clang-format off
       Eigen::Matrix3d imu_ext = Eigen::Matrix3d::Identity();
-      imu_ext << 1.0, 0.0, 0.0,
-                 0.0, 0.6428, -0.7660,
-                 0.0, 0.7660, 0.6428;
+      // imu_ext << 1.0, 0.0, 0.0,
+      //            0.0, 0.6428, -0.7660,
+      //            0.0, 0.7660, 0.6428;
+      imu_ext << 1,  0,  0,
+                 0, -1,  0,
+                 0,  0, -1;
       // clang-format on
       
       gyro = imu_ext * gyro;

@@ -460,8 +460,9 @@ void Ros1Convert::RadarHandler(const rosbag::MessageInstance& m) {
         Point.x = msg_ptr->objectData[i].x;
         Point.y = msg_ptr->objectData[i].y;
         // version 1.1
-        // Point.x          = msg_ptr->objectData[i].front_distance;
-        // Point.y          = msg_ptr->objectData[i].left_distance;
+        // Point.x = msg_ptr->objectData[i].front_distance;
+        // Point.y = msg_ptr->objectData[i].left_distance;
+
         Point.range      = msg_ptr->objectData[i].range;
         Point.azimuth    = msg_ptr->objectData[i].angle;
         Point.range_rate = msg_ptr->objectData[i].rangeRate;

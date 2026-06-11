@@ -53,34 +53,36 @@ file(GLOB SOURCES
   # "${CMAKE_CURRENT_SOURCE_DIR}/config/runtime_config_realtime.cpp"
 )
 
-add_executable(lidar_camera_fusion_test
-  lidar_camera_fusion_test.cpp
-  ${APOLLO_SOURCES}
-  ${CODEX_SOURCES}
-  ${SOURCES}
-  ${CMAKE_CURRENT_SOURCE_DIR}/config/runtime_config.cpp
-)
+option(BUILD_TESTING "Enable Unit Tests" OFF)
 
-target_link_libraries(lidar_camera_fusion_test PRIVATE 
-  ${PCL_LIBRARIES}
-  ${OpenCV_LIBS}
-  glog
-  ${Boost_LIBRARIES} boost_thread
-  cyber_binary
-  common_math
-  perception_common_base
-  perception_common_config
-  perception_common_camera
-  perception_tools
-  perception_common_lidar_convert
-)
+if(BUILD_TESTING)
+  add_executable(lidar_camera_fusion_test
+    lidar_camera_fusion_test.cpp
+    ${APOLLO_SOURCES}
+    ${CODEX_SOURCES}
+    ${SOURCES}
+    ${CMAKE_CURRENT_SOURCE_DIR}/config/runtime_config.cpp
+  )
 
-if (OPENMP_FOUND)
-  target_compile_options(lidar_camera_fusion_test PRIVATE ${OpenMP_CXX_FLAGS})
-  target_link_libraries(lidar_camera_fusion_test PRIVATE gomp)
+  target_link_libraries(lidar_camera_fusion_test PRIVATE 
+    ${PCL_LIBRARIES}
+    ${OpenCV_LIBS}
+    glog
+    ${Boost_LIBRARIES} boost_thread
+    cyber_binary
+    common_math
+    perception_common_base
+    perception_common_config
+    perception_common_camera
+    perception_tools
+    perception_common_lidar_convert
+  )
+
+  if (OPENMP_FOUND)
+    target_compile_options(lidar_camera_fusion_test PRIVATE ${OpenMP_CXX_FLAGS})
+    target_link_libraries(lidar_camera_fusion_test PRIVATE gomp)
+  endif()
 endif()
-
-install_module(lidar_camera_fusion_test modules/perception/common/fusion/lidar2camera)
 
 option(BUILD_ROS1 "Enable ROS1" OFF)
 

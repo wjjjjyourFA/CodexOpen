@@ -25,6 +25,7 @@ void RuntimeConfig::LoadConfig(const std::string& config_path) {
     min_bound = ReadVec3(pt, "min_bound", Eigen::Vector3f(-5, -3.5, -5));
     max_bound = ReadVec3(pt, "max_bound", Eigen::Vector3f(6, 3.5, 2));
 
+    ref_height = pt.get<float>("general.ref_height", 0.0);
     hanging_z = pt.get<float>("general.hanging_z", 2.0);
     mean_z_thresh = pt.get<float>("general.mean_z_thresh", -0.55);
     delta_z_thresh = pt.get<float>("general.delta_z_thresh", 0.1);

@@ -18,7 +18,7 @@ bool RsToVd(pcl::PointCloud<robosense_ros::PointIF>::Ptr point_rs_,
     const auto& pt = point_rs_->points[i];
     auto& dst      = point_vd_->points[i];
 
-    if (has_nan(pt)) {
+    if (HasNaN(pt)) {
       dst.x = dst.y = dst.z = std::numeric_limits<float>::quiet_NaN();
       dst.intensity         = std::numeric_limits<float>::quiet_NaN();
       continue;
@@ -70,7 +70,7 @@ bool RsToVd(pcl::PointCloud<robosense_ros::PointIF>::Ptr point_rs_,
     const auto& pt = point_rs_->points[i];
     auto& dst      = point_vd_->points[i];
 
-    if (has_nan(pt)) {
+    if (HasNaN(pt)) {
       dst.x = dst.y = dst.z = std::numeric_limits<float>::quiet_NaN();
       dst.intensity         = std::numeric_limits<float>::quiet_NaN();
       continue;

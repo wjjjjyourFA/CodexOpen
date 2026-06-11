@@ -64,8 +64,8 @@ struct Segment {
     // 其他成员拷贝...
 
     if (other.points) {
-      points =
-          boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>(*other.points);
+      // points = pcl::make_shared<pcl::PointCloud<pcl::PointXYZI>>(*other.points);
+      points.reset(new pcl::PointCloud<pcl::PointXYZI>(*other.points));
     }
   }
 
@@ -83,8 +83,8 @@ struct Segment {
       // 其他成员拷贝...
 
       if (other.points) {
-        points =
-            boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>(*other.points);
+        // points = pcl::make_shared<pcl::PointCloud<pcl::PointXYZI>>(*other.points);
+        points.reset(new pcl::PointCloud<pcl::PointXYZI>(*other.points));
       } else {
         points.reset();
       }

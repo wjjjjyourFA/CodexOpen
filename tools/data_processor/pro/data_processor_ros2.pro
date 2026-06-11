@@ -1,4 +1,4 @@
-MY_SYSTEM_INFO = 20.04.1
+MY_SYSTEM_INFO = 22.04.1
 unix{
   MY_SYSTEM_INFO = $$system(uname -a | cut -d \~ -f 2 | cut -d \- -f 1)
   message("System Is Ubuntu" $${QT_ARCH} : $${MY_SYSTEM_INFO})
@@ -35,6 +35,7 @@ SOURCES += \
   $$CODEX_PATH/cyber/common/file.cc \
   $$CODEX_PATH/modules/common/config/config_file_base.cpp \
   $$CODEX_PATH/tools/common/utils/rosbag_utils.cpp \
+  $$CODEX_PATH/tools/common/utils/rclcpp_utils.cpp \
   $$PREFIX/common/base/camera.cc \
   $$PREFIX/common/base/distortion_model.cc \
   $$PREFIX/common/base/fisheye_model.cc \
@@ -61,6 +62,7 @@ HEADERS += \
   $$CODEX_PATH/modules/common/environment_conf.h \
   $$CODEX_PATH/modules/common/config/config_file_base.h \
   $$CODEX_PATH/tools/common/utils/rosbag_utils.h \
+  $$CODEX_PATH/tools/common/utils/rclcpp_utils.h \
   $$PREFIX/common/base/camera.h \
   $$PREFIX/common/base/distortion_model.h \
   $$PREFIX/common/base/fisheye_model.h \
@@ -73,7 +75,7 @@ HEADERS += \
   $$files($$PREFIX/common/radar/convert/*.h) \
   $$SELF_PATH/config/sensor_config.h \
   $$SELF_PATH/data_processor.h \
-  $$SELF_PATH/ros2_convert.h
+  $$SELF_PATH/ros2_convert.h \
   $$files($$SELF_PATH/config/*.h) \
 
 HEADERS -= \
@@ -82,7 +84,7 @@ HEADERS -= \
 INCLUDEPATH += \
   $$CODEX_PATH \
   $$SELF_PATH/ros2_message \
-  $$SELF_PATH/ros2_message/version_1.0 \
+  $$SELF_PATH/ros2_message/version_1.1 \
 
 INCLUDEPATH += \
   /usr/include/eigen3 \
@@ -94,7 +96,7 @@ INCLUDEPATH += \
   /opt/ros/$(ROS_DISTRO)/include \
   /opt/ros/foxy/include \
   /opt/ros/humble/include \
-  # $$PWD/../../ros1/devel/include \
+  # $$PWD/../../ros2/install/include \
 }
 
 # contains(MY_SYSTEM_INFO, 22.04){
@@ -128,7 +130,7 @@ LIBS += \
 ## ROS2
 contains(MY_ROS_INFO, 2){
 LIBS += \
-  # -L/opt/ros/$(ROS_DISTRO)/lib \
+  -L/opt/ros/$(ROS_DISTRO)/lib \
   -L/opt/ros/foxy/lib \
   -L/opt/ros/humble/lib \
   -lrclcpp -lrcutils -lrcl -lrmw -lyaml -lbuiltin_interfaces__rosidl_generator_c \

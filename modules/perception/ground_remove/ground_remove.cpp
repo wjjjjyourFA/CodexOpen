@@ -47,7 +47,7 @@ void GroundRemove::Run(const pcl::PointCloud<pcl::PointXYZI>::Ptr& frame,
   auto& pose_y = in_pose(1, 3);
 
   // TODO：点云变换 ==> 车辆中心
-
+  // 现在传入的是 激光雷达坐标系 的点云 ==> 地面是 -2.5m 左右
   ground_segmentation->Run(frame);
 
   // this->remove_noise_points();

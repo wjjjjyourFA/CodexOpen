@@ -20,6 +20,7 @@ class RuntimeConfig : public jojo::common::config::ConfigFileBase {
 
   std::string lidar_calib_file_path;
   std::string camera_calib_file_path;
+  std::string gravity_imu_calib_file_path;
   std::string vehicle_config_file_path;
 
   bool b_save_pcd = false;

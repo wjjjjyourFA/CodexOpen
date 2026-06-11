@@ -36,6 +36,7 @@ class LidarOdometry {
   LidarOdometry();
   ~LidarOdometry();
 
+  void SetGravityImuExtrinsicMatrix(const Eigen::Matrix4f& extrinsic_matrix);
   void SetExtrinsicMatrix(const Eigen::Matrix4f& extrinsic_matrix);
   void SetDataFolder();
   void Close();
@@ -85,6 +86,10 @@ class LidarOdometry {
   pcl::VoxelGrid<PointType> downSizeFilterMap;
 
   KD_TREE<PointType> ikdtree;
+
+  // 用于将 倒装IMU数据 转换为 正装坐标系
+  Eigen::Matrix4d gravity_imu_ext = Eigen::Matrix4d::Identity();
+  void TransformImuData(MeasureGroup& measures);
 
   V3D Lidar_T_wrt_IMU = V3D::Zero();
   M3D Lidar_R_wrt_IMU = M3D::Identity();

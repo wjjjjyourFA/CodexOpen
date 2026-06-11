@@ -4,7 +4,7 @@ void show3d_lidar_data(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& cloud,
                        const std::string& viewer_name) {
   // 适用于 单线程、局部使用。
   auto viewer =
-      boost::make_shared<pcl::visualization::PCLVisualizer>(viewer_name);
+      std::make_shared<pcl::visualization::PCLVisualizer>(viewer_name);
   // viewer.setBackgroundColor(0.0, 0.0, 0.0);  // 设置背景色
   // viewer.removeAllPointClouds();
 
@@ -56,10 +56,10 @@ void show3d_lidar_data(const pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud,
 }
 
 // 使用 shared_ptr 管理 PCLVisualizer 以支持多线程共享
-// boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer(
+// std::shared_ptr<pcl::visualization::PCLVisualizer> viewer(
 //   new pcl::visualization::PCLVisualizer(name));
 void show3d_lidar_data_shared(
-    boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer,
+    std::shared_ptr<pcl::visualization::PCLVisualizer> viewer,
     const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& cloud,
     const std::string& cloud_name) {
   // clang-format off
@@ -70,14 +70,15 @@ void show3d_lidar_data_shared(
   // clang-format on
 
   while (!viewer->wasStopped()) {
-    viewer->spinOnce(100);
+    viewer->spinOnce(50);
     // 暂停一段时间以避免CPU占用过高
-    boost::this_thread::sleep(boost::posix_time::microseconds(1));
+    // boost::this_thread::sleep(boost::posix_time::microseconds(1));
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
   }
 }
 
 void show3d_lidar_data_realtime(
-    boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer,
+    std::shared_ptr<pcl::visualization::PCLVisualizer> viewer,
     pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
     const std::string& cloud_name) {
   // clang-format off
@@ -91,7 +92,7 @@ void show3d_lidar_data_realtime(
 }
 
 void show3d_box3d_shared(
-    boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer,
+    std::shared_ptr<pcl::visualization::PCLVisualizer> viewer,
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr,
     const base::Point3DF (&vertex_p)[8],  // 使用数组传递 8 个 Point3DF 对象
     const std::string& box_name) {
@@ -142,7 +143,8 @@ void show3d_box3d_shared(
   viewer->addCoordinateSystem(1.0);
 
   while (!viewer->wasStopped()) {
-    viewer->spinOnce(100);
-    boost::this_thread::sleep(boost::posix_time::microseconds(100000));
+    viewer->spinOnce(50);
+    // boost::this_thread::sleep(boost::posix_time::microseconds(100000));
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
   };
 }

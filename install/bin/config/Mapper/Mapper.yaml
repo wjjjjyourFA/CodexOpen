@@ -2,7 +2,8 @@
 # 地图保存路径 ==> 根目录
 # map_save_path: /workspaces/CodexOpenExtraData/DataSet/2026-04-21/16102220208346880_1420_000_1440_000-O/map_data
 # map_save_path: /workspaces/CodexOpenExtraData/DataSet/2026-01-28/2026-01-28-09-31-37-O/map_data
-map_save_path: /workspaces/CodexOpenExtraData/DataSet/2026-04-16/2026-04-16-17-13-20-O/map_data
+# map_save_path: /workspaces/CodexOpenExtraData/DataSet/2026-04-16/2026-04-16-17-13-20-O/map_data
+map_save_path: /workspaces/CodexOpenExtraData/DataSet/1970-01-12/1970-01-12-07-25-18-O/map_data
 
 init:
   # 先验地图：false ; 构建地图：true

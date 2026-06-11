@@ -80,8 +80,6 @@ RUN bash -c '\
     ln -sfn "$tgt" "$link"; \
   fi'
 
-RUN cat << 'EOF' >> /home/$USERNAME/.bashrc
-
 ARG ENABLE_CUDA_ENV=1
 
 RUN if [ "$ENABLE_CUDA_ENV" = "1" ]; then \

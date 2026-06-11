@@ -5,6 +5,7 @@
 
 #include <pcl/point_types.h>
 
+#include "modules/perception/tools/pcl/common.h"
 #include "modules/perception/tools/pcl/point_types.h"
 
 // Velodyne 的 ring 字段本身就是顺序的（0,1,2,...），但顺序“不是按物理从上到下”。

@@ -289,6 +289,9 @@ void MapperColor::FlushBufferToMap() {
 void MapperColor::SaveMap(const std::string& path) {
   // std::cout << ds_history_point_cloud->size() << " points!" << std::endl;
 
+  common::CreateDir(path);
+  common::CreateDir(path + "/map3d");
+
   std::string path_c_map = path + "/map3d/colorized_map_point_cloud.pcd";
   pcl::io::savePCDFileBinary(path_c_map, *ds_history_point_cloud);
 }

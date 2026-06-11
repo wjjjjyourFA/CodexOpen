@@ -30,11 +30,16 @@ int main(int argc, char** argv) {
   lidar_params->LoadFromFile(runtime_config->lidar_calib_file_path /*kk.ini*/);
   auto matrix1 = lidar_params->GetMatrixVector();
 
+  auto imu_params = std::make_shared<cfg::SensorExtrinsics>();
+  imu_params->LoadFromFile(runtime_config->gravity_imu_calib_file_path);
+  auto matrix2 = imu_params->GetMatrixVector();
+
   auto vehicle_params = std::make_shared<cfg::VehicleConfig>();
   vehicle_params->LoadFromFile(runtime_config->vehicle_config_file_path);
 
   // clang-format off
   std::shared_ptr<MapLocalization> localization = std::make_shared<MapLocalization>();
+  localization->SetGravityImuExtrinsicMatrix(matrix2.at(0)->extrinsic_matrix);
   localization->SetExtrinsicMatrix(matrix1.at(0)->extrinsic_matrix);
   localization->Init(runtime_config, static_config);
   // clang-format on

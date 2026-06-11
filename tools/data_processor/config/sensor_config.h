@@ -29,9 +29,6 @@ enum class Radar4dType { UNKNOWN = 0, ARS548, ARBE };
 
 enum class LidarType { UNKNOWN = 0, RS128, M1P, MID360 };
 
-// LidarCode
-// M1P = 16 * 35
-
 class SensorRegistry {
  public:
   static const SensorRegistry& Instance();
@@ -41,6 +38,10 @@ class SensorRegistry {
   RadarType GetRadarType(const std::string& name) const;
   Radar4dType GetRadar4dType(const std::string& name) const;
   LidarType GetLidarType(const std::string& name) const;
+
+  // LidarCode
+  // M1P = 16 * 35 for ros2
+  int GetDifopNum(LidarType type) const;
 
  private:
   SensorRegistry();  // 构造时完成注册

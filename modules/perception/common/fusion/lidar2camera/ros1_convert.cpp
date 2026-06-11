@@ -100,10 +100,10 @@ bool Ros1Convert::Init(ros::NodeHandle& nh, ros::NodeHandle& private_nh,
   }
 
   if (param_->b_do_undistort) {
-    // camera_undistort = std::make_shared<camera::UndistortionHandler>(camera::CameraDistortionModel::Brown);
-    // camera_undistort = std::make_shared<camera::UndistortionHandlerCv>(camera::CameraDistortionModel::Brown);
-    camera_undistort = std::make_shared<camera::UndistortionHandler>(
-        camera::CameraDistortionModel::Kannala);
+    // clang-format off
+    camera_undistort = std::make_shared<camera::UndistortionHandlerCv>();
+    // camera_undistort = std::make_shared<camera::UndistortionHandler>();
+    // clang-format on
   }
 
   trans_matrix = math::GetTransMatrix(param_->b_lt_none_rt);
@@ -183,7 +183,8 @@ void Ros1Convert::Run() {
       fusion->SetProjectionMatrix(matrix.at(0)->projection_matrix);
 
       if (param_->b_do_undistort) {
-        camera_undistort->InitModel(CameraDistortionModel::Brown);
+        camera_undistort->InitModel(camera::CameraDistortionModel::Brown);
+        // camera_undistort->InitModel(camera::CameraDistortionModel::Kannala);
         camera_undistort->InitParams(img.cols, img.rows, params);
         camera_undistort->Init("camera");
       }

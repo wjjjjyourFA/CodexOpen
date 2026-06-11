@@ -13,6 +13,7 @@
 
 #include "opencv2/opencv.hpp"
 
+#include "cyber/common/file.h"
 #include "modules/mapping/map_processing/downsampling.h"
 #include "modules/mapping/mapper/config/runtime_config.h"
 #include "modules/mapping/mapper/config/static_config.h"

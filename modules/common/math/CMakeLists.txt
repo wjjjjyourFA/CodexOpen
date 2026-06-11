@@ -151,6 +151,7 @@ endif()
 # 添加所有模块内源文件（自动收集）
 file(GLOB_RECURSE SRCS CONFIGURE_DEPENDS
   ${CMAKE_CURRENT_SOURCE_DIR}/*.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
 )
 # 排除测试文件（以 _test.cc 结尾）
 list(FILTER SRCS EXCLUDE REGEX ".*_test\\.cc$")

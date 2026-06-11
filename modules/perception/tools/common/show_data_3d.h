@@ -5,9 +5,11 @@
 
 #include <Eigen/Dense>
 
-#include <boost/thread/thread.hpp>
-#include <boost/shared_ptr.hpp>
+// #include <boost/make_shared.hpp>
+// #include <boost/shared_ptr.hpp>
+// #include <boost/thread/thread.hpp>
 #include <thread>
+#include <chrono>
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
@@ -31,17 +33,17 @@ void show3d_lidar_data(const pcl::PointCloud<pcl::PointXYZI>::Ptr &cloud,
                        const std::string &viewer_name);
 
 void show3d_lidar_data_shared(
-    boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer,
+    std::shared_ptr<pcl::visualization::PCLVisualizer> viewer,
     const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud,
     const std::string &cloud_name);
 
 void show3d_lidar_data_realtime(
-    boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer,
+    std::shared_ptr<pcl::visualization::PCLVisualizer> viewer,
     pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
     const std::string &cloud_name);
 
 void show3d_box3d_shared(
-    boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer,
+    std::shared_ptr<pcl::visualization::PCLVisualizer> viewer,
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr,
     const base::Point3DF (&vertex_p)[8], const std::string &box_name);
 

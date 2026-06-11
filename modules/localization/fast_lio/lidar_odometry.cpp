@@ -20,21 +20,30 @@ LidarOdometry::LidarOdometry() {
 
 LidarOdometry::~LidarOdometry() {}
 
-void LidarOdometry::SetExtrinsicMatrix(
+void LidarOdometry::SetGravityImuExtrinsicMatrix(
     const Eigen::Matrix4f& extrinsic_matrix) {
-  /* debug
+  /* debug 雷达-IMU 非正装
   // clang-format off
   Eigen::Matrix4d imu_ext = Eigen::Matrix4d::Identity();
-  imu_ext << 1.0, 0.0, 0.0, 0.0, 
-             0.0, 0.6428, -0.7660, 0.0, 
-             0.0, 0.7660, 0.6428, 0.0, 
+  // imu_ext << 1.0, 0.0, 0.0, 0.0, 
+  //            0.0, 0.6428, -0.7660, 0.0, 
+  //            0.0, 0.7660, 0.6428, 0.0, 
+  //            0.0, 0.0, 0.0, 1.0;
+  imu_ext << 1.0, 0.0, 0.0, 0.0,
+             0.0, -1.0, 0.0, 0.0,
+             0.0, 0.0, -1.0, 0.0,
              0.0, 0.0, 0.0, 1.0;
-  Eigen::Matrix4d ext = imu_ext * extrinsic_matrix.cast<double>();
   // clang-format on
   */
+  gravity_imu_ext = extrinsic_matrix.cast<double>();
+}
 
+void LidarOdometry::SetExtrinsicMatrix(
+    const Eigen::Matrix4f& extrinsic_matrix) {
   // 转成 double
-  Eigen::Matrix4d ext = extrinsic_matrix.cast<double>();
+  // Eigen::Matrix4d ext = extrinsic_matrix.cast<double>();
+  Eigen::Matrix4d ext = extrinsic_matrix.cast<double>() * gravity_imu_ext;
+
   // 提取旋转
   Lidar_R_wrt_IMU = ext.block<3, 3>(0, 0);
   // 提取平移
@@ -406,6 +415,10 @@ void LidarOdometry::run_odometry(MeasureGroup& Measures) {
   feats_undistort->clear();
   feats_undistort_filtered->clear();
 
+  // 0. 将 IMU 数据变换到 正装坐标系；
+  // 也许数据生成时就变换挺好的，但是会污染 原始 IMU 数据
+  this->TransformImuData(Measures);
+
   // 1. 预积分 + 去畸变
   p_imu->Process(Measures, kf, feats_undistort);
 
@@ -546,11 +559,21 @@ void LidarOdometry::run_odometry(MeasureGroup& Measures) {
   pose_inited = true;
 }
 
+void LidarOdometry::TransformImuData(MeasureGroup& measures) {
+  const Eigen::Matrix3d R = gravity_imu_ext.block<3, 3>(0, 0);
+
+  for (auto& imu : measures.imu) {
+    imu.linear_acceleration = R * imu.linear_acceleration;
+    imu.angular_velocity    = R * imu.angular_velocity;
+  }
+}
+
 void LidarOdometry::SetDataFolder() {
   this->prefix = param_->root_path + "/" + param_->file_name;
   // std::cout << "data_file : " << this->prefix << std::endl;
 
   this->postfix = this->prefix + "-O";
+  common::CreateDir(this->postfix + "/sensor_data");
 
   path_lidar = this->postfix + "/sensor_data/" + "lidar_pcd";
   common::CreateDir(path_lidar);
@@ -597,8 +620,7 @@ void LidarOdometry::save_result(bool b_save_pcd) {
   if (ofs_pose.is_open()) {
     // timestamp x y z r p y
     ofs_pose << std::fixed << uint64_t(lidar_end_time * 1000) << " "
-             << o_pose.pos.x() << " " << o_pose.pos.y() << " "
-             << o_pose.pos.z()
+             << o_pose.pos.x() << " " << o_pose.pos.y() << " " << o_pose.pos.z()
              << " " << euler[2] << " " << euler[1] << " " << euler[0]
              << std::endl;
   } else {
@@ -611,8 +633,8 @@ void LidarOdometry::save_result(bool b_save_pcd) {
     feats_undistort->height = 1;
 
     std::ostringstream oss_time;
-    oss_time << std::fixed << std::setprecision(13)
-             << uint64_t(lidar_end_time * 1000);
+    oss_time << std::setw(13) << std::setfill('0')
+             << static_cast<uint64_t>(lidar_end_time * 1000);
     std::string pcd_filename = path_lidar + "/" + oss_time.str() + ".pcd";
     pcl::io::savePCDFileBinary(pcd_filename, *feats_undistort);
     // std::cout << "Saving " << pcd_filename << std::endl;
