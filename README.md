@@ -5,10 +5,13 @@ An engineering project by XXXX
 ## Introduction
 **CodexOpen** is an open source project for autonomous driving. It is a platform for developers to **build** and **deploy** autonomous driving solutions. The project includes a variety of tools and technologies for autonomous driving, such as **perception**, **planning**, control, and simulation. The project is designed to be **modular** and **extensible**, allowing developers to easily add new features and components to the platform.
 
-详细介绍：[CodexOpen](./docs/02_Quick_Start/02_Quick_Start.md)
+详细介绍：[CodexOpen](./docs/框架设计/CodexOpen模块详解.md)
 
 ## Quick Install
-The docker image is not available as `Dockerfile` yet, so you need to build it yourself. or use the prebuilt Docker image instead.  - [QuakPanLink](https://pan.quark.cn/s/a6dc030c7b97) && 提取码：2PLZ
+The docker image is not available as `Dockerfile` yet, so you need to build it yourself. or use **the prebuilt Docker image** instead.  - [QuakPanLink](https://pan.quark.cn/s/a6dc030c7b97) && 提取码：2PLZ：（**Download links are often hidden. If not, please check the individual files. If still unavailable, please open an issue.**）
+- X86_ROS1 [QuakPanLink](https://pan.quark.cn/s/c34d89b26766) && 提取码：5UD3
+- X86_ROS2 [QuakPanLink](https://pan.quark.cn/s/cf02277ee077) && 提取码：T66p
+- ARM_ROS2 [QuakPanLink](https://pan.quark.cn/s/d605b1e20c45) && 提取码：9bk6
 
 ### Use JOJO's Docker Image
 1. Install `VsCode` && `Dev Containers` plugins
@@ -35,14 +38,19 @@ If you want to compile the image yourself, please refer to the "Image Building" 
 - [工程安装说明](./docs/安装指南/工程安装说明.md)
 - [docker构建](./docs/安装指南/docker/docker_CodexOpen.md)
 
-### Diff to Apollo
-**把 Apollo 从“一体化系统”降级为“算法库”**；转向 **ROS2**；
+### Build CodexOpen in docker
+
+详细介绍：
+[02_Quick_Start](./docs/02_Quick_Start/02_Quick_Start.md)
+
+#### Diff to Apollo
+**把 Apollo 从“一体化系统”降级为“算法库”**；转向 **ROS1**、**ROS2**、**DDS**；
 
 ## Features
-- [X] Perception: Object detection, tracking, and recognition
-- [ ] Planning: Path planning, trajectory planning, and behavior planning
-- [ ] Control: Vehicle control, including acceleration, steering, and braking
-- [ ] Data Analysis：
+- [X] Perception: object detection, tracking, and recognition
+- [ ] Planning: path planning, trajectory planning, and behavior planning
+- [ ] Control: vehicle control, including acceleration, steering, and braking
+- [x] Data Analysis：map_center_view
 
 ## Demo
 - [x] 自动标定--图像内参
@@ -63,13 +71,13 @@ If you want to compile the image yourself, please refer to the "Image Building" 
       <img src="assets/images/edge_points.jpg" width="300">
     </div>
 
-- [ ] 自动标定--图像和雷达外参：
+- [x] 自动标定--图像和雷达外参：
 <div style="display:flex; justify-content:center; align-items:center; gap:10px;">
   <img src="assets/images/2025-12-13_00-46-04.png" width="400">
   <img src="assets/images/calib.gif" width="300">
 </div>
 
-- [ ] 数据库构建：
+- [x] 数据库构建：
 <div style="display:flex; justify-content:center; align-items:center; gap:10px;">
   <img src="assets/images/2022-11-22_15-06-11.png" width="350">
   <img src="assets/images/map_center_view.gif" width="300">
@@ -94,7 +102,7 @@ If you want to compile the image yourself, please refer to the "Image Building" 
 </div>
 
 - [ ] 点云地图：
-  - [x] 三位建图、彩色建图与道路边缘表征
+  - [x] 三维建图、彩色建图与道路边缘表征
     <div style="display:flex; justify-content:center; align-items:center; gap:10px;">
       <img src="assets/images/mapper.gif" width="400">
       <img src="assets/images/mapper_color.gif" width="400">

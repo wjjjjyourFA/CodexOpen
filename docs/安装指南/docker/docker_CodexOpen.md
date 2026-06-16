@@ -1,9 +1,9 @@
-## CodexOpen
+## docker镜像
 
 - [x] x86 镜像
-- [ ] arm 镜像
+- [x] arm 镜像
 - [x] ros1 镜像需要兼容 apollo、ros1、
-- [ ] ros2 镜像需要兼容 apollo、ros2、autoware
+- [x] ros2 镜像需要兼容 apollo、ros2、autoware
 
 ## 容器构建
 
@@ -19,7 +19,7 @@
 
 - [x] 下载 `osrf ros` ==> 第三方 `althack` 官方的基础镜像 : `FROM althack/ros2:humble-full`
   - [x] `tag`重新打包准备相关基础镜像：`x86` && `aarch64`
-  - [ ] 使用 `ubuntu base`镜像，手动搭建，再导出，替换对 第三方 `althack` 镜像的使用
+  - [x] 使用 `ubuntu base`镜像，手动搭建，再导出，替换对 第三方 `althack` 镜像的使用
 - [x] 加载为 容器，修改为国内软件源 : 
   - [x] 在容器中手动配置好新的软件源；详细见 [基础容器构建](./基础容器构建.md)
 - [x] 安装基础软件 : wget、curl 、openssh-sever等
