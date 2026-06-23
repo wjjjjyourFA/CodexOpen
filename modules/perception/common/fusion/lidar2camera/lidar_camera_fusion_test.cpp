@@ -39,6 +39,7 @@ int main(int argc, char** argv) {
         matrix.at(0)->camera_matrix->distortion_params);
 
     camera_undistort->InitModel(CameraDistortionModel::Brown);
+    // std::cout << "InitParams()" << std::endl;
     camera_undistort->InitParams(raw_img.cols, raw_img.rows, params);
     camera_undistort->Init("camera");
     camera_undistort->Handle(raw_img, &dst_img);
@@ -46,6 +47,7 @@ int main(int argc, char** argv) {
     // 直接读取 undistort_img
     // dst_img = undistort_image.clone();
   }
+  std::cout << "image size: " << dst_img.size() << std::endl;
 
   pcl::PointCloud<pcl::PointXYZI>::Ptr cloud(
       new pcl::PointCloud<pcl::PointXYZI>);

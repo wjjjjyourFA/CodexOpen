@@ -83,8 +83,12 @@
 		"XDG_RUNTIME_DIR": "${localEnv:XDG_RUNTIME_DIR}",
 		// For audio
 		"PULSE_SERVER": "${localEnv:PULSE_SERVER}",
-		"LIBGL_ALWAYS_SOFTWARE": "1", // Needed for software rendering of opengl
+		// 强制 Mesa 使用软件渲染器（llvmpipe/softpipe），不使用GPU
+		"LIBGL_ALWAYS_SOFTWARE": "1",
+		// GLVND 加载 Mesa 的 GLX 实现，而不是 NVIDIA 的 GLX 实现
+		"__GLX_VENDOR_LIBRARY_NAME": "mesa",
 		"QT_X11_NO_MITSHM": "1",
+		"XAUTHORITY": "/run/user/1000/gdm/Xauthority",
 		// uncomment to force Wayland
 		// "QT_QPA_PLATFORM": "wayland"
 		"NVIDIA_VISIBLE_DEVICES": "all",

@@ -48,13 +48,22 @@ bool UndistortionHandler::InitModel(const CameraDistortionModel& sensor_type) {
       std::cout << "name : " << distort_model->name() << std::endl;
       break;
     case CameraDistortionModel::Raw:
+      distort_model.reset();
       type = CameraDistortionModel::Raw;
+      break;
     default:
       distort_model = nullptr;
       type = CameraDistortionModel::None;
       break;
   }
   // clang-format on
+  // std::cout << "InitModel()" << std::endl;
+
+  if (distort_model == nullptr) {
+    return false;
+  }
+
+  return true;
 }
 
 bool UndistortionHandler::InitParams(size_t width, size_t height, double k1,
