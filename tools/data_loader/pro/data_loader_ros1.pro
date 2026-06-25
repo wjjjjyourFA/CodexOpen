@@ -37,6 +37,7 @@ SOURCES += \
   $$CODEX_PATH/modules/common/config/config_file_base.cpp \
   $$PREFIX/common/base/camera.cc \
   $$PREFIX/common/base/distortion_model.cc \
+  $$PREFIX/common/base/fisheye_model.cc \
   $$PREFIX/common/camera/common/undistortion_handler.cc \
   $$files($$PREFIX/common/config/*.cpp) \
   $$files($$PREFIX/common/camera/params/*.cpp) \
@@ -59,6 +60,7 @@ HEADERS += \
   $$CODEX_PATH/modules/common/config/config_file_base.h \
   $$PREFIX/common/base/camera.h \
   $$PREFIX/common/base/distortion_model.h \
+  $$PREFIX/common/base/fisheye_model.h \
   $$PREFIX/common/camera/common/undistortion_handler.h \
   $$files($$PREFIX/common/config/*.h) \
   $$files($$PREFIX/common/camera/params/*.h) \

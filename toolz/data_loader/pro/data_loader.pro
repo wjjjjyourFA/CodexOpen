@@ -40,6 +40,7 @@ SOURCES += \
   $$CODEX_PATH/modules/common/transform/geometry/rotation_conversions.cpp \
   $$PREFIX/common/base/camera.cc \
   $$PREFIX/common/base/distortion_model.cc \
+  $$PREFIX/common/base/fisheye_model.cc \
   $$files($$PREFIX/tools/pcl/*.cpp) \
   $$PREFIX/common/camera/common/undistortion_handler.cc \
   $$files($$PREFIX/common/config/*.cpp) \
@@ -63,6 +64,7 @@ HEADERS += \
   $$CODEX_PATH/modules/common/transform/geometry/rotation_conversions.h \
   $$PREFIX/common/base/camera.h \
   $$PREFIX/common/base/distortion_model.h \
+  $$PREFIX/common/base/fisheye_model.h \
   $$files($$PREFIX/tools/pcl/*.h) \
   $$PREFIX/common/camera/common/undistortion_handler.h \
   $$files($$PREFIX/common/config/*.h) \
