@@ -68,7 +68,7 @@ bool VdToPcl(pcl::PointCloud<velodyne_ros::PointXYZIR>::Ptr point_vd_,
     for (size_t i = 0; i < point_num; i++) {
       const auto& pt = point_vd_->points[i];
 
-      bool invalid = !pcl::isFinite(pt) ||
+      bool invalid = !IsFinitePoint(pt) ||
                      (pt.x == 0.0 && pt.y == 0.0 && pt.z == 0.0) ||
                      (pt.intensity == 0);
       if (invalid) continue;
@@ -140,7 +140,7 @@ bool VdToPcl(pcl::PointCloud<velodyne_ros::PointXYZIRT>::Ptr point_vd_,
     for (size_t i = 0; i < point_num; i++) {
       const auto& pt = point_vd_->points[i];
 
-      bool invalid = !pcl::isFinite(pt) ||
+      bool invalid = !IsFinitePoint(pt) ||
                      (pt.x == 0.0 && pt.y == 0.0 && pt.z == 0.0) ||
                      (pt.intensity == 0);
       if (invalid) continue;
