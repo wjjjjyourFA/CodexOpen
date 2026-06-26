@@ -3,7 +3,7 @@
 使用 CodexOpen 构建的 docker 镜像；
 - 镜像只保留基础的库文件，各类编译文件不提供，因此需要下载后，在容器里再次初始化 CodexOpen
 
-docker 镜像的详细介绍：[docker_CodexOpen](notes/docs/安装指南/docker/docker_CodexOpen.md)
+docker 镜像的详细介绍：[docker_CodexOpen](./../../docs/安装指南/docker/docker_CodexOpen.md)
 
 ### 快速初始化
 
@@ -41,6 +41,11 @@ ninja install
 ```
 3. 第一次编译完成后，如果需要更换环境进行二次编译。请先删除 `BUILD` 缓存，并检查**全局宏**。
 4. `CodexOpen` 代码仍在开发中，仅部分成熟算法支持`CMakeList`一键编译。其余开发代码，请检查`PRO`文件。
+
+### GPU 初始化
+
+本工程提供的镜像，为了缩小镜像体积，均不预安装 `CUDA`、`TensorRT`、`LibTorch`、`PaddlePaddle` 等深度学习网络框架。
+请需要使用这些模块的同学，自行在 `MASTER` 主机上安装**适配显卡版本**的 **驱动**、**推理库**（谨慎在容器中安装），详细操作步骤见：[gpu_CodexOpen](./../../docs/安装指南/docker/gpu_CodexOpen.md)
 
 ---
 
