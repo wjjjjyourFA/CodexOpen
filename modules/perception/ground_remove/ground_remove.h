@@ -8,6 +8,7 @@
 #include <pcl/point_types.h>
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/visualization/cloud_viewer.h>
+#include <pcl/common/transforms.h>
 
 #include <opencv2/opencv.hpp>
 
@@ -18,6 +19,7 @@
 #include "modules/perception/ground_remove/ObstacleCell.h"
 
 #include "modules/perception/ground_remove/ground_segmentation/ground_segmentation_legacy.h"
+// #include "modules/perception/ground_remove/ground_segmentation/ground_segmentation.h"
 
 namespace jojo {
 namespace perception {
@@ -46,6 +48,8 @@ class GroundRemove {
   GroundRemove();
   virtual ~GroundRemove();
 
+  void SetGravityLidarExtrinsicMatrix(const Eigen::Matrix4f& extrinsic_matrix);
+
   void Init(std::shared_ptr<jojo::perception::RuntimeConfig> rparam);
 
   void InitViewer();
@@ -73,6 +77,9 @@ class GroundRemove {
 
   // 障碍物地图 ==> 障碍物点云
   pcl::PointCloud<pcl::PointXYZI>::Ptr obstacle_cloud_;
+
+  // 用于将 非水平安装的lidar数据 转换到 水平系
+  Eigen::Matrix4d gravity_lidar_ext = Eigen::Matrix4d::Identity();
 
  private:
   pcl::visualization::PCLVisualizer::Ptr vis_ = nullptr;

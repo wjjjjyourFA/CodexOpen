@@ -14,8 +14,6 @@
 #include "modules/perception/common/base/point.h"
 #include "modules/perception/tools/pcl/point_types.h"
 
-namespace base = jojo::perception::base;
-
 // clang-format off
 void show2d_lidar_data(const pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud,
                        const uint& idx = 0, const uint& mode = 0,
@@ -27,13 +25,63 @@ void show2d_lidar_data(const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud,
                        const std::string& name = "lidar",
                        cv::Mat* ext_img = nullptr);
 
-void show2d_lidar_bev(const base::Point3DF p[8] /*vertex*/,
+template <typename PointT>
+void show2d_lidar_data_normal(const typename pcl::PointCloud<PointT>::Ptr& cloud, 
+                              const uint& idx = 0, const uint& mode = 0,
+                              const std::string& name = "lidar",
+                              cv::Mat* ext_img = nullptr) {
+  if (!cloud || cloud->empty()) return;
+
+  static int width  = 1024;
+  static int height = 768;
+  // static int width  = 1920;
+  // static int height = 1080;
+
+  static float resolution = 100 / 20.0f;
+  static int width_half   = width / 2;
+  static int height_half  = height / 2;
+
+  cv::Mat LidarImage;
+  if (ext_img != nullptr) {
+    LidarImage = *ext_img;
+  } else {
+    LidarImage = cv::Mat::zeros(height, width, CV_8UC3);
+  }
+
+  for (size_t i = 0; i < cloud->size(); i++) {
+    int x = (int)(-cloud->points[i].y * resolution + width_half);
+    int y = (int)(height_half - cloud->points[i].x * resolution);
+    if (x > 0 && y > 0 && x < width && y < height) {
+      cv::Vec3b color(0, 97, static_cast<uchar>(cloud->points[i].z));
+
+      if (mode == 0) {
+        // LidarImage.at<cv::Vec3b>(y,x) = cv::Vec3b(0, 97, 255);
+        LidarImage.at<cv::Vec3b>(y, x) = color;
+      } else if (mode == 1) {
+        cv::circle(LidarImage, cv::Point(x, y), 1, color, -1);
+      }
+    }
+  }
+
+  cv::line(LidarImage, cv::Point(0, height_half), cv::Point(width, height_half),
+           cv::Scalar(125, 125, 125));
+  cv::line(LidarImage, cv::Point(width_half, 0), cv::Point(width_half, height),
+           cv::Scalar(125, 125, 125));
+
+  std::string win_name = name + "_" + std::to_string(idx);
+  cv::namedWindow(win_name, cv::WINDOW_NORMAL);
+  cv::resizeWindow(win_name, width, height);
+  cv::imshow(win_name, LidarImage);
+  cv::waitKey(1);
+}
+
+void show2d_lidar_bev(const jojo::perception::base::Point3DF p[8] /*vertex*/,
                       const Eigen::Vector3f& center,
                       cv::Scalar color = cv::Scalar(0, 97, 0),
                       cv::Mat* ext_img = nullptr);
 // clang-format on
 
-// void show2d_lidar_data(const base::Frame* frame);
+// void show2d_lidar_data(const jojo::perception::base::Frame* frame);
 
 // for depth image color
 void show2d_camera_data(const cv::Mat& image_float, const int max_depth);
@@ -41,15 +89,15 @@ void show2d_camera_data(const cv::Mat& image_float, const int max_depth);
 void show2d_camera_data(const cv::Mat& image, const uint& idx = 0,
                         const std::string& name = "camera");
 
-// void show2d_radar_data(const base::Frame* frame);
+// void show2d_radar_data(const jojo::perception::base::Frame* frame);
 
-// void show2d_segmentation_data(const base::Frame* frame);
+// void show2d_segmentation_data(const jojo::perception::base::Frame* frame);
 
-// void show2d_tracking_data(const base::Frame* frame);
+// void show2d_tracking_data(const jojo::perception::base::Frame* frame);
 
-// void show2d_detection_data(const base::Frame* frame);
+// void show2d_detection_data(const jojo::perception::base::Frame* frame);
 
-// void show2d_perception_data(const base::Frame* frame);
+// void show2d_perception_data(const jojo::perception::base::Frame* frame);
 
 // Mat 必须是连续内存
 void show_cv_splits_cloud(std::vector<cv::Mat>& splits);

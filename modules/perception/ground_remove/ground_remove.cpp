@@ -9,6 +9,20 @@ GroundRemove::GroundRemove() {
 
 GroundRemove::~GroundRemove() {}
 
+void GroundRemove::SetGravityLidarExtrinsicMatrix(
+    const Eigen::Matrix4f& extrinsic_matrix) {
+  /* debug 雷达-IMU 非正装
+  // clang-format off
+  Eigen::Matrix4d lidar_ext = Eigen::Matrix4d::Identity();
+  lidar_ext << 1.0, 0.0, 0.0, 0.0,
+               0.0, 0.6428, -0.7660, 0.0,
+               0.0, 0.7660, 0.6428, 0.0,
+               0.0, 0.0, 0.0, 1.0;
+  // clang-format on
+  */
+  gravity_lidar_ext = extrinsic_matrix.cast<double>();
+}
+
 void GroundRemove::Init(
     std::shared_ptr<jojo::perception::RuntimeConfig> rparam) {
   rparam_ = rparam;
@@ -46,7 +60,12 @@ void GroundRemove::Run(const pcl::PointCloud<pcl::PointXYZI>::Ptr& frame,
   auto& pose_x = in_pose(0, 3);
   auto& pose_y = in_pose(1, 3);
 
+  // 确保雷达点云数据是水平系
   // TODO：点云变换 ==> 车辆中心
+  if (rparam_->b_gravity) {
+    pcl::transformPointCloud(*frame, *frame, gravity_lidar_ext);
+  }
+
   // 现在传入的是 激光雷达坐标系 的点云 ==> 地面是 -2.5m 左右
   ground_segmentation->Run(frame);
 
@@ -78,8 +97,8 @@ void GroundRemove::build_occupancy(
   for (const auto& grid : polar_grid_map) {
     if (!grid.active || grid.is_ground) continue;
 
-    for (auto idx : grid.indices) {
-      const auto& pt = frame->points[idx];
+    for (auto zp : grid.z_points) {
+      const auto& pt = frame->points[zp.indices];
 
       if (rparam_->b_show_color_point) obstacle_cloud_->points.push_back(pt);
 

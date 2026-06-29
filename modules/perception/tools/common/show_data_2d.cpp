@@ -1,5 +1,7 @@
 #include "modules/perception/tools/common/show_data_2d.h"
 
+namespace base = jojo::perception::base;
+
 void show2d_lidar_data(const pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud,
                        const uint& idx, const uint& mode,
                        const std::string& name, cv::Mat* ext_img) {

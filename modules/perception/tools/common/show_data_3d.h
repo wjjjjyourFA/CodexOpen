@@ -24,8 +24,6 @@
 #include "modules/perception/common/base/point.h"
 #include "modules/perception/common/base/box3d_extra.h"
 
-namespace base = jojo::perception::base;
-
 void show3d_lidar_data(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud,
                        const std::string &name);
 
@@ -45,6 +43,7 @@ void show3d_lidar_data_realtime(
 void show3d_box3d_shared(
     std::shared_ptr<pcl::visualization::PCLVisualizer> viewer,
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr,
-    const base::Point3DF (&vertex_p)[8], const std::string &box_name);
+    const jojo::perception::base::Point3DF (&vertex_p)[8], 
+    const std::string &box_name);
 
 #endif  // SHOW_DATA_3D_H

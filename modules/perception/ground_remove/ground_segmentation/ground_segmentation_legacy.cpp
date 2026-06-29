@@ -11,7 +11,9 @@ void GroundSegmentation::Init(
     std::shared_ptr<jojo::perception::RuntimeConfig> rparam) {
   rparam_ = rparam;
 
-  hps_.mean_z_thresh     = rparam->mean_z_thresh;
+  // 如果默认 ref_height = 0，那么代表 地面高度是 0 左右；
+  // 对于非地面坐标系点云来说，需要 ref_height + mean_z_thresh ==> 波动 车轮半高
+  hps_.mean_z_thresh     = rparam->ref_height + rparam->mean_z_thresh;
   hps_.delta_z_thresh    = rparam->delta_z_thresh;
   hps_.far_resolution    = rparam->far_resolution;
   hps_.middle_resolution = rparam->middle_resolution;
@@ -105,7 +107,7 @@ void GroundSegmentation::Run(
       active_grids_.push_back(&grid);
       grid.active = true;
     }
-    grid.AddPoint(i, z);
+    grid.AddPoint(i, z, r1);
 
     /* debug
     if (polar_grid_[grid_idx].point_num > 3){
@@ -117,7 +119,7 @@ void GroundSegmentation::Run(
 
   // 2. classify ground
   for (auto& grid : polar_grid_) {
-    if (grid.point_num < 3) {
+    if (grid.z_points.size() < 3) {
       // grid 中的点数太少，无法计算统计量
       grid.active = false;
       continue;
@@ -125,6 +127,14 @@ void GroundSegmentation::Run(
     // std::cout << "grid.point_num: " << grid.point_num << std::endl;
 
     grid.ComputeStatistic();
+
+    // /* 悬空判别条件
+    if (grid.mean_z > hps_.hanging_z) {
+      // TODO：是否标记为悬挂物
+      grid.is_ground = false;
+      continue;
+    }
+    // */
 
     // 地面判别条件 mean_z_thresh ==> 车轮半高
     if ((grid.mean_z < hps_.mean_z_thresh) &&

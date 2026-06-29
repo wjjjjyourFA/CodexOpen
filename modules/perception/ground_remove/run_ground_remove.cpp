@@ -1,8 +1,10 @@
 #include "toolz/data_loader/group_convert.h"
+#include "modules/perception/common/config/sensor_extrinsics.h"
 #include "modules/perception/ground_remove/ground_remove.h"
 
 using namespace jojo::tools;
 using namespace jojo::perception;
+namespace cfg = jojo::perception::config;
 
 int main(int argc, char** argv) {
   // clang-format off
@@ -14,7 +16,12 @@ int main(int argc, char** argv) {
   runtime_config->set_name(name);
   runtime_config->LoadConfig(config_path);
 
+  auto lidar_params = std::make_shared<cfg::SensorExtrinsics>();
+  lidar_params->LoadFromFile(runtime_config->gravity_lidar_calib_file_path);
+  auto matrix2 = lidar_params->GetMatrixVector();
+
   std::shared_ptr<GroundRemove> ground_remove = std::make_shared<GroundRemove>();
+  ground_remove->SetGravityLidarExtrinsicMatrix(matrix2.at(0)->extrinsic_matrix);
   ground_remove->Init(runtime_config);
 
   std::string dl_config_path = "./../../../config/GroundRemove/DataLoader.ini";

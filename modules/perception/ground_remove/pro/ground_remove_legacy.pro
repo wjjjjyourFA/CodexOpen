@@ -58,6 +58,8 @@ SOURCES += \
   $$PREFIX/fusion/lidar2camera/lidar_camera_fusion.cpp \
   $$CODEX_PATH/modules/perception/tools/opencv/colors.cpp \
   $$CODEX_PATH/modules/perception/tools/opencv/cv_colors.cpp \
+  # $$CODEX_PATH/modules/perception/tools/pcl/pcl_viewer.cpp \
+  $$CODEX_PATH/modules/perception/tools/common/show_data_2d.cpp \
   $$DATA_PROCESSOR_PATH/config/sensor_config.cc \
   $$OTHER_PATH/data_loader.cpp \
   $$OTHER_PATH/group_convert.cpp \
@@ -87,6 +89,8 @@ HEADERS += \
   $$PREFIX/fusion/lidar2camera/lidar_camera_fusion.h \
   $$CODEX_PATH/modules/perception/tools/opencv/colors.hpp \
   $$CODEX_PATH/modules/perception/tools/opencv/cv_colors.h \
+  # $$CODEX_PATH/modules/perception/tools/pcl/pcl_viewer.h \
+  $$CODEX_PATH/modules/perception/tools/common/show_data_2d.h \
   $$PREFIX/config/sensor_extrinsics.h \
   $$PREFIX/config/vehicle_config.h \
   $$PREFIX/camera/common/undistortion_handler.h \

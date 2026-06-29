@@ -31,8 +31,10 @@ void RuntimeConfig::LoadConfig(const std::string& config_path) {
     delta_z_thresh = pt.get<float>("general.delta_z_thresh", 0.1);
     b_use_legacy = pt.get<bool>("general.b_use_legacy", false);
     b_use_gaussian = pt.get<bool>("general.b_use_gaussian", false);
+    b_gravity = pt.get<bool>("general.b_gravity", false);
 
     camera_calib_file_path = pt.get<std::string>("calibration.camera_calib_file_path", "");
+    gravity_lidar_calib_file_path = pt.get<std::string>("calibration.gravity_lidar_calib_file_path", "");
 
     b_show_color_point = pt.get<bool>("visualize.b_show_color_point", false);
 

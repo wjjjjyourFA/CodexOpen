@@ -38,9 +38,11 @@ class RuntimeConfig : public jojo::common::config::ConfigFileBase {
   float near_resolution   = 0.2;
 
   std::string camera_calib_file_path = "";
+  std::string gravity_lidar_calib_file_path;
 
   bool b_use_legacy   = false;
   bool b_use_gaussian = false;
+  bool b_gravity      = false;
 
   bool b_show_color_point = false;
 

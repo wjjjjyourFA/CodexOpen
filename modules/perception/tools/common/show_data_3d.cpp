@@ -1,5 +1,7 @@
 #include "modules/perception/tools/common/show_data_3d.h"
 
+namespace base = jojo::perception::base;
+
 void show3d_lidar_data(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& cloud,
                        const std::string& viewer_name) {
   // 适用于 单线程、局部使用。

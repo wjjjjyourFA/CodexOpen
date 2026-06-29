@@ -10,8 +10,10 @@
 #include "tools/data_processor/config/sensor_config.h"
 
 #include "tools/data_loader/data_loader.h"
-#include "modules/perception/tools/pcl/pcl_viewer.h"
 #include "modules/perception/tools/pcl/point_types.h"
+#include "modules/perception/tools/pcl/pcl_viewer.h"
+// #include "modules/perception/tools/common/show_data_3d.h"
+#include "modules/perception/tools/common/show_data_2d.h"
 
 namespace jojo {
 namespace tools {
@@ -237,6 +239,15 @@ bool GroupConvert::GetLidarBase(
                 << ", skipping frame." << std::endl;
     }
 
+    /* debug 雷达-IMU 非正装
+    Eigen::Matrix4d lidar_ext = Eigen::Matrix4d::Identity();
+    lidar_ext << 1.0, 0.0, 0.0, 0.0,
+                 0.0, 0.6428, -0.7660, 0.0,
+                 0.0, 0.7660, 0.6428, 0.0,
+                 0.0, 0.0, 0.0, 1.0;
+    pcl::transformPointCloud(*cur_cloud_ptr, *cur_cloud_ptr, lidar_ext);
+    */
+
     // warning
     // pcl::PointCloud<pcl::PointXYZI> cloud;
     // pcl::fromPCLPointCloud2(*cur_cloud_ptr, cloud);
@@ -247,6 +258,7 @@ bool GroupConvert::GetLidarBase(
 
   // show_pointcloud_height(*cur_cloud_ptr, 1);
   // show_pointcloud_num(*cur_cloud_ptr, 1800);
+  // show2d_lidar_data_normal<PointT>(cur_cloud_ptr);
 
   time = tmp->cur_time;
   // std::cout << tmp->cur_time << " writing LidarData!" << std::endl;
