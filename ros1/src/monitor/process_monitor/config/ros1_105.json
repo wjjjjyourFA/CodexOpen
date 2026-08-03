@@ -1,0 +1,88 @@
+{
+  "profile": "ros1_105",
+  "refresh_seconds": 2,
+  "programs": [
+    {
+      "name": "ptp4l-eth1",
+      "group": "驱动",
+      "match": {
+        "process_name": "ptp4l",
+        "cmdline_contains": [
+          "-i eth1"
+        ]
+      }
+    },
+    {
+      "name": "rslidar_sdk_node",
+      "group": "驱动",
+      "match": {
+        "process_name": "rslidar_sdk_node"
+      }
+    },
+    {
+      "name": "super_lio",
+      "group": "感知",
+      "match": {
+        "process_name": "super_lio"
+      }
+    },
+    {
+      "name": "FspaceDetection",
+      "group": "感知",
+      "match": {
+        "process_name": "FspaceDetection"
+      }
+    },
+    {
+      "name": "TerrainAnalysis",
+      "group": "感知",
+      "match": {
+        "process_name": "TerrainAnalysis"
+      }
+    },
+    {
+      "name": "path_planning_node",
+      "group": "规划",
+      "match": {
+        "process_name": "path_planning_node"
+      }
+    },
+    {
+      "name": "planning bridge_node.py",
+      "group": "规划",
+      "match": {
+        "cmdline_contains": [
+          "python3",
+          "planning-net-bridge",
+          "bridge_node.py"
+        ]
+      }
+    },
+    {
+      "name": "road_network_editor",
+      "group": "规划",
+      "match": {
+        "cmdline_contains": [
+          "python3",
+          "road_network_editor.road_network_editor_app"
+        ]
+      }
+    },
+    {
+      "name": "LocalPlanforGPU",
+      "group": "规划",
+      "match": {
+        "process_name": "LocalPlanforGPU"
+      }
+    },
+    {
+      "name": "roscore",
+      "group": "ROS",
+      "match": {
+        "cmdline_contains": [
+          "/rosmaster"
+        ]
+      }
+    }
+  ]
+}

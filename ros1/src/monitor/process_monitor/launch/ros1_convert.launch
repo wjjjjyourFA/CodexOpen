@@ -1,0 +1,14 @@
+<launch>
+  <arg name="profile" default="ros1_105"/>
+  <arg name="topic" default="/process_monitor/status"/>
+  <arg name="interval" default="2.0"/>
+
+  <node pkg="process_monitor"
+        type="ros1_convert.py"
+        name="process_monitor_converter"
+        args="--profile $(arg profile)"
+        output="screen">
+    <param name="topic" value="$(arg topic)"/>
+    <param name="interval" value="$(arg interval)"/>
+  </node>
+</launch>

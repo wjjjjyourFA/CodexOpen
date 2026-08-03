@@ -1,0 +1,90 @@
+{
+  "profile": "ros1_95",
+  "refresh_seconds": 2,
+  "programs": [
+    {
+      "name": "Tracker_module",
+      "group": "控制",
+      "match": {
+        "process_name": "Tracker_module"
+      }
+    },
+    {
+      "name": "SpeedControlServo",
+      "group": "控制",
+      "match": {
+        "process_name": "SpeedControlServo"
+      }
+    },
+    {
+      "name": "SteerServo",
+      "group": "控制",
+      "match": {
+        "process_name": "SteerServo"
+      }
+    },
+    {
+      "name": "VehicleDriver",
+      "group": "控制",
+      "match": {
+        "process_name": "VehicleDriver"
+      }
+    },
+    {
+      "name": "Monitor",
+      "group": "控制",
+      "match": {
+        "process_name": "Monitor"
+      }
+    },
+    {
+      "name": "getTargetInfoByRos",
+      "group": "控制",
+      "match": {
+        "process_name": "getTargetInfoByRos"
+      }
+    },
+    {
+      "name": "gpio_node",
+      "group": "控制",
+      "match": {
+        "process_name": "gpio_node"
+      }
+    },
+    {
+      "name": "pbox_pub",
+      "group": "驱动定位",
+      "match": {
+        "process_name": "pbox_pub"
+      }
+    },
+    {
+      "name": "LocalPose",
+      "group": "驱动定位",
+      "match": {
+        "process_name": "LocalPose"
+      }
+    },
+    {
+      "name": "localization_switch",
+      "group": "驱动定位",
+      "match": {
+        "process_name": "localization_switch"
+      }
+    },
+    {
+      "name": "recvRemoteCmd",
+      "group": "远程服务",
+      "match": {
+        "process_name": "recvRemoteCmd"
+      }
+    },
+    {
+      "name": "ros_to_udp_bridge_node",
+      "group": "远程服务",
+      "match": {
+        "process_name": "ros_to_udp_bridge_node"
+      }
+    }
+  ]
+}

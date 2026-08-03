@@ -1,0 +1,18 @@
+<launch>
+  <arg name="topic" default="/process_monitor/status"/>
+  <arg name="upper_profile" default="ros1_95"/>
+  <arg name="lower_profile" default="ros1_105"/>
+  <arg name="refresh" default="0.5"/>
+  <arg name="stale_timeout" default="6.0"/>
+
+  <node pkg="process_monitor"
+        type="monitor_board_ros1.py"
+        name="monitor_board"
+        output="screen">
+    <param name="topic" value="$(arg topic)"/>
+    <param name="upper_profile" value="$(arg upper_profile)"/>
+    <param name="lower_profile" value="$(arg lower_profile)"/>
+    <param name="refresh" value="$(arg refresh)"/>
+    <param name="stale_timeout" value="$(arg stale_timeout)"/>
+  </node>
+</launch>

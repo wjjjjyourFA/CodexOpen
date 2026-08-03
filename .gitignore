@@ -9,8 +9,8 @@
 # install/map
 # install/
 
-/ros1/
-/ros2/
+# /ros1/
+# /ros2/
 
 # third_party/
 third_tools/
@@ -38,3 +38,5 @@ tools/data_processor/ros2_message/
 *.qtc_clangd
 *.qmake.stash
 Makefile
+
+__pycache__
