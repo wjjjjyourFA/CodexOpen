@@ -1,0 +1,24 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build Debug",
+            "type": "shell",
+            "command": "cmake --build . --config Debug",  //# 构建 Debug 配置
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "Build Release",
+            "type": "shell",
+            "command": "cmake --build . --config Release",  //# 构建 Release 配置
+            "group": {
+                "kind": "build"
+            },
+            "problemMatcher": "$gcc"
+        }
+    ]
+}

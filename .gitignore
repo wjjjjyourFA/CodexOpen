@@ -1,7 +1,11 @@
 ## 忽略 vscode 
-.vscode/
+.vscode/*
+!.vscode/*.json
 
-**/build/
+**/build/*
+!docker/build/
+!docker/build/**
+docker/logs/
 
 # install/bin
 # install/common
