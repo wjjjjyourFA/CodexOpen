@@ -9,8 +9,14 @@
 # install/map
 # install/
 
-# /ros1/
-# /ros2/
+ros1/.catkin_tools
+ros1/build
+ros1/devel
+ros1/logs
+
+ros2/build
+ros2/install
+ros2/log
 
 # third_party/
 third_tools/
