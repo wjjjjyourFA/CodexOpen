@@ -19,6 +19,10 @@ void RuntimeConfig::LoadConfig(const std::string& config_path) {
     b_use_time_interpolate = pt.get<bool>("map.b_use_time_interpolate", false);
 
     b_realtime_show = pt.get<bool>("visualize.b_realtime_show", false);
+    realtime_voxel_size = pt.get<float>("visualize.realtime_voxel_size", 0.3f);
+    realtime_history_voxel_size = pt.get<float>("visualize.realtime_history_voxel_size", 0.8f);
+    realtime_history_batch_frames = pt.get<int>("visualize.realtime_history_batch_frames", 10);
+    realtime_max_history_points = pt.get<int>("visualize.realtime_max_history_points", 1500000);
 
     camera_calib_file_path = pt.get<std::string>("calibration.camera_calib_file_path", "");
 

@@ -1,6 +1,6 @@
-#include <iomanip>
-
 #include "modules/localization/common/algorithm/gauss_projection.h"
+
+#include <iomanip>
 
 using namespace jojo::localization::common;
 

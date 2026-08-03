@@ -3,15 +3,9 @@
 namespace fastlio {
 
 MapLocalization::MapLocalization() : LidarOdometry() {
-  // feats_undistort.reset(new PointCloudXYZI());
-  // feats_down_body.reset(new PointCloudXYZI());
-  // feats_down_world.reset(new PointCloudXYZI());
-  // normvec.reset(new PointCloudXYZI(100000, 1));
-  // laserCloudOri.reset(new PointCloudXYZI(100000, 1));
-  // corr_normvect.reset(new PointCloudXYZI(100000, 1));
-  // p_imu = std::make_shared<ImuProcess>();
-
-  // feats_undistort_filtered.reset(new PointCloudXYZI());
+#ifdef MP_EN
+  omp_set_num_threads(MP_PROC_NUM);
+#endif
 }
 
 MapLocalization::~MapLocalization() {}
@@ -19,12 +13,13 @@ MapLocalization::~MapLocalization() {}
 void MapLocalization::Init(
     std::shared_ptr<jojo::localization::RuntimeConfig> rparam,
     std::shared_ptr<jojo::localization::StaticConfig> sparam) {
-  param_  = rparam;
-  sparam_ = sparam;
+  // rparam_ = rparam;
+  // sparam_ = sparam;
 
   // 调用父类的初始化函数
-  LidarOdometry::Init(param_);
+  // LidarOdometry::Init(rparam_);
   // “static 回调 + virtual 分发” ==> 最终会调用 MapLocalization::h_share_model
+  LidarOdometry::Init(rparam, sparam);
 
   // for IMU_processing
   this->LoadInitMap(sparam_->map_file_path);
@@ -112,6 +107,7 @@ void MapLocalization::SetInitPose(const Eigen::Vector3d& pos,
   // 用于外部设置初值，如 GNSS，此时不需要更新 kf
   init_state = kf.get_x();
 
+  // 手动设置的初值，会在 UpdateKfState() 更新为 ICP 计算的值；
   init_state.pos = pos;
   init_state.rot = rot;
 }
@@ -255,7 +251,8 @@ void MapLocalization::GetAutoInitPose(state_ikfom& init_state,
   // clang-format on
 
   static float range_thresh_pow = 80 * 80;
-  pcl::PointXYZ p_in, p_out;
+
+  // ----
 
   frame_imu_ori->points.reserve(frame->size());  // 避免反复扩容
   // const Eigen::Matrix3f R = Aff_imu_lidar_f.rotation();
@@ -263,6 +260,7 @@ void MapLocalization::GetAutoInitPose(state_ikfom& init_state,
 
   for (auto& pt : *frame) {
     /* way 1
+    pcl::PointXYZ p_in;
     p_in.x = pt.x;
     p_in.y = pt.y;
     p_in.z = pt.z;
@@ -292,9 +290,28 @@ void MapLocalization::GetAutoInitPose(state_ikfom& init_state,
     }
   }
 
-  map_imu_ori->points.reserve(map->size());
+  // ----
 
-  for (auto& pt : *map) {
+  // 借助 CropBox 在 World 坐标系下完成快速裁剪
+  // pcl::CropBox<pcl::PointXYZI> crop;
+  pcl::CropBox<pcl::PointXYZINormal> crop;
+  crop.setInputCloud(map);
+
+  // 以当前 init_state.pos 为中心，取 +/-80m 的包围盒
+  Eigen::Vector4f min_pt(init_state.pos.x() - 80.0, init_state.pos.y() - 80.0,
+                         init_state.pos.z() - 20.0, 1.0);
+  Eigen::Vector4f max_pt(init_state.pos.x() + 80.0, init_state.pos.y() + 80.0,
+                         init_state.pos.z() + 20.0, 1.0);
+  crop.setMin(min_pt);
+  crop.setMax(max_pt);
+
+  pcl::PointCloud<pcl::PointXYZINormal>::Ptr map_cropped(
+      new pcl::PointCloud<pcl::PointXYZINormal>);
+  crop.filter(*map_cropped);
+
+  // 仅对裁剪后的少量点做矩阵变换
+  map_imu_ori->points.reserve(map_cropped->size());
+  for (const auto& pt : *map_cropped) {
     Eigen::Vector3f p(pt.x, pt.y, pt.z);
     Eigen::Vector3f p_out = Aff_imu_world_f * p;  // world -> imu
 
@@ -332,7 +349,9 @@ void MapLocalization::GetAutoInitPose(state_ikfom& init_state,
   Tr_delta_1 = this->Tr_delta;
   std::cout << ".. end first matching ." << std::endl;
 
+  // 粗配准 + 精配准
   if (sparam_->b_init_twice) {
+    // ICP 函数内部的 icp->align(*o, this->Tr_delta) 会自动使用 NDT 的结果 (Tr_delta_1) 作为初始猜测
     this->ICP(frame_imu, map_imu);
     Tr_delta_2 = this->Tr_delta;
     std::cout << ".. end second matching ." << std::endl;
@@ -358,8 +377,8 @@ void MapLocalization::GetAutoInitPose(state_ikfom& init_state,
 
     // ShowMatchResultSingle(vis, frame_imu_corrected1, map_imu, "NDT");
     // ShowMatchResultSingle(vis, frame_imu_corrected2, map_imu, "ICP");
-    ShowMatchResultDual(vis, frame_imu, frame_imu_corrected2, map_imu, "NDT ICP");
-    ShowMatchResultDual(vis, frame_imu_corrected1, frame_imu_corrected2, map_imu, "RAW ICP" );
+    ShowMatchResultDual(vis, frame_imu, frame_imu_corrected2, map_imu, "RAW ICP");
+    ShowMatchResultDual(vis, frame_imu_corrected1, frame_imu_corrected2, map_imu, "NDT ICP" );
     // clang-format on
   }
 }
@@ -412,6 +431,8 @@ void MapLocalization::InitDynMap() {
   // !! 在用两套“不同空间分布规则”的点，混进同一个树
   // ikdtree_dyn.Add_Points(feats_down_world->points, true);
 
+  // TODO：需要为空时用当前帧初始化或拒绝切换
+
   // 严格来说是，无法复用 map_incremental()，Nearest_Points 在 h_share_model() 后才有效
   // 但该流程有个硬性假设，一开始必在地图中，因此可认为 Nearest_Points 是有值的
   // 在同一帧中，map_incremental() 只执行一次，因此这里不执行叠加，交给后面叠加
@@ -433,7 +454,7 @@ void MapLocalization::lasermap_fov_segment() {
 
   // W系下位置
   V3D pos_LiD = pos_lid;
-  // 初始化局部地图范围，以pos_LiD为中心,长宽高均为cube_len
+  // 初始化局部地图范围，以 pos_LiD 为中心,长宽高均为 cube_len
   if (!Localmap_Initialized) {
     for (int i = 0; i < 3; i++) {
       LocalMap_Points.vertex_min[i] = pos_LiD(i) - cube_len / 2.0;
@@ -588,17 +609,23 @@ void MapLocalization::h_share_model(
 
   //
   double match_start = omp_get_wtime();
-  laserCloudOri->clear();  // 计算点-面残差时，实际用到的满足要求的点坐标，l系
-  corr_normvect->clear();  // 计算点-面残差时，实际用到的点对应平面的参数，w系
+
+  // laserCloudOri->clear();
+  // corr_normvect->clear();
+
+  laserCloudOri->resize(feats_down_size);
+  corr_normvect->resize(feats_down_size);
+
   total_residual = 0.0;
 
-/** closest surface search and residual computation **/
+  /** closest surface search and residual computation **/
+
 #ifdef MP_EN
-  omp_set_num_threads(MP_PROC_NUM);
-  // std::cout << "MP_EN ON" << std::endl;
 #pragma omp parallel
   {
-    std::vector<float> pointSearchSqDis(NUM_MATCH_POINTS);
+    thread_local std::vector<float> pointSearchSqDis;
+    pointSearchSqDis.clear();
+    pointSearchSqDis.reserve(NUM_MATCH_POINTS);
 
 #pragma omp for
     // 遍历所有的特征点
@@ -625,7 +652,6 @@ void MapLocalization::h_share_model(
       // auto& points_near = Nearest_Points[i];
       // zero copy
       auto& points_near = (*Nearest_Points)[i];
-      points_near.clear();
 
       if (ekfom_data.converge) {
         /** Find the closest surfaces in the map **/
@@ -680,6 +706,9 @@ void MapLocalization::h_share_model(
     }
   }
 
+  laserCloudOri->resize(effct_feat_num);
+  corr_normvect->resize(effct_feat_num);
+
   if (effct_feat_num < 1) {
     ekfom_data.valid = false;
     std::cerr << "No Effective Points! \n" << std::endl;
@@ -730,7 +759,7 @@ void MapLocalization::h_share_model(
   // LOG(INFO) << "effective points: " << effct_feat_num << std::endl;
 }
 
-void MapLocalization::run_localization(MeasureGroup& Measures) {
+bool MapLocalization::run_localization(MeasureGroup& Measures) {
   // TODO：如果进来就超出地图范围怎么办？
   // !! 这里默认初始进来的时候，是在地图里的。
 
@@ -738,6 +767,7 @@ void MapLocalization::run_localization(MeasureGroup& Measures) {
     first_lidar_time        = Measures.lidar_beg_time;
     p_imu->first_lidar_time = first_lidar_time;
     flg_first_scan          = false;
+    p_imu->SetInitMode(1);
 
     printf("Before match init_state: %f %f %f\n", init_state.pos(0),
            init_state.pos(1), init_state.pos(2));
@@ -752,13 +782,18 @@ void MapLocalization::run_localization(MeasureGroup& Measures) {
     point.x = init_state.pos(0);
     point.y = init_state.pos(1);
     point.z = init_state.pos(2);
-    PointVector Storage;
-    this->ikdtree.Radius_Search(point, dyn_map_radius_, Storage);
+    
+    // PointVector Storage;
+    // this->ikdtree.Radius_Search(point, dyn_map_radius_, Storage);
   }
 
   this->lidar_end_time = Measures.lidar_end_time;
   feats_undistort->clear();
   feats_undistort_filtered->clear();
+
+  // 0. 将 IMU 数据变换到 正装坐标系；
+  // 也许数据生成时就变换挺好的，但是会污染 原始 IMU 数据
+  this->TransformImuData(Measures);
 
   // 1. 预积分 + 去畸变
   p_imu->Process(Measures, kf, feats_undistort);
@@ -777,7 +812,7 @@ void MapLocalization::run_localization(MeasureGroup& Measures) {
 
   if ((feats_undistort_filtered == NULL) || feats_undistort_filtered->empty()) {
     std::cerr << "No point, skip this scan!\n" << std::endl;
-    return;
+    return false;
   }
 
   flg_EKF_inited =
@@ -785,7 +820,9 @@ void MapLocalization::run_localization(MeasureGroup& Measures) {
 
   // 2. 状态校准
   // auto frame_start = omp_get_wtime();
-  this->Optimization(feats_undistort_filtered);
+  if(!this->Optimization(feats_undistort_filtered)){
+    return false;
+  }
   // auto frame_end = omp_get_wtime();
   // std::cout << "Optimization runtime: " << (frame_end - frame_start) * 1000
   //           << " ms" << std::endl;
@@ -798,6 +835,8 @@ void MapLocalization::run_localization(MeasureGroup& Measures) {
   o_pose.pos  = pos_lid;
   o_pose.rot  = state_point.rot * state_point.offset_R_L_I;
   pose_inited = true;
+
+  return true;
 }
 
 bool MapLocalization::Optimization(PointCloudXYZI::Ptr frame) {
@@ -805,7 +844,8 @@ bool MapLocalization::Optimization(PointCloudXYZI::Ptr frame) {
 
   // ---------------- 地图检测 ----------------
   // 当前是否在地图外
-  bool prev_outside           = enable_incremental_mapping_;
+  bool prev_outside = enable_incremental_mapping_;
+
   enable_incremental_mapping_ = CheckOutsideGlobalMap();
 
   /*** initialize the dyn kdtree ***/
@@ -842,7 +882,7 @@ bool MapLocalization::Optimization(PointCloudXYZI::Ptr frame) {
   normvec->points.resize(feats_down_size);
   feats_down_world->points.resize(feats_down_size);
 
-  Nearest_Points.resize(feats_down_size);  // 存储近邻点的vector
+  this->Nearest_Points.resize(feats_down_size);  // 存储近邻点的vector
 
   /*** iterated state estimation ***/
   // auto start = omp_get_wtime();
@@ -851,18 +891,19 @@ bool MapLocalization::Optimization(PointCloudXYZI::Ptr frame) {
 
   share.user_ptr = this;
 
-  share.feats_down_body  = feats_down_body;
-  share.feats_down_world = feats_down_world;
-  share.normvec          = normvec;
-  share.laserCloudOri    = laserCloudOri;
-  share.corr_normvect    = corr_normvect;
+  // 将 LidarOdometry 的内部成员传递给 share
+  share.feats_down_body  = this->feats_down_body;
+  share.feats_down_world = this->feats_down_world;
+  share.normvec          = this->normvec;
+  share.laserCloudOri    = this->laserCloudOri;
+  share.corr_normvect    = this->corr_normvect;
 
-  share.Nearest_Points = &Nearest_Points;
+  share.Nearest_Points = &(this->Nearest_Points);
 
-  share.res_last            = res_last;
-  share.point_selected_surf = point_selected_surf;
+  share.res_last            = this->res_last;
+  share.point_selected_surf = this->point_selected_surf;
 
-  share.feats_down_size = feats_down_size;
+  share.feats_down_size = this->feats_down_size;
 
   double solve_H_time = 0;
   // 该更新过程中，选择 KDTree or KDTree_dyn
@@ -956,7 +997,9 @@ double MapLocalization::IsFarFromMap(const PointType& pt) {
   ikdtree.Nearest_Search(pt, this->far_point_num_, nearest_pts, sq_dist);
 
   if (nearest_pts.empty() || nearest_pts.size() < this->far_point_num_) {
-    return true;
+    // 至少返回大于 th_global_to_local 的数值
+    return std::numeric_limits<double>::infinity();
+    ;
   }
 
   double mean_dist = 0;
@@ -970,92 +1013,102 @@ double MapLocalization::IsFarFromMap(const PointType& pt) {
 }
 
 void MapLocalization::Show(bool b_pause) {
-  if (!pose_inited) return;
+  if (!pose_inited || feats_down_world->empty()) {
+    return;
+  }
 
-  static int cloud_id = 0;  // 点云编号
-  static pcl::PointCloud<pcl::PointXYZRGB>::Ptr traj_cloud(
-      new pcl::PointCloud<pcl::PointXYZRGB>);
-  static bool has_traj         = false;
-  static std::string traj_name = "traj";
+  const std::string traj_name = "traj";
+  const std::string lm_name   = "local_prior_map";
 
   if (vis == NULL) {
-    vis.reset(new pcl::visualization::PCLVisualizer("vis pcd"));
-    vis->setBackgroundColor(0, 0, 0);
+    vis.reset(new pcl::visualization::PCLVisualizer(
+        "Map localization: local map / optimized"));
+    vis->setBackgroundColor(0.03, 0.03, 0.03);
     vis->initCameraParameters();
+    vis->setCameraPosition(pos_lid[0] - 35.0, pos_lid[1] - 35.0,
+                           pos_lid[2] + 30.0, pos_lid[0], pos_lid[1],
+                           pos_lid[2], 0.0, 0.0, 1.0);
+    vis->addText("local prior map", 10, 70, 16, 0.6, 0.6, 0.6, "legend_map");
+    vis->addText("optimized scan", 10, 30, 16, 0.1, 1.0, 0.1,
+                 "legend_optimized");
+  }
+
+  if (vis->wasStopped()) return;
+
+  const std::string name = "optimized_cloud";
+
+  // 与 LidarOdometry::Show() 一样，地图低频刷新。
+  // 这里进一步只查询当前位置 150 m 内的先验地图，并限制交给 VTK 的点数，避免整张地图阻塞渲染线程。
+  const bool refresh_local_map =
+      !local_map_added_to_viewer_ ||
+      visualization_frame_count_ % local_map_refresh_period_ == 0;
+
+  if (refresh_local_map) {
+    // 获取当前位置的局部地图
+    PointType center;
+    center.x = pos_lid.x();
+    center.y = pos_lid.y();
+    center.z = pos_lid.z();
+
+    PointVector points_in_radius;
+    constexpr float kVisualizationRadiusMeter = 150.0f;
+    ikdtree.Radius_Search(center, kVisualizationRadiusMeter, points_in_radius);
+
     // clang-format off
-    vis->setCameraPosition(pos_lid[0], pos_lid[1], pos_lid[2] + 90, 
-                           pos_lid[0], pos_lid[1], pos_lid[2], 
-                           0, 0, 1);
+    constexpr std::size_t kMaxDisplayMapPoints = 120000;
+    // 在点云数量少时，避免内存过度申请
+    const std::size_t stride = std::max<std::size_t>(1, (points_in_radius.size() + kMaxDisplayMapPoints - 1) / kMaxDisplayMapPoints);
+
+    local_map_cloud_->clear();
+    // 申请符合点数的空间，特别是 降采样后的大点云
+    local_map_cloud_->points.reserve((points_in_radius.size() + stride - 1) / stride);
+
+    // 降采样
+    for (std::size_t i = 0; i < points_in_radius.size(); i += stride) {
+      local_map_cloud_->points.emplace_back(points_in_radius[i]);
+    }
+
+    local_map_cloud_->width = static_cast<std::uint32_t>(local_map_cloud_->points.size());
+    local_map_cloud_->height = 1;
+    local_map_cloud_->is_dense = false;
     // clang-format on
 
-    // 灰色
-    pcl::visualization::PointCloudColorHandlerCustom<PointType>
-        map_color_handler(map_, 128, 128, 128);
-    vis->addPointCloud<PointType>(map_, map_color_handler, "init_map");
+    pcl::visualization::PointCloudColorHandlerCustom<PointType> map_color(
+        local_map_cloud_, 150, 150, 150);
+    if (!local_map_added_to_viewer_) {
+      local_map_added_to_viewer_ =
+          vis->addPointCloud<PointType>(local_map_cloud_, map_color, lm_name);
+      if (local_map_added_to_viewer_) {
+        vis->setPointCloudRenderingProperties(
+            pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, lm_name);
+      }
+    } else {
+      vis->updatePointCloud<PointType>(local_map_cloud_, map_color, lm_name);
+    }
   }
 
-  // 1. static cloud
-  static pcl::PointCloud<pcl::PointXYZRGB>::Ptr vis_cloud(
-      new pcl::PointCloud<pcl::PointXYZRGB>);
-
-  vis_cloud->clear();
-  vis_cloud->points.reserve(feats_down_world->size());
-
-  // 2. nth_element instead of sort
-  std::vector<float> z_list;
-  z_list.reserve(feats_down_world->size());
-  for (const auto& pt : feats_down_world->points) {
-    z_list.push_back(pt.z);
+  // 绿色为最终 state_point 对应的优化点云。
+  pcl::visualization::PointCloudColorHandlerCustom<PointType> optimized_color(
+      feats_down_world, 30, 255, 30);
+  if (!current_scan_added_to_viewer_) {
+    vis->addPointCloud<PointType>(feats_down_world, optimized_color, name);
+    vis->setPointCloudRenderingProperties(
+        pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, name);
+    current_scan_added_to_viewer_ = true;
+  } else {
+    vis->updatePointCloud<PointType>(feats_down_world, optimized_color, name);
   }
 
-  size_t n       = z_list.size();
-  size_t idx_min = n * 0.10;
-  size_t idx_max = n * 0.90;
-  std::nth_element(z_list.begin(), z_list.begin() + idx_min, z_list.end());
-  float z_min_map = z_list[idx_min];
-  std::nth_element(z_list.begin(), z_list.begin() + idx_max, z_list.end());
-  float z_max_map = z_list[idx_max];
-
-  std::cout << "[VIS] Map Z range: " << z_min_map << " ~ " << z_max_map
-            << std::endl;
-
-  // 3. build cloud
-  float denom = std::max(1e-6f, z_max_map - z_min_map);
-  for (const auto& pt : feats_down_world->points) {
-    pcl::PointXYZRGB p;
-    p.x = pt.x;
-    p.y = pt.y;
-    p.z = pt.z;
-
-    // 归一化 z（使用 map 的范围）
-    float z_norm = (p.z - z_min_map) / denom;
-
-    // z_norm = std::clamp(z_norm, 0.0f, 1.0f);
-    z_norm = std::min(1.0f, std::max(0.0f, z_norm));
-
-    // 0.3 ~ 0.6 都很好用
-    // float gamma = 0.4f;
-    // z_norm = std::pow(z_norm, gamma);
-
-    // 简单蓝→红渐变（稳定，不晃）
-    auto bgr = GetColorByNorm(z_norm);
-    // const auto& bgr = GetColorByNorm(z_norm);
-    p.r = bgr(2);
-    p.g = bgr(1);
-    p.b = bgr(0);
-
-    vis_cloud->push_back(p);
+  std::ostringstream optimization_info;
+  optimization_info << std::fixed << std::setprecision(3)
+                    << " | residual: " << res_mean_last
+                    << " | effective points: " << effct_feat_num
+                    << " | local map points: " << local_map_cloud_->size();
+  const std::string info_name = "optimization_info";
+  if (vis->contains(info_name)) {
+    vis->removeShape(info_name);
   }
-
-  static std::string name = "current_cloud";
-
-  if (vis->contains(name)) {
-    vis->removePointCloud(name);
-  }
-
-  vis->addPointCloud<pcl::PointXYZRGB>(vis_cloud, name);
-  vis->setPointCloudRenderingProperties(
-      pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, name);
+  vis->addText(optimization_info.str(), 10, 10, 14, 1.0, 1.0, 1.0, info_name);
 
   pcl::PointXYZRGB traj;
   traj.x = pos_lid[0];
@@ -1065,16 +1118,19 @@ void MapLocalization::Show(bool b_pause) {
   traj.g = 255;
   traj.b = 255;
   traj_cloud->points.push_back(traj);
+  traj_cloud->width  = static_cast<std::uint32_t>(traj_cloud->points.size());
+  traj_cloud->height = 1;
 
-  // 只需要添加一次，之后只更新
-  if (!has_traj) {
+  if (!trajectory_added_to_viewer_) {
     vis->addPointCloud(traj_cloud, traj_name);
     vis->setPointCloudRenderingProperties(
         pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 4, traj_name);
-    has_traj = true;
+    trajectory_added_to_viewer_ = true;
   } else {
     vis->updatePointCloud(traj_cloud, traj_name);
   }
+
+  ++visualization_frame_count_;
 
   if (b_pause) {
     vis->spin();
@@ -1083,10 +1139,10 @@ void MapLocalization::Show(bool b_pause) {
   }
 }
 
-void MapLocalization::ShowInitResult(pcl::visualization::PCLVisualizer::Ptr vis,
-                                     pcl::PointCloud<pcl::PointXYZ>::Ptr frame,
-                                     pcl::PointCloud<pcl::PointXYZ>::Ptr map,
-                                     const string& window_name) {
+void MapLocalization::ShowInitResult(
+    pcl::visualization::PCLVisualizer::Ptr& vis,
+    pcl::PointCloud<pcl::PointXYZ>::Ptr frame,
+    pcl::PointCloud<pcl::PointXYZ>::Ptr map, const string& window_name) {
   if (vis == NULL) {
     vis.reset(new pcl::visualization::PCLVisualizer(window_name));
   }
@@ -1106,16 +1162,21 @@ void MapLocalization::ShowInitResult(pcl::visualization::PCLVisualizer::Ptr vis,
   vis->setPointCloudRenderingProperties(
       pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "frame cloud");
 
-  vis->addCoordinateSystem(10.0);
+  // vis->addCoordinateSystem(10.0);
+  // 阻塞等待用户按 'q' 或关闭窗口
   vis->spin();
 
   vis->removeAllPointClouds();
   vis->removeAllShapes();
   vis->close();
+
+  // 强行刷新一次事件队列，确保 VTK 彻底销毁窗口
+  vis->spinOnce(100);
+  vis.reset();  // 释放智能指针，彻底关闭 GUI 句柄
 }
 
 void MapLocalization::ShowMatchResultDual(
-    pcl::visualization::PCLVisualizer::Ptr vis,
+    pcl::visualization::PCLVisualizer::Ptr& vis,
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_first,
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_second,
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_map, const string& window_name) {
@@ -1156,6 +1217,9 @@ void MapLocalization::ShowMatchResultDual(
   vis->removeAllPointClouds();
   vis->removeAllShapes();
   vis->close();
+
+  vis->spinOnce(100);
+  vis.reset();
 }
 
 void MapLocalization::GetWholeMap(PointCloudXYZI::Ptr& cloud_map) {
@@ -1180,8 +1244,9 @@ void MapLocalization::GetWholeMap(PointCloudXYZI::Ptr& cloud_map) {
 
   // 拷贝 feats
   if (_featsArray) {
-    cloud_map->points.insert(cloud_map->points.end(), _featsArray->points.begin(),
-                            _featsArray->points.end());
+    cloud_map->points.insert(cloud_map->points.end(),
+                             _featsArray->points.begin(),
+                             _featsArray->points.end());
   }
 }
 

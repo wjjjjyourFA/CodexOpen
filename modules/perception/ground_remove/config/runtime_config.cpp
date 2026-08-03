@@ -33,6 +33,8 @@ void RuntimeConfig::LoadConfig(const std::string& config_path) {
     b_use_gaussian = pt.get<bool>("general.b_use_gaussian", false);
     b_gravity = pt.get<bool>("general.b_gravity", false);
 
+    dist_threshold = pt.get<int>("general.dist_threshold", 100);
+
     camera_calib_file_path = pt.get<std::string>("calibration.camera_calib_file_path", "");
     gravity_lidar_calib_file_path = pt.get<std::string>("calibration.gravity_lidar_calib_file_path", "");
 

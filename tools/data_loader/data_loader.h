@@ -1,18 +1,18 @@
-#ifndef DATA_LOADER_HH
-#define DATA_LOADER_HH
+#ifndef DATA_LOADER_H
+#define DATA_LOADER_H
 
 #pragma once
 
-#include <vector>
-#include <string>
-#include <tuple>
-#include <filesystem>
-#include <fstream>
-#include <sstream>
-#include <iostream>
 #include <algorithm>
 #include <deque>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
 #include <memory>
+#include <sstream>
+#include <string>
+#include <tuple>
+#include <vector>
 
 #if __cplusplus >= 201703L  // C++17 或更高
 #include <filesystem>
@@ -24,20 +24,20 @@ namespace fs = boost::filesystem;
 
 #include <opencv2/opencv.hpp>
 #include <pcl/io/pcd_io.h>
-#include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
 
 #include "cyber/common/file.h"
-#include "modules/perception/common/camera/common/undistortion_handler.h"
-#include "modules/perception/common/camera/params/camera_params.h"
+#include "modules/common_struct/localization_msgs/OdometryData.h"
 #include "modules/common_struct/sensor_msgs/GnssData.h"
 #include "modules/common_struct/sensor_msgs/ImuData.h"
-#include "modules/common_struct/localization_msgs/OdometryData.h"
+#include "modules/perception/common/camera/common/undistortion_handler.h"
+#include "modules/perception/common/camera/params/camera_params.h"
 #include "modules/perception/common/radar/convert/ars408.h"
 #include "modules/perception/common/radar/convert/ars548.h"
 #include "modules/perception/common/radar/convert/hugin.h"
-
-#include "tools/data_loader/config/runtime_config_offline.h"
+#include "tools/data_loader/config/interface_config.h"
+#include "tools/data_loader/config/runtime_config.h"
 #include "tools/data_loader/data_container.h"
 
 typedef pcl::PointXYZ PointType;
@@ -53,8 +53,8 @@ class DataLoader {
   virtual ~DataLoader();
 
   // 也许可以，通过指向基类，实现多态。
-  void Init(std::shared_ptr<RuntimeConfigOffline> param);
-
+  virtual bool Init(std::shared_ptr<jojo::tools::RuntimeConfig> param,
+                    std::shared_ptr<jojo::tools::InterfaceConfig> interface);
   virtual void InitUndistortion();
 
   void Start();
@@ -68,7 +68,7 @@ class DataLoader {
 
   bool SaveTimeStamp(const std::string& path, const std::string& ts_file,
                      const DataContainerBase& data_container);
-                     
+
   std::string prefix;
   std::string postfix;
   std::string path_global_pose;
@@ -82,7 +82,8 @@ class DataLoader {
   std::vector<std::string> path_radar4d;
 
  protected:
-  std::shared_ptr<RuntimeConfigOffline> param_;
+  std::shared_ptr<jojo::tools::RuntimeConfig> rparam_;
+  std::shared_ptr<jojo::tools::InterfaceConfig> iparam_;
 
   std::vector<std::string> SetDataFolderVector(const std::string& prefix,
                                                const std::string& name,
@@ -95,7 +96,7 @@ class DataLoader {
   // std::vector<std::shared_ptr<jojo::perception::camera::CameraParams>> camera_params_vector;
   // clang-format on
  protected:
-   // clang-format off
+  // clang-format off
   std::vector<std::shared_ptr<jojo::perception::camera::UndistortionHandler>> undistort_vector;
   std::vector<bool> undistort_init;
   // clang-format on
@@ -110,4 +111,4 @@ class DataLoader {
 }  // namespace tools
 }  // namespace jojo
 
-#endif  // DATA_LOADER_HH
+#endif  // DATA_LOADER_H

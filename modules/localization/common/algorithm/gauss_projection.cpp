@@ -46,8 +46,8 @@ void GaussProjection::SetCoordinateSystem(int coordinate_system) {
 
 // 输入 ：纬度， 经度 in degrees
 // 输出 ：gauss_x gauss_y in m
-void GaussProjection::Forward(double longitude, double latitude, double *gauss_x,
-                        double *gauss_y) {
+void GaussProjection::Forward(double longitude, double latitude,
+                              double* gauss_x, double* gauss_y) {
   double longitude1, latitude1, longitude0, latitude0, X0, Y0, xval, yval;
   double e2, ee, NN, T, C, A, M;
 
@@ -82,8 +82,8 @@ void GaussProjection::Forward(double longitude, double latitude, double *gauss_x
                  (A * A / 2 + (5 - T + 9 * C + 4 * C * C) * A * A * A * A / 24 +
                   (61 - 58 * T + T * T + 600 * C - 330 * ee) * A * A * A * A *
                       A * A / 720);
-  X0 = 1000000L * (ProjNo + 1) + 500000L;
-  Y0 = 0;
+  X0   = 1000000L * (ProjNo + 1) + 500000L;
+  Y0   = 0;
 
   xval = xval + X0;
   yval = yval + Y0;
@@ -92,8 +92,8 @@ void GaussProjection::Forward(double longitude, double latitude, double *gauss_x
   *gauss_y = yval;
 }
 
-void GaussProjection::Inverse(double gauss_x, double gauss_y, double *longitude,
-                        double *latitude) {
+void GaussProjection::Inverse(double gauss_x, double gauss_y, double* longitude,
+                              double* latitude) {
   double longitude1, latitude1, longitude0, X0, Y0, xval, yval;
   double e1, e2, f, a, ee, NN, T, C, M, D, R, u, fai;
 

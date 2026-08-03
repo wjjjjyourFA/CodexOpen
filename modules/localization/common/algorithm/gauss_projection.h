@@ -15,8 +15,8 @@
 
 #include <math.h>
 #include <stdint.h>
-#include <iostream>
 
+#include <iostream>
 #include <regex>
 
 #include "time.h"
@@ -32,11 +32,11 @@ class GaussProjection {
 
   void SetCoordinateSystem(int coordinate_system);
 
-  void Forward(double longitude, double latitude, double *gauss_x,
-               double *gauss_y);
+  void Forward(double longitude, double latitude, double* gauss_x,
+               double* gauss_y);
 
-  void Inverse(double gauss_x, double gauss_y, double *longitude,
-               double *latitude);
+  void Inverse(double gauss_x, double gauss_y, double* longitude,
+               double* latitude);
 
   // 地理坐标系（BLH，纬度、经度、高度） 转换为 平面坐标系（XY）.. lbk
   void blh2xy(double blh[], double pos[]);

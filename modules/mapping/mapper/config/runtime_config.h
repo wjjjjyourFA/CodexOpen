@@ -25,6 +25,12 @@ class RuntimeConfig : public jojo::common::config::ConfigFileBase {
 
   bool b_realtime_show = false;
 
+  // Realtime viewer only. These parameters do not affect the saved map.
+  float realtime_voxel_size         = 0.3f;
+  float realtime_history_voxel_size = 0.8f;
+  int realtime_history_batch_frames = 10;
+  int realtime_max_history_points   = 1500000;
+
   std::string camera_calib_file_path = "";
 };
 

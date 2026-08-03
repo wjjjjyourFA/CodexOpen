@@ -1,5 +1,5 @@
-#ifndef __SEGMENT_H
-#define __SEGMENT_H
+#ifndef SEGMENT_H
+#define SEGMENT_H
 
 #pragma once
 
@@ -7,10 +7,10 @@
 #include <string>
 #include <vector>
 
-#include "Eigen/Core"
-
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
+
+#include "Eigen/Core"
 
 // #include "modules/perception/common/base/point.h"
 // #include "modules/perception/common/base/point_cloud.h"
@@ -100,4 +100,4 @@ using SegmentConstPtr = std::shared_ptr<const Segment>;
 }  // namespace perception
 }  // namespace jojo
 
-#endif  // __SEGMENT_H
+#endif  // SEGMENT_H

@@ -1,5 +1,5 @@
-#ifndef _MATH_UTILS_EXTRA_H
-#define _MATH_UTILS_EXTRA_H
+#ifndef MATH_UTILS_EXTRA_H
+#define MATH_UTILS_EXTRA_H
 
 #include <cstdint>
 #include <cfloat>   // DBL_MIN, DBL_EPSILON

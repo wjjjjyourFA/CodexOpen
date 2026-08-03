@@ -1,8 +1,7 @@
-#ifndef HUGIN_H_
-#define HUGIN_H_
+#ifndef __HUGIN_H__
+#define __HUGIN_H__
 
 #include <Eigen/Core>
-
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 

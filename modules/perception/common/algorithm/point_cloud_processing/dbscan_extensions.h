@@ -10,7 +10,7 @@ class DBSCAN_velocity : public DBSCAN<PointXYZV> {
 
  public:
   // 这里应该叫做距离度量函数
-  double Distance(const PointXYZV &a, const PointXYZV &b) {
+  double Distance(const PointXYZV& a, const PointXYZV& b) {
     // 开方耗时，不开方能行吗
     double spatial_distance =
         std::sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y) +

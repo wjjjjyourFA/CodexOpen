@@ -4,9 +4,8 @@
 #include <cfloat>
 #include <cstdint>
 
-#include <pcl/point_types.h>
-
 #include <opencv2/opencv.hpp>
+#include <pcl/point_types.h>
 
 class ColorCell {
  public:

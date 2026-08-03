@@ -1,17 +1,18 @@
-#ifndef ROS1_CONVERT_H
-#define ROS1_CONVERT_H
-
-#include <rosbag/bag.h>
-#include <rosbag/view.h>
+#ifndef DATA_PROCESSOR_ROS1_CONVERT_H
+#define DATA_PROCESSOR_ROS1_CONVERT_H
 
 #include <ros/ros.h>
-#include <cv_bridge/cv_bridge.h>
-#include <image_transport/image_transport.h>
+
 #include <sensor_msgs/PointCloud.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/image_encodings.h>
 #include <sensor_msgs/point_cloud_conversion.h>
+
+#include <cv_bridge/cv_bridge.h>
+#include <image_transport/image_transport.h>
 #include <pcl_conversions/pcl_conversions.h>
+#include <rosbag/bag.h>
+#include <rosbag/view.h>
 
 #include "sensor_msgs/CompressedImage.h"
 #include "sensor_msgs/Image.h"
@@ -30,22 +31,23 @@
 // CODEXOPEN
 // #include "ars548_msg/DetectionList.h"
 // #include "ars548_msg/detections.h"
-#include "ars548_process/DetectionList.h"
 #include "ars548_process/Detection.h"
+#include "ars548_process/DetectionList.h"
 #include "ars_40X/Cluster.h"
 #include "ars_40X/ClusterList.h"
-#include "rslidar_sdk-1.3.2/lidar_packet_ros.h"
-#include "rslidar_sdk-1.3.2/lidar_scan_ros.h"
 #include "livox_ros_driver2-1.2.4/CustomMsg.h"
 #include "livox_ros_driver2-1.2.4/CustomPoint.h"
+#include "rslidar_sdk-1.3.2/lidar_packet_ros.h"
+#include "rslidar_sdk-1.3.2/lidar_scan_ros.h"
 
 // #include <boost/foreach.hpp> // C++11 之前
+#include <math.h>  // for llround
+#include <stdint.h>
+
 #include <iostream>
 #include <thread>
 #include <unordered_set>
 #include <vector>
-#include <stdint.h>
-#include <math.h>  // for llround
 
 #include <boost/asio/post.hpp>
 #include <boost/asio/thread_pool.hpp>
@@ -53,13 +55,12 @@
 #include "cyber/base/thread_pool.h"
 #include "modules/common/environment_conf.h"
 #include "modules/common/math/math_utils_extra.h"
+#include "modules/perception/common/lidar/convert/livox.h"
 #include "modules/perception/common/lidar/convert/robosense.h"
 #include "modules/perception/common/lidar/convert/velodyne.h"
-#include "modules/perception/common/lidar/convert/livox.h"
 #include "modules/perception/common/radar/convert/ars408.h"
 #include "modules/perception/common/radar/convert/ars548.h"
 #include "modules/perception/common/radar/convert/hugin.h"
-
 #include "tools/data_processor/async_writer.h"
 #include "tools/data_processor/block_queue.h"
 #include "toolz/data_processor/data_processor.h"
@@ -76,7 +77,7 @@ using namespace jojo::perception::camera;
 
 // #define M_PI (3.14159265358)
 #define DEG_2_RAD 0.017453293  // M_PI / 180.0
-#define RAD_2_DEG 57.29578     // 180.0 / M_PI
+#define RAD_2_DEG 57.29578  // 180.0 / M_PI
 
 template <typename dataType>
 struct DataStatistic {
@@ -118,11 +119,11 @@ struct ImageTask {
 
 class Ros1Convert {
  public:
-  Ros1Convert();
+  Ros1Convert(ros::NodeHandle& nh, ros::NodeHandle& private_nh);
   virtual ~Ros1Convert();
 
-  void Init(ros::NodeHandle& nh, ros::NodeHandle& private_nh,
-            std::shared_ptr<RuntimeConfig> param);
+  bool Init(std::shared_ptr<jojo::tools::RuntimeConfig> param,
+            std::shared_ptr<jojo::tools::InterfaceConfig> interface);
 
   void CreateImageWorker();
 
@@ -156,9 +157,10 @@ class Ros1Convert {
   // clang-format on
 
  private:
-  std::shared_ptr<RuntimeConfig> param_ /*runtime_config*/;
+  std::shared_ptr<jojo::tools::RuntimeConfig> rparam_;
+  std::shared_ptr<jojo::tools::InterfaceConfig> iparam_;
 
-  ros::NodeHandle nh_, private_nh_;
+  ros::NodeHandle nh_, pnh_;
 
   int num_global_pose = 0;
   int num_local_pose  = 0;
@@ -250,4 +252,4 @@ void Ros1Convert::PrintParserCount(
 }  // namespace tools
 }  // namespace jojo
 
-#endif  // Ros1Convert
+#endif  // DATA_PROCESSOR_ROS1_CONVERT_H

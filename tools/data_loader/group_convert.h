@@ -1,5 +1,5 @@
-#ifndef GROUP_CONVERT_H
-#define GROUP_CONVERT_H
+#ifndef DATA_LOADER_GROUP_CONVERT_H
+#define DATA_LOADER_GROUP_CONVERT_H
 
 #pragma once
 
@@ -7,11 +7,10 @@
 
 #include "cyber/common/file.h"
 #include "modules/common/math/unit_converter.h"
-#include "tools/data_processor/config/sensor_config.h"
-
-#include "tools/data_loader/data_loader.h"
-#include "modules/perception/tools/pcl/point_types.h"
 #include "modules/perception/tools/pcl/pcl_viewer.h"
+#include "modules/perception/tools/pcl/point_types.h"
+#include "tools/data_loader/data_loader.h"
+#include "tools/data_processor/config/sensor_config.h"
 // #include "modules/perception/tools/common/show_data_3d.h"
 #include "modules/perception/tools/common/show_data_2d.h"
 
@@ -74,7 +73,8 @@ class GroupConvert {
   GroupConvert();
   virtual ~GroupConvert();
 
-  virtual void Init(std::shared_ptr<RuntimeConfigOffline> param);
+  virtual bool Init(std::shared_ptr<jojo::tools::RuntimeConfig> param,
+                    std::shared_ptr<jojo::tools::InterfaceConfig> interface);
 
   virtual void InitGroup();
 
@@ -100,7 +100,8 @@ class GroupConvert {
 
   uint64_t index_ts = 0;
 
-  std::shared_ptr<RuntimeConfigOffline> param_ /*param_simple_base*/;
+  std::shared_ptr<jojo::tools::RuntimeConfig> rparam_;
+  std::shared_ptr<jojo::tools::InterfaceConfig> iparam_;
 
   std::vector<DataContainer<uint64_t>> dc_camera;
   std::vector<DataContainer<uint64_t>> dc_infra;
@@ -171,7 +172,7 @@ bool GroupConvert::GetLidarBase(DataContainer<uint64_t>& data_c,
 
   char file[300];
 
-  if (!param_->use_bin_or_pcd) {
+  if (!rparam_->use_bin_or_pcd) {
     sprintf(file, "%s/%.13ld.bin", data_loader->path_lidar.c_str(),
             tmp->cur_time);
   } else {
@@ -195,7 +196,7 @@ bool GroupConvert::GetLidarBase(
     return false;
   }
 
-  if (!param_->use_bin_or_pcd) {
+  if (!rparam_->use_bin_or_pcd) {
     // clang-format off
     if (!apollo::cyber::common::FileExists(file)) {
       std::cerr << "[ERROR] Failed to load file: " << file << std::endl;

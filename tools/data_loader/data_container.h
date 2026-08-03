@@ -1,5 +1,5 @@
-#ifndef DATA_CONTAINER_HH
-#define DATA_CONTAINER_HH
+#ifndef DATA_CONTAINER_H
+#define DATA_CONTAINER_H
 
 #pragma once
 
@@ -185,10 +185,8 @@ class DataContainer : public DataContainerBase {
     // 这里是拷贝，不是引用
     *static_cast<T*>(out) = cur_data;
   }
-  
-  const void* GetCurDataPtr() const override {
-    return &cur_data;
-  }
+
+  const void* GetCurDataPtr() const override { return &cur_data; }
 
   void GetCurTime(uint64_t& out) const override { out = cur_time; }
 

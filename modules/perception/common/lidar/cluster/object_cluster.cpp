@@ -23,7 +23,7 @@ ObjectCluster::~ObjectCluster() {
   if (max_kdtree != nullptr) {
     // delete max_kdtree;
     // 释放旧的指针 or 生命周期交给引用计数管理。
-    // max_kdtree.reset();   
+    // max_kdtree.reset();
   }
 }
 

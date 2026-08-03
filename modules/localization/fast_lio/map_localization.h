@@ -2,15 +2,17 @@
 
 #include <omp.h>
 
+#include <pcl/point_types.h>
+#include <pcl/filters/crop_box.h>
+
 #define PCL_NO_PRECOMPILE
-#include <pcl/registration/ndt.h>
 #include <pcl/registration/icp.h>
+#include <pcl/registration/ndt.h>
 
-#include "modules/perception/tools/opencv/cv_colors.h"
-
-#include "modules/localization/fast_lio/lidar_odometry.h"
 #include "modules/localization/fast_lio/config/runtime_config.h"
 #include "modules/localization/fast_lio/config/static_config.h"
+#include "modules/localization/fast_lio/lidar_odometry.h"
+#include "modules/perception/tools/opencv/cv_colors.h"
 
 namespace fastlio {
 
@@ -19,7 +21,7 @@ enum class MapState { INSIDE, OUTSIDE };
 class MapLocalization : public LidarOdometry {
  public:
   MapLocalization();
-  ~MapLocalization();
+  virtual ~MapLocalization();
 
   void LoadInitMap(const std::string& map_path);
 
@@ -29,7 +31,7 @@ class MapLocalization : public LidarOdometry {
   void SetInitPose(const Eigen::Vector3d& pos, const Eigen::Quaterniond& rot);
 
   void Init(std::shared_ptr<jojo::localization::RuntimeConfig> rparam,
-            std::shared_ptr<jojo::localization::StaticConfig> sparam);
+            std::shared_ptr<jojo::localization::StaticConfig> sparam) override;
 
   void UpdateKfState(state_ikfom& state_point);
 
@@ -48,15 +50,13 @@ class MapLocalization : public LidarOdometry {
       state_ikfom& s,
       esekfom::dyn_share_datastruct<double>& ekfom_data) override;
 
-  void run_localization_legacy(MeasureGroup& Measures);
-
-  void run_localization(MeasureGroup& Measures);
+  bool run_localization(MeasureGroup& Measures);
 
   bool Optimization(PointCloudXYZI::Ptr frame);
 
   // void save_result(bool b_save_pcd = false) override;
 
-  void Show(bool b_pause) override;
+  void Show(bool b_pause = false) override;
 
   void GetWholeMap(PointCloudXYZI::Ptr& cloud_map);
 
@@ -80,10 +80,16 @@ class MapLocalization : public LidarOdometry {
   KD_TREE<PointType> ikdtree_dyn;
 
  private:
+  // 将当前降采样帧按指定状态变换到地图坐标系。优化前、优化后各保留一份，
+  // 用于检查 IEKF 的位姿修正是否把点云推到了地图的正确位置。
+  void TransformCurrentFrameToWorld(const state_ikfom& state,
+                                    PointCloudXYZI::Ptr cloud_world) const;
+
   // LidarOdometry::param_;  // ==> rparam_
-  std::shared_ptr<jojo::localization::StaticConfig> sparam_;
+  // std::shared_ptr<jojo::localization::StaticConfig> sparam_;
 
   PointCloudXYZI::Ptr map_ = nullptr;
+  PointCloudXYZI::Ptr feats_down_world_predicted_;
   Eigen::Vector3d map_center;
   int dyn_map_radius_ = 100;
 
@@ -101,12 +107,12 @@ class MapLocalization : public LidarOdometry {
   const int stable_frame_num      = 10;  // 连续帧阈值
 
  private:
-  void ShowInitResult(pcl::visualization::PCLVisualizer::Ptr vis,
+  void ShowInitResult(pcl::visualization::PCLVisualizer::Ptr& vis,
                       pcl::PointCloud<pcl::PointXYZ>::Ptr frame,
                       pcl::PointCloud<pcl::PointXYZ>::Ptr map,
                       const string& window_name);
 
-  void ShowMatchResultDual(pcl::visualization::PCLVisualizer::Ptr vis,
+  void ShowMatchResultDual(pcl::visualization::PCLVisualizer::Ptr& vis,
                            pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_first,
                            pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_second,
                            pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_map,

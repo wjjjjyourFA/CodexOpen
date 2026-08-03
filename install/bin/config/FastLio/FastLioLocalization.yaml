@@ -1,6 +1,6 @@
 
 # map_file_path: /workspaces/CodexOpen/install/map/MiLuo/cloud_merged.pcd
-map_file_path: /workspaces/CodexOpenExtraData/DataSet/2026-01-28/2026-01-28-09-31-37/uav/map/cloud_merged.pcd
+map_file_path: /workspaces/CodexOpenExtraData/data/2026-01-28/2026-01-28-09-31-37/uav/map/cloud_merged.pcd
 
 init:
   # 0: chaos  1:GNSS  2:Handle  3:config  4:fusion

@@ -12,26 +12,26 @@ DataLoaderDataSet::~DataLoaderDataSet() {}
 
 void DataLoaderDataSet::InitUndistortion() {
   camera_params = std::make_shared<camera::CameraParamsJson>();
-  camera_params->SetLoadPath(param_->calib_file_dir);
+  camera_params->SetLoadPath(rparam_->calib_file_dir);
 
-  for (int i = 0; i < param_->b_camera; i++) {
-    camera_params->LoadFromName(param_->camera_name.at(i), ".json");
-
-    auto camera_undistort = std::make_shared<camera::UndistortionHandler>();
-    camera_undistort->InitModel(camera::CameraDistortionModel::Brown);
-    undistort_vector.push_back(camera_undistort);
-  }
-
-  for (int i = 0; i < param_->b_infra; i++) {
-    camera_params->LoadFromName(param_->infra_name.at(i), ".json");
+  for (int i = 0; i < iparam_->b_camera; i++) {
+    camera_params->LoadFromName(rparam_->camera_name.at(i), ".json");
 
     auto camera_undistort = std::make_shared<camera::UndistortionHandler>();
     camera_undistort->InitModel(camera::CameraDistortionModel::Brown);
     undistort_vector.push_back(camera_undistort);
   }
 
-  for (int i = 0; i < param_->b_star; i++) {
-    camera_params->LoadFromName(param_->star_name.at(i), ".json");
+  for (int i = 0; i < iparam_->b_infra; i++) {
+    camera_params->LoadFromName(rparam_->infra_name.at(i), ".json");
+
+    auto camera_undistort = std::make_shared<camera::UndistortionHandler>();
+    camera_undistort->InitModel(camera::CameraDistortionModel::Brown);
+    undistort_vector.push_back(camera_undistort);
+  }
+
+  for (int i = 0; i < iparam_->b_star; i++) {
+    camera_params->LoadFromName(rparam_->star_name.at(i), ".json");
 
     auto camera_undistort = std::make_shared<camera::UndistortionHandler>();
     camera_undistort->InitModel(camera::CameraDistortionModel::Brown);
@@ -39,17 +39,17 @@ void DataLoaderDataSet::InitUndistortion() {
   }
 
   // clang-format off
-  undistort_init.resize(param_->b_camera + param_->b_infra + param_->b_star, false);
+  undistort_init.resize(iparam_->b_camera + iparam_->b_infra + iparam_->b_star, false);
   // clang-format on
 }
 
 void DataLoaderDataSet::LoadDataFolder() {
-  this->prefix = param_->root_path + "/" + param_->file_name;
+  this->prefix = rparam_->root_path + "/" + rparam_->file_name;
   std::cout << "data_file : " << this->prefix << std::endl;
 
   this->postfix = this->prefix + "-O";
 
-  if (param_->use_bin_or_pcd == 0) {
+  if (rparam_->use_bin_or_pcd == 0) {
     path_lidar = this->postfix + "/sensor_data/" + "lidar";
   } else {
     path_lidar = this->postfix + "/sensor_data/" + "lidar_pcd";
@@ -57,14 +57,14 @@ void DataLoaderDataSet::LoadDataFolder() {
   // common::CreateDir(path_lidar);
 
   // clang-format off
-  if(param_->b_undistort) {
-    path_camera = SetDataFolderVector(this->postfix, "sensor_data/camera_undistort", param_->b_camera);
-    path_infra = SetDataFolderVector(this->postfix, "sensor_data/infra_undistort", param_->b_infra);
-    path_star = SetDataFolderVector(this->postfix, "sensor_data/star_undistort", param_->b_star);
+  if(iparam_->b_undistort) {
+    path_camera = SetDataFolderVector(this->postfix, "sensor_data/camera_undistort", iparam_->b_camera);
+    path_infra = SetDataFolderVector(this->postfix, "sensor_data/infra_undistort", iparam_->b_infra);
+    path_star = SetDataFolderVector(this->postfix, "sensor_data/star_undistort", iparam_->b_star);
   } else {
-    path_camera = SetDataFolderVector(this->prefix, "camera", param_->b_camera);
-    path_infra = SetDataFolderVector(this->prefix, "infra", param_->b_infra);
-    path_star = SetDataFolderVector(this->prefix, "star", param_->b_star);
+    path_camera = SetDataFolderVector(this->prefix, "camera", iparam_->b_camera);
+    path_infra = SetDataFolderVector(this->prefix, "infra", iparam_->b_infra);
+    path_star = SetDataFolderVector(this->prefix, "star", iparam_->b_star);
   }
   // std::cout << "path_camera.size() = " << path_camera.size() << std::endl;
 
@@ -73,7 +73,7 @@ void DataLoaderDataSet::LoadDataFolder() {
 
   path_radar = this->postfix + "/" + "radar";
 
-  path_radar4d = SetDataFolderVector(this->postfix, "radar4d", param_->b_radar4d);
+  path_radar4d = SetDataFolderVector(this->postfix, "radar4d", iparam_->b_radar4d);
   // clang-format on
 }
 

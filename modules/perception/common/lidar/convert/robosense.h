@@ -2,17 +2,15 @@
 #define __ROBOSENSE_H__
 
 #include <bits/stdc++.h>
-
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
 // #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/visualization/cloud_viewer.h>
 
+#include "modules/perception/common/lidar/convert/rs_sort_map.h"
 #include "modules/perception/tools/opencv/cv_colors.h"
 #include "modules/perception/tools/pcl/point_types.h"
-
-#include "modules/perception/common/lidar/convert/rs_sort_map.h"
 
 /* 保留点云的结构，将 intensity 类型改为 float，点云类型改为 pcl::PointXYZI */
 // RoboSense / 速腾 Lidar 的 ring 字段 = 真实物理通道编号（从上到下顺序）

@@ -1,5 +1,5 @@
-#ifndef BOX_EXTRA_H_
-#define BOX_EXTRA_H_
+#ifndef BOX_EXTRA_H
+#define BOX_EXTRA_H
 //          0 -------- 1
 //          |          |
 //          .          .
@@ -76,4 +76,4 @@ inline apollo::perception::base::BBox2DF tlwh2box(float x /*minx*/,
 }  // namespace perception
 }  // namespace jojo
 
-#endif  // BOX_EXTRA_H_
+#endif  // BOX_EXTRA_H

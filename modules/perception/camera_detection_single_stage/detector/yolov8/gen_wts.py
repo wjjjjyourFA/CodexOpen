@@ -37,7 +37,8 @@ print(f'Loading {pt_file}')
 device = 'cpu'
 
 # Load model
-model = torch.load(pt_file, map_location=device)  # Load FP32 weights
+# model = torch.load(pt_file, map_location=device)  # Load FP32 weights
+model = torch.load(pt_file, map_location=device, weights_only=False)
 model = model['ema' if model.get('ema') else 'model'].float()
 
 if m_type in ['detect', 'seg', 'pose', 'obb']:

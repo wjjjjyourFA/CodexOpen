@@ -6,16 +6,16 @@
 #include "modules/common/environment_conf.h"
 
 #if defined(ENABLE_DDS)
-#include <pcl_ros/point_cloud.h>
-#include <pcl_conversions/pcl_conversions.h>
+#include <geometry_msgs/Pose2D.h>
+#include <sensor_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/image_encodings.h>
+#include <sensor_msgs/point_cloud_conversion.h>
 
 #include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.h>
-#include <sensor_msgs/image_encodings.h>
-#include <sensor_msgs/PointCloud.h>
-#include <sensor_msgs/PointCloud2.h>
-#include <sensor_msgs/point_cloud_conversion.h>
-#include <geometry_msgs/Pose2D.h>
+#include <pcl_conversions/pcl_conversions.h>
+#include <pcl_ros/point_cloud.h>
 
 // sub
 #include <nav_msgs/Odometry.h>
@@ -38,8 +38,6 @@ typedef geometry_msgs::Pose2D lidar_pose_msgtype;
 typedef geometry_msgs::Pose2D lidar_msgtype;
 typedef geometry_msgs::Pose2D radar_msgtype;
 typedef geometry_msgs::Pose2D cimage_msgtype;
-#endif // ENABLE_DDS
+#endif  // ENABLE_DDS
 
-
-#endif // ENVIRONMENT_CONF_H
-
+#endif  // ENVIRONMENT_DDS_H

@@ -27,7 +27,7 @@ struct VdSMap64 {
     -9.40260700000000,    -8.90031200000000,    -12.3946160000000,    -11.9021070000000,
   };
   // clang-format on
-  
+
   int laser_sort[64];
   int laser_sort_tmp[64];
 };

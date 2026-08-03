@@ -1,14 +1,14 @@
-#ifndef DATA_CONTAINER_ROS1_HH
-#define DATA_CONTAINER_ROS1_HH
+#ifndef DATA_CONTAINER_ROS1_H
+#define DATA_CONTAINER_ROS1_H
 
 #pragma once
 
 #include <ros/ros.h>
+
 #include <image_transport/image_transport.h>
 
 #include "sensor_msgs/CompressedImage.h"
 #include "sensor_msgs/Image.h"
-
 #include "tools/data_loader/data_container.h"
 
 namespace jojo {

@@ -15,9 +15,9 @@ void StaticConfig::LoadConfig(const std::string& config_path) {
     // this->SwitchMethod(init_method);
 
     b_use_pose_center = yaml["init"]["b_use_pose_center"].as<bool>(false);
-    
-    b_display_roi     = yaml["init"]["b_display_roi"].as<bool>(false);
-    b_display_body    = yaml["init"]["b_display_body"].as<bool>(false);
+
+    b_display_roi  = yaml["init"]["b_display_roi"].as<bool>(false);
+    b_display_body = yaml["init"]["b_display_body"].as<bool>(false);
 
     // yaw_offset_euler = yaml["init"]["yaw_offset_euler"].as<double>(0);
 

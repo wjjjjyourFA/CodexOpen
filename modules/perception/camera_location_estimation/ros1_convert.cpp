@@ -1,8 +1,10 @@
 #include "modules/perception/camera_location_estimation/ros1_convert.h"
 
-Ros1Convert::Ros1Convert() {
+Ros1Convert::Ros1Convert(ros::NodeHandle& nh, ros::NodeHandle& private_nh) {
+  node = nh;
+
   camera_params = std::make_shared<camera::CameraParams>();
-  image_locator = std::make_shared<cle::ImageLocation>();
+  image_locator = std::make_shared<cle::CameraLocationEstimation>();
   fusion        = std::make_shared<fusion::LidarCameraFusion>();
 }
 
@@ -84,37 +86,37 @@ void Ros1Convert::PointCloudCallback(
   point_recv_ = true;
 }
 
-bool Ros1Convert::Init(ros::NodeHandle& nh, ros::NodeHandle& private_nh,
-                       std::shared_ptr<cle::RuntimeConfig> param) {
-  node   = nh;
-  param_ = param;
+bool Ros1Convert::Init(std::shared_ptr<cle::RuntimeConfig> rparam,
+                       std::shared_ptr<cle::InterfaceConfig> iparam) {
+  rparam_ = rparam;
+  iparam_ = iparam;
 
-  if (!param_->b_compressed) {
+  if (!iparam_->b_compressed) {
     image_sub = node.subscribe<sensor_msgs::Image>(
-        param_->image_topic, 1,
+        iparam_->image_topic, 1,
         std::bind(&Ros1Convert::ImageCallback, this, std::placeholders::_1));
   } else {
     image_sub = node.subscribe<sensor_msgs::CompressedImage>(
-        param_->image_topic, 1,
+        iparam_->image_topic, 1,
         std::bind(&Ros1Convert::ImageCompressedCallback, this,
                   std::placeholders::_1));
   }
 
-  if (param_->b_undistort) {
+  if (rparam_->b_undistort) {
     camera_undistort = std::make_shared<camera::UndistortionHandler>();
   }
 
   cloud_sub = node.subscribe<sensor_msgs::PointCloud2>(
-      param_->lidar_topic, 1,
+      iparam_->lidar_topic, 1,
       std::bind(&Ros1Convert::PointCloud2Callback, this,
                 std::placeholders::_1));
 
-  image_locator->Init(param_->engine_file);
+  image_locator->Init(rparam_->engine_file);
   image_locator->Start();
 
-  camera_params->ReadCameraParaBase(param_->calib_file_path /*kk.ini*/);
+  camera_params->LoadFromFile(rparam_->calib_file_path /*kk.ini*/);
 
-  fusion->set_params("Lidar", param_->dist_threshold);
+  fusion->set_params("Lidar", rparam_->dist_threshold);
 
 #if defined(RSLIDAR_OLD)
   rs_cloud_ptr = pcl::make_shared<pcl::PointCloud<robosense_ros::PointII>>();
@@ -144,7 +146,7 @@ void Ros1Convert::Run() {
 
   bool first_flag = false;
 
-  ros::Rate loop_rate(param_->rate);
+  ros::Rate loop_rate(iparam_->rate);
 
   image_locator->Start();
 
@@ -164,15 +166,15 @@ void Ros1Convert::Run() {
     if (!first_flag) {
       auto matrix = camera_params->GetMatrixVector();
       Eigen::VectorXf params(17);
-      params = base::IntrinsicParamsToVector(
+      params = cfg::IntrinsicParamsToVector(
           matrix.at(0)->camera_matrix->intrinsic_matrix,
           matrix.at(0)->camera_matrix->distortion_params);
 
       fusion->SetProjectionMatrix(matrix.at(0)->projection_matrix);
       image_locator->SetProjectionMatrix(matrix.at(0)->projection_matrix);
 
-      if (param_->b_undistort) {
-        camera_undistort->InitModel(CameraDistortionModel::Brown);
+      if (rparam_->b_undistort) {
+        camera_undistort->InitModel(camera::CameraDistortionModel::Brown);
         camera_undistort->InitParams(img.cols, img.rows, params);
         camera_undistort->Init("camera");
       }
@@ -181,7 +183,7 @@ void Ros1Convert::Run() {
     }
 
     cv::Mat dst_img = img.clone();
-    if (param_->b_undistort) {
+    if (rparam_->b_undistort) {
       camera_undistort->Handle(img, &dst_img);
     }
 

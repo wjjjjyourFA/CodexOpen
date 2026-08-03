@@ -1,7 +1,7 @@
 vehicle_model:
   name: "GreenMengShi193"
   manufacturer: "jojo"
-  model: "GreenMengShi193"
+  model: "GreenMengShi"
 
 sensors:
   lidar:

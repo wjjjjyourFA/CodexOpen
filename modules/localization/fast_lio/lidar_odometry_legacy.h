@@ -1,25 +1,24 @@
 #pragma once
 
-#include <vector>
-
 #include <omp.h>
 
-#include <pcl/io/pcd_io.h>
-#include <pcl/registration/ndt.h>
-#include <pcl/registration/icp.h>
+#include <vector>
+
 #include <pcl/filters/voxel_grid.h>
+#include <pcl/io/pcd_io.h>
+#include <pcl/registration/icp.h>
+#include <pcl/registration/ndt.h>
 
 #define PCL_NO_PRECOMPILE
-#include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/visualization/cloud_viewer.h>
-
+#include <pcl/visualization/pcl_visualizer.h>
 #include <yaml-cpp/yaml.h>
 
 #include "cyber/common/file.h"
-#include "modules/perception/common/algorithm/point_cloud_processing/ikd-Tree/ikd_Tree.h"
-#include "modules/localization/fast_lio/include/imu_processing_legacy.hpp"
-#include "modules/localization/fast_lio/config/runtime_config.h"
 #include "modules/common/transform/geometry/rotation_conversions.h"
+#include "modules/localization/fast_lio/config/runtime_config.h"
+#include "modules/localization/fast_lio/include/imu_processing_legacy.hpp"
+#include "modules/perception/common/algorithm/point_cloud_processing/ikd-Tree/ikd_Tree.h"
 
 using namespace std;
 
@@ -33,21 +32,21 @@ namespace fastlio {
 class LidarOdometry {
  public:
   LidarOdometry();
-  ~LidarOdometry();
+  virtual ~LidarOdometry();
 
   void SetExtrinsicMatrix(const Eigen::Matrix4f& extrinsic_matrix);
   void SetDataFolder();
   void Close();
 
-  void Init(std::shared_ptr<jojo::localization::RuntimeConfig> param);
-
+  virtual void Init(std::shared_ptr<jojo::localization::RuntimeConfig> rparam);
+         
   void pointBodyToWorld(PointType const* const pi, PointType* const po);
 
   void points_cache_collect();
 
   void lasermap_fov_segment();
 
-  bool sync_packages(MeasureGroup& meas);
+  // bool sync_packages(MeasureGroup& meas);
 
   void map_incremental();
 
@@ -65,6 +64,8 @@ class LidarOdometry {
   PointCloudXYZI::Ptr feats_down_body;
   PointCloudXYZI::Ptr feats_down_world;
   PointCloudXYZI::Ptr normvec;
+
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr traj_cloud;
 
   pcl::VoxelGrid<PointType> downSizeFilterSurf;
   pcl::VoxelGrid<PointType> downSizeFilterMap;
@@ -94,7 +95,8 @@ class LidarOdometry {
   std::string path_pose;
 
  private:
-  std::shared_ptr<jojo::localization::RuntimeConfig> param_;
+  std::shared_ptr<jojo::localization::RuntimeConfig> rparam_;
+
   int lidar_type = 1;
   // float LASER_POINT_COV = 0.001;
   int point_filter_num = 5;
@@ -132,7 +134,9 @@ class LidarOdometry {
   int kdtree_delete_counter = 0;
   /**************************/
 
-  pcl::visualization::PCLVisualizer* vis = NULL;
+  pcl::visualization::PCLVisualizer::Ptr vis = NULL;
+  
+  bool trajectory_added_to_viewer_    = false;
 };
 
 }  // namespace fastlio

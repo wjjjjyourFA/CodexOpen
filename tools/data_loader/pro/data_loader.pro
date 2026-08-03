@@ -46,7 +46,8 @@ SOURCES += \
   $$SELF_PATH/run_data_loader.cpp \
   $$DATA_PROCESSOR_PATH/config/sensor_config.cc \
   $$SELF_PATH/data_loader.cpp \
-  $$SELF_PATH/config/runtime_config_offline.cpp \
+  $$SELF_PATH/config/runtime_config.cpp \
+  $$SELF_PATH/config/interface_config.cpp \
   $$SELF_PATH/group_convert.cpp \
 
 SOURCES -= \
@@ -68,7 +69,8 @@ HEADERS += \
   $$DATA_PROCESSOR_PATH/config/sensor_config.h \
   $$SELF_PATH/data_loader.h \
   $$SELF_PATH/data_container.h \
-  $$SELF_PATH/config/runtime_config_offline.h \
+  $$SELF_PATH/config/runtime_config.h \
+  $$SELF_PATH/config/interface_config.h \
   $$SELF_PATH/group_convert.h \
 
 INCLUDEPATH += \

@@ -63,7 +63,8 @@ SOURCES += \
   $$DATA_PROCESSOR_PATH/config/sensor_config.cc \
   $$OTHER_PATH/data_loader.cpp \
   $$OTHER_PATH/group_convert.cpp \
-  $$OTHER_PATH/config/runtime_config_offline.cpp \
+  $$OTHER_PATH/config/runtime_config.cpp \
+  $$OTHER_PATH/config/interface_config.cpp \
   $$BRANCH_PATH/data_loader.cpp \
   $$BRANCH_PATH/group_convert.cpp \
   $$SELF_PATH/config/runtime_config.cpp \
@@ -99,7 +100,8 @@ HEADERS += \
   $$OTHER_PATH/data_loader.h \
   $$OTHER_PATH/data_container.h \
   $$OTHER_PATH/group_convert.h \
-  $$OTHER_PATH/config/runtime_config_offline.h \
+  $$OTHER_PATH/config/runtime_config.h \
+  $$OTHER_PATH/config/interface_config.h \
   $$BRANCH_PATH/data_loader.h \
   $$BRANCH_PATH/group_convert.h \
   $$CODEX_PATH/modules/perception/similarity_map/CGridMap/*.h \

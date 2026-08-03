@@ -5,7 +5,7 @@ using namespace jojo::tools;
 
 int main(int argc, char** argv) {
   // clang-format off
-  std::string name = "MapVisualization";
+  std::string name = "MapVisualizationGenerate";
   std::string runtime_config_path = "./../../../config/MapVisualization/MapVisualization.ini";
   std::string static_config_path = "./../../../config/MapVisualization/MapVisualization.yaml";
   // clang-format on
@@ -22,15 +22,19 @@ int main(int argc, char** argv) {
   view->Init(runtime_config, static_config);
   // view->InitViewer(); // 不需要初始化 pcl viewer
 
-  std::string dl_config_path =
-      "./../../../config/MapVisualization/DataLoader.ini";
+  std::string dl_rc_path = "./../../../config/MapVisualization/DataLoader.ini";
+  std::string dl_ic_path = "./../../../config/MapVisualization/Interface.ini";
 
   auto dl_runtime_config = std::make_shared<RuntimeConfigOffline>();
   dl_runtime_config->set_name(name);
-  dl_runtime_config->LoadConfig(dl_config_path);
+  dl_runtime_config->LoadConfig(dl_rc_path);
+
+  auto dl_interface_config = std::make_shared<jojo::tools::InterfaceConfig>();
+  dl_interface_config->set_name(name);
+  dl_interface_config->LoadConfig(dl_ic_path);
 
   auto group_convert = std::make_shared<GroupConvertDataSet>();
-  group_convert->Init(dl_runtime_config);
+  group_convert->Init(dl_runtime_config, dl_interface_config);
 
   view->LoadMapLabel();
   view->FillUnknownGroundByHeight();

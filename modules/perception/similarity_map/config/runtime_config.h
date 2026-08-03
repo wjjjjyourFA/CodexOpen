@@ -1,5 +1,5 @@
-#ifndef PARAMS_H
-#define PARAMS_H
+#ifndef SIMILARITY_MAP_RUNTIME_CONFIG_H
+#define SIMILARITY_MAP_RUNTIME_CONFIG_H
 
 #pragma once
 

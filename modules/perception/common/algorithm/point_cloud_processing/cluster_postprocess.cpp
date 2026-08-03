@@ -72,7 +72,7 @@ void CalculateSegAttribute(std::shared_ptr<base::Segment>& seg) {
   const float center_x = (min_x + max_x) * 0.5f;
   const float center_y = (min_y + max_y) * 0.5f;
   const float center_z = (min_z + max_z) * 0.5f;
-  seg->center = Eigen::Vector3f(center_x, center_y, center_z);
+  seg->center          = Eigen::Vector3f(center_x, center_y, center_z);
 
   const size_t point_count = seg->points->size();
   // 质心

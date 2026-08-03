@@ -1,14 +1,12 @@
-#ifndef __PCL_EIGEN_H
-#define __PCL_EIGEN_H
+#ifndef PERCEPTION_TOOLS_PCL_EIGEN_H
+#define PERCEPTION_TOOLS_PCL_EIGEN_H
 
 #include <Eigen/Dense>
-
-#include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
-#include <pcl/point_traits.h>  // 提供 pcl::traits::fieldList
-
 #include <Eigen/Geometry>  // Eigen::Quaterniond, Eigen::Affine3d
 #include <pcl/common/transforms.h>  // pcl::getTranslationAndEulerAngles
+#include <pcl/point_cloud.h>
+#include <pcl/point_traits.h>  // 提供 pcl::traits::fieldList
+#include <pcl/point_types.h>
 
 #include "modules/common/math/math_utils.h"
 #include "modules/common/math/math_utils_extra.h"
@@ -70,7 +68,8 @@ namespace common_struct = jojo::common_struct;
 // 四元数转欧拉角 ZYX 顺序 单位：弧度
 // #include "modules/perception/common/algorithm/image_processing/util/utils.h"
 // 两个函数等价，cv_utils.h 中的 角度输出是倒序
-inline common_struct::EulerAngles QuaternionToEuler(const Eigen::Quaterniond& q) {
+inline common_struct::EulerAngles QuaternionToEuler(
+    const Eigen::Quaterniond& q) {
   // 将四元数转为旋转矩阵
   Eigen::Matrix3d R = q.toRotationMatrix();
 

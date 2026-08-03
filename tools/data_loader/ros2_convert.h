@@ -1,34 +1,35 @@
-#ifndef ROS2_CONVERT_H
-#define ROS2_CONVERT_H
+#ifndef DATA_LOADER_ROS2_CONVERT_H
+#define DATA_LOADER_ROS2_CONVERT_H
 
-#include "rclcpp/rclcpp.hpp"
-#include <cv_bridge/cv_bridge.h>
-#include <image_transport/image_transport.h>
 #include <sensor_msgs/image_encodings.hpp>
 #include <sensor_msgs/msg/point_cloud.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <sensor_msgs/point_cloud_conversion.hpp>
+
+#include <cv_bridge/cv_bridge.h>
+#include <image_transport/image_transport.h>
 #include <pcl_conversions/pcl_conversions.h>
 
+#include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/compressed_image.hpp"
 #include "sensor_msgs/msg/image.hpp"
 
 // UGV_2024
+#include "ars548_interface/msg/detection.hpp"
+#include "ars548_interface/msg/detection_list.hpp"
 #include "rslidar_msg-1.5.9/msg/rslidar_packet.hpp"
 #include "self_state/msg/global_pose.hpp"
 #include "self_state/msg/local_pose.hpp"
-#include "sensor/msg/esr_radar_object.hpp"
 #include "sensor/msg/esr_radar_info.hpp"
-#include "ars548_interface/msg/detection_list.hpp"
-#include "ars548_interface/msg/detection.hpp"
+#include "sensor/msg/esr_radar_object.hpp"
 
 // CODEXOPEN
 #include "modules/common/math/math_utils_extra.h"
-#include "tools/data_processor/config/sensor_config.h"
-
 #include "tools/data_loader/config/runtime_config_realtime.h"
-#include "tools/data_loader/data_loader_realtime.h"
 #include "tools/data_loader/data_container_ros2.h"
+#include "tools/data_loader/data_loader.h"
+// #include "tools/data_loader/data_loader_realtime.h"
+#include "tools/data_processor/config/sensor_config.h"
 
 namespace jojo {
 namespace tools {
@@ -36,11 +37,11 @@ using namespace std;
 
 class Ros2Convert {
  public:
-  Ros2Convert();
+  Ros2Convert(std::shared_ptr<rclcpp::Node> nh);
   ~Ros2Convert();
 
-  void Init(std::shared_ptr<rclcpp::Node> nh,
-            std::shared_ptr<RuntimeConfigRealtime> param);
+  bool Init(std::shared_ptr<jojo::tools::RuntimeConfig> param,
+            std::shared_ptr<jojo::tools::InterfaceConfig> interface);
   void InitRos2();
 
   void Run();
@@ -52,13 +53,15 @@ class Ros2Convert {
   bool LoadLocalPose(const std::string& file_path);
   bool LoadLocalPose(const std::string& path, const std::string& data_file);
 
-  std::shared_ptr<DataLoaderRealtime> data_loader;
+  std::shared_ptr<DataLoader> data_loader;
+  // std::shared_ptr<DataLoaderRealtime> data_loader;
 
  protected:
   bool is_running_ = false;
 
  private:
-  std::shared_ptr<RuntimeConfigRealtime> param_;
+  std::shared_ptr<jojo::tools::RuntimeConfig> rparam_;
+  std::shared_ptr<jojo::tools::InterfaceConfig> iparam_;
 
   std::shared_ptr<rclcpp::Node> node;
   std::shared_ptr<image_transport::ImageTransport> it;

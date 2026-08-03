@@ -1,5 +1,5 @@
-#ifndef __PCL_COMMON
-#define __PCL_COMMON
+#ifndef PERCEPTION_TOOLS_PCL_COMMON
+#define PERCEPTION_TOOLS_PCL_COMMON
 
 #include <cmath>
 
@@ -28,4 +28,4 @@ inline bool IsFinitePoint(const T& p) {
   return std::isfinite(p.x) && std::isfinite(p.y) && std::isfinite(p.z);
 }
 
-#endif  // __PCL_COMMON
+#endif  // PERCEPTION_TOOLS_PCL_COMMON

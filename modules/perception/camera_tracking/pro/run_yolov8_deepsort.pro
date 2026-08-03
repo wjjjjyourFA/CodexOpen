@@ -47,7 +47,8 @@ SOURCES += \
   $$PREFIX/common/config/utils.cpp \
   $$files($$PREFIX/common/camera/params/*.cpp) \
   $$CODEX_PATH/tools/data_loader/data_loader.cpp \
-  $$CODEX_PATH/tools/data_loader/config/runtime_config_offline.cpp \
+  $$CODEX_PATH/tools/data_loader/config/runtime_config.cpp \
+  $$CODEX_PATH/tools/data_loader/config/interface_config.cpp \
   $$CODEX_PATH/tools/data_loader/group_convert.cpp \
   $$CODEX_PATH/tools/data_processor/config/sensor_config.cc \
   $$DETECTOR_PATH/detector/yolo_obstacle_detector.cpp \
@@ -71,7 +72,8 @@ HEADERS += \
   $$PREFIX/common/config/utils.h \
   $$files($$PREFIX/common/camera/params/*.h) \
   $$CODEX_PATH/tools/data_loader/data_loader.h \
-  $$CODEX_PATH/tools/data_loader/config/runtime_config_offline.h \
+  $$CODEX_PATH/tools/data_loader/config/runtime_config.h \
+  $$CODEX_PATH/tools/data_loader/config/interface_config.h \
   $$CODEX_PATH/tools/data_loader/data_container.h \
   $$CODEX_PATH/tools/data_loader/group_convert.h \
   $$CODEX_PATH/tools/data_processor/config/sensor_config.h \

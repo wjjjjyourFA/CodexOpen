@@ -1,13 +1,15 @@
-#ifndef ROS1_CONVERT_H
-#define ROS1_CONVERT_H
+#ifndef DATA_LOADER_ROS1_CONVERT_H
+#define DATA_LOADER_ROS1_CONVERT_H
 
 #include <ros/ros.h>
-#include <cv_bridge/cv_bridge.h>
-#include <image_transport/image_transport.h>
+
 #include <sensor_msgs/PointCloud.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/image_encodings.h>
 #include <sensor_msgs/point_cloud_conversion.h>
+
+#include <cv_bridge/cv_bridge.h>
+#include <image_transport/image_transport.h>
 #include <pcl_conversions/pcl_conversions.h>
 
 #include "sensor_msgs/CompressedImage.h"
@@ -31,13 +33,15 @@
 #include "rslidar_sdk-1.3.2/lidar_packet_ros.h"
 #include "rslidar_sdk-1.3.2/lidar_scan_ros.h"
 
+//
 #include "modules/common/environment_conf.h"
 #include "modules/common/math/math_utils_extra.h"
-#include "tools/data_processor/config/sensor_config.h"
-
-#include "tools/data_loader/config/runtime_config_realtime.h"
-#include "tools/data_loader/data_loader_realtime.h"
+#include "tools/data_loader/config/interface_config.h"
+#include "tools/data_loader/config/runtime_config.h"
 #include "tools/data_loader/data_container_ros1.h"
+#include "tools/data_loader/data_loader.h"
+// #include "tools/data_loader/data_loader_realtime.h"
+#include "tools/data_processor/config/sensor_config.h"
 
 namespace jojo {
 namespace tools {
@@ -45,11 +49,11 @@ using namespace std;
 
 class Ros1Convert {
  public:
-  Ros1Convert();
+  Ros1Convert(ros::NodeHandle& nh, ros::NodeHandle& private_nh);
   ~Ros1Convert();
 
-  void Init(ros::NodeHandle& nh, ros::NodeHandle& private_nh,
-            std::shared_ptr<RuntimeConfigRealtime> param);
+  bool Init(std::shared_ptr<jojo::tools::RuntimeConfig> param,
+            std::shared_ptr<jojo::tools::InterfaceConfig> interface);
   void InitRos1();
 
   void Run();
@@ -61,13 +65,15 @@ class Ros1Convert {
   bool LoadLocalPose(const std::string& file_path);
   bool LoadLocalPose(const std::string& path, const std::string& data_file);
 
-  std::shared_ptr<DataLoaderRealtime> data_loader;
+  std::shared_ptr<DataLoader> data_loader;
+  // std::shared_ptr<DataLoaderRealtime> data_loader;
 
  protected:
   bool is_running_ = false;
 
  private:
-  std::shared_ptr<RuntimeConfigRealtime> param_;
+  std::shared_ptr<jojo::tools::RuntimeConfig> rparam_;
+  std::shared_ptr<jojo::tools::InterfaceConfig> iparam_;
 
   ros::NodeHandle node;
   std::shared_ptr<image_transport::ImageTransport> it;
@@ -81,10 +87,11 @@ class Ros1Convert {
   std::vector<DataContainerRos1<sensor_msgs::ImagePtr>> dc_infra;
   std::vector<DataContainerRos1<sensor_msgs::ImagePtr>> dc_star;
 
+  // clang-format off
   DataContainerRos1<uint64_t /*sensor_msgs::PointCloud*/> dc_radar;
-  std::vector<DataContainerRos1<uint64_t /*sensor_msgs::PointCloud2*/>>
-      dc_radar4d;
+  std::vector<DataContainerRos1<uint64_t /*sensor_msgs::PointCloud2*/>> dc_radar4d;
   DataContainerRos1<uint64_t> dc_lidar;
+  // clang-format on
 
   // clang-format off
   void Ros1PublishBase(const ros::TimerEvent &, DataContainerBase *tmp);

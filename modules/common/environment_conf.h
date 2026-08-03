@@ -3,9 +3,9 @@
 
 #pragma once
 
-#include <string>
 #include <algorithm>
 #include <iostream>
+#include <string>
 
 #define ENABLE_ROS1
 // #define ENABLE_ROS2
@@ -22,11 +22,11 @@
 #define LIDAR_DATASET
 
 #if defined(RSLIDAR_OLD) || defined(RSLIDAR_NEW)
-  #define USE_RSLIDAR
+#define USE_RSLIDAR
 #endif
 
 #if defined(LIVOX_OLD) || defined(LIVOX_NEW)
-  #define USE_LIVOX
+#define USE_LIVOX
 #endif
 
 #if defined(ENABLE_ROS2)

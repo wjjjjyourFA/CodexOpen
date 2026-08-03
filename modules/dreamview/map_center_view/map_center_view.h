@@ -2,15 +2,15 @@
 
 #include <omp.h>
 
-#include <pcl/io/pcd_io.h>
 #include <pcl/common/transforms.h>
+#include <pcl/io/pcd_io.h>
 
 #define PCL_NO_PRECOMPILE
-#include <pcl/visualization/pcl_visualizer.h>
-#include <pcl/visualization/cloud_viewer.h>
-#include <pcl/filters/extract_indices.h>
 #include <pcl/filters/crop_box.h>
+#include <pcl/filters/extract_indices.h>
 #include <pcl/kdtree/kdtree_flann.h>
+#include <pcl/visualization/cloud_viewer.h>
+#include <pcl/visualization/pcl_visualizer.h>
 
 #include "modules/perception/tools/opencv/colors.hpp"
 // #include "modules/dreamview/map_center_view/config/runtime_config.h"
@@ -41,11 +41,11 @@ class MapCenterView {
   void ShowFrameROI(const pcl::PointCloud<pcl::PointXYZI>::Ptr& frame,
                     const Eigen::Matrix4f& pose);
 
-  // void ShowPose(pcl::visualization::PCLVisualizer::Ptr vis, &pose,
+  // void ShowPose(pcl::visualization::PCLVisualizer::Ptr& vis, &pose,
   //               pcl::PointCloud<pcl::PointXYZ>::Ptr map,
   //               const string& window_name);
 
-  // void ShowFrame(pcl::visualization::PCLVisualizer::Ptr vis,
+  // void ShowFrame(pcl::visualization::PCLVisualizer::Ptr& vis,
   //                pcl::PointCloud<pcl::PointXYZ>::Ptr frame,
   //                pcl::PointCloud<pcl::PointXYZ>::Ptr map,
   //                const string& window_name);
@@ -55,7 +55,7 @@ class MapCenterView {
 
  protected:
   pcl::visualization::PCLVisualizer::Ptr vis_ = NULL;
-  bool vis_inited_ = false;
+  bool vis_inited_                            = false;
 
   // 动态中心裁剪
   pcl::PointCloud<pcl::PointXYZI>::Ptr map_roi;
@@ -67,7 +67,7 @@ class MapCenterView {
   bool kdtree_built = false;
 
   bool NeedUpdateROI(const Eigen::Vector3f& center);
-  
+
   void BridView(const Eigen::Matrix4f& pose);
 
  private:

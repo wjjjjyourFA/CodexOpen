@@ -340,6 +340,7 @@ bool EnsureDirectory(const std::string &directory_path) {
 }
 */
 
+// 自动递归创建目录
 bool EnsureDirectory(const std::string& directory_path, mode_t mode) {
   if (directory_path.empty()) return false;
 
@@ -350,13 +351,20 @@ bool EnsureDirectory(const std::string& directory_path, mode_t mode) {
     current.push_back(directory_path[i]);
 
     if (directory_path[i] == '/' || i == directory_path.size() - 1) {
+      // 消除末尾的 '/'。比如把 "/a/b/" 变成 "/a/b"
+      std::string check_path = current;
+      if (check_path.size() > 1 && check_path.back() == '/') {
+        check_path.pop_back();
+      }
+      if (check_path.empty()) continue;
+
       struct stat st;
-      if (::stat(current.c_str(), &st) == 0) {
+      if (::stat(check_path.c_str(), &st) == 0) {
         if (!S_ISDIR(st.st_mode)) {
           return false;  // exists but not a directory
         }
       } else {
-        if (::mkdir(current.c_str(), mode) != 0 && errno != EEXIST) {
+        if (::mkdir(check_path.c_str(), mode) != 0 && errno != EEXIST) {
           return false;
         }
       }
@@ -626,15 +634,20 @@ bool DeleteFile(const string& filename) {
   return true;
 }
 
-// 如果路径已经存在，不会返回 false
+// 创建 `/a/b/c`，但目前只有 `/a`，会创建失败
 bool CreateDir(const string& dir) {
   if (dir.empty()) return false;
 
   int ret = mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IRWXO);
   if (ret != 0) {
     if (errno == EEXIST) {
-      // 路径存在，但不保证它是目录
-      return true;
+      // 确保已存在的路径确实是一个目录，而不是普通文件
+      struct stat st;
+      if (::stat(dir.c_str(), &st) == 0 && S_ISDIR(st.st_mode)) {
+        return true; 
+      }
+      AWARN << "path exists but is not a directory. [dir: " << dir << "]";
+      return false;
     }
     AWARN << "failed to create dir. [dir: " << dir
           << "] [err: " << strerror(errno) << "]";
@@ -646,11 +659,12 @@ bool CreateDir(const string& dir) {
 bool CreateFile(const std::string& file_path) {
   if (file_path.empty()) return false;
 
-  int fd = ::open(file_path.c_str(), O_CREAT | O_WRONLY,
+  // 使用 O_EXCL。如果文件存在，open 会失败并设置 errno = EEXIST
+  int fd = ::open(file_path.c_str(), O_CREAT | O_WRONLY| O_EXCL,
                   S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
   if (fd < 0) {
     if (errno == EEXIST) {
-      // 文件已存在，不视为失败
+      // 文件已存在，满足 O_EXCL 触发此条件，安全返回 true
       return true;
     }
     AWARN << "failed to create file. [file: " << file_path

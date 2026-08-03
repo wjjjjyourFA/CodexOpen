@@ -1,8 +1,10 @@
 #include "modules/perception/camera_detection_single_stage/ros1_convert.h"
 
-Ros1Convert::Ros1Convert() {
+Ros1Convert::Ros1Convert(ros::NodeHandle& nh, ros::NodeHandle& private_nh) {
+  node = nh;
+
   camera_params  = std::make_shared<camera::CameraParams>();
-  image_detector = std::make_shared<camera::YoloObstacleDetector>();
+  image_detector = std::make_shared<cdss::YoloObstacleDetector>();
 }
 
 Ros1Convert::~Ros1Convert() {}
@@ -43,29 +45,29 @@ void Ros1Convert::ImageCompressedCallback(
   }
 }
 
-bool Ros1Convert::Init(ros::NodeHandle& nh, ros::NodeHandle& private_nh,
-                       std::shared_ptr<cdss::RuntimeConfig> param) {
-  node   = nh;
-  param_ = param;
+bool Ros1Convert::Init(std::shared_ptr<cdss::RuntimeConfig> rparam,
+                       std::shared_ptr<cdss::InterfaceConfig> iparam) {
+  rparam_ = rparam;
+  iparam_ = iparam;
 
-  if (!param_->b_compressed) {
+  if (!iparam_->b_compressed) {
     image_sub = node.subscribe<sensor_msgs::Image>(
-        param_->image_topic, 1,
+        iparam_->image_topic, 1,
         std::bind(&Ros1Convert::ImageCallback, this, std::placeholders::_1));
   } else {
     image_sub = node.subscribe<sensor_msgs::CompressedImage>(
-        param_->image_topic, 1,
+        iparam_->image_topic, 1,
         std::bind(&Ros1Convert::ImageCompressedCallback, this,
                   std::placeholders::_1));
   }
 
-  if (param_->b_undistort) {
+  if (rparam_->b_undistort) {
     camera_undistort = std::make_shared<camera::UndistortionHandler>();
   }
 
-  camera_params->ReadCameraParaBase(param_->calib_file_path /*kk.ini*/);
+  camera_params->LoadFromFile(rparam_->calib_file_path /*kk.ini*/);
 
-  image_detector->Init(std::string(param_->engine_file));
+  image_detector->Init(std::string(rparam_->engine_file));
 
   return true;
 }
@@ -75,7 +77,7 @@ void Ros1Convert::Run() {
 
   bool first_flag = false;
 
-  ros::Rate loop_rate(param_->rate);
+  ros::Rate loop_rate(iparam_->rate);
 
   image_detector->Start();
 
@@ -95,11 +97,11 @@ void Ros1Convert::Run() {
     if (!first_flag) {
       auto matrix = camera_params->GetMatrixVector();
       Eigen::VectorXf params(17);
-      params = base::IntrinsicParamsToVector(
+      params = cfg::IntrinsicParamsToVector(
           matrix.at(0)->camera_matrix->intrinsic_matrix,
           matrix.at(0)->camera_matrix->distortion_params);
 
-      camera_undistort->InitModel(CameraDistortionModel::Brown);
+      camera_undistort->InitModel(camera::CameraDistortionModel::Brown);
       camera_undistort->InitParams(img.cols, img.rows, params);
       camera_undistort->Init("camera");
 

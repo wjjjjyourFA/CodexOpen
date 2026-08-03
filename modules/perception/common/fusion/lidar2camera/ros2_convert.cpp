@@ -1,6 +1,8 @@
 #include "modules/perception/common/fusion/lidar2camera/ros2_convert.h"
 
-Ros2Convert::Ros2Convert() {
+Ros2Convert::Ros2Convert(std::shared_ptr<rclcpp::Node> nh) {
+  nh_ = nh;
+
   camera_params = std::make_shared<camera::CameraParams>();
   fusion        = std::make_shared<fusion::LidarCameraFusion>();
 }
@@ -20,7 +22,7 @@ void Ros2Convert::ImageCallback(const sensor_msgs::msg::Image::SharedPtr msg) {
 
     image_recv_ = true;
   } catch (cv_bridge::Exception& e) {
-    RCLCPP_ERROR(node->get_logger(), "Could not convert from '%s' to 'bgr8'.",
+    RCLCPP_ERROR(nh_->get_logger(), "Could not convert from '%s' to 'bgr8'.",
                  msg->encoding.c_str());
   }
 }
@@ -41,7 +43,7 @@ void Ros2Convert::ImageCompressedCallback(
 
     image_recv_ = true;
   } catch (cv_bridge::Exception& e) {
-    RCLCPP_ERROR(node->get_logger(),
+    RCLCPP_ERROR(nh_->get_logger(),
                  "Could not convert from compressed image to 'bgr8'.");
     return;
   }
@@ -82,37 +84,37 @@ void Ros2Convert::PointCloudCallback(
   point_recv_ = true;
 }
 
-bool Ros2Convert::Init(std::shared_ptr<rclcpp::Node> nh,
-                       std::shared_ptr<perception::RuntimeConfig> param) {
-  node   = nh;
-  param_ = param;
+bool Ros2Convert::Init(
+    std::shared_ptr<perception::RuntimeConfig> param,
+    std::shared_ptr<jojo::perception::InterfaceConfig> interface) {
+  rparam_ = param;
+  iparam_ = interface;
 
-  if (!param_->b_compressed) {
-    image_sub = node->create_subscription<sensor_msgs::msg::Image>(
-        param_->image_topic, 1,
+  if (!iparam_->b_compressed) {
+    image_sub = nh_->create_subscription<sensor_msgs::msg::Image>(
+        iparam_->image_topic, 1,
         std::bind(&Ros2Convert::ImageCallback, this, std::placeholders::_1));
   } else {
-    image_sub = node->create_subscription<sensor_msgs::msg::CompressedImage>(
-        param_->image_topic, 1,
+    image_sub = nh_->create_subscription<sensor_msgs::msg::CompressedImage>(
+        iparam_->image_topic, 1,
         std::bind(&Ros2Convert::ImageCompressedCallback, this,
                   std::placeholders::_1));
   }
 
-  if (param_->b_do_undistort) {
-    camera_undistort = std::make_shared<camera::UndistortionHandler>(
-        camera::CameraDistortionModel::Kannala);
+  if (rparam_->b_do_undistort) {
+    camera_undistort = std::make_shared<camera::UndistortionHandler>();
   }
 
-  trans_matrix = math::GetTransMatrix(param_->b_lt_none_rt);
+  trans_matrix = math::GetTransMatrix(rparam_->b_lt_none_rt);
 
-  cloud_sub = node->create_subscription<sensor_msgs::msg::PointCloud2>(
-      param_->lidar_topic, 1,
+  cloud_sub = nh_->create_subscription<sensor_msgs::msg::PointCloud2>(
+      rparam_->lidar_topic, 1,
       std::bind(&Ros2Convert::PointCloud2Callback, this,
                 std::placeholders::_1));
 
-  camera_params->LoadFromFile(param_->calib_file_path /*kk.ini*/);
+  camera_params->LoadFromFile(rparam_->calib_file_path /*kk.ini*/);
 
-  fusion->set_params(param_->dist_threshold);
+  fusion->set_params(rparam_->dist_threshold);
 
   rs_cloud_ptr = pcl::make_shared<pcl::PointCloud<robosense_ros::PointIF>>();
 
@@ -129,12 +131,12 @@ bool Ros2Convert::Init(std::shared_ptr<rclcpp::Node> nh,
 }
 
 void Ros2Convert::Run() {
-  rclcpp::Rate loop_rate(param_->rate);
+  rclcpp::Rate loop_rate(rparam_->rate);
 
   while (rclcpp::ok()) {
     // ros::spinOnce() 只会处理一次队列里的回调，然后就返回。
     // 如果你 不调用 ros::spinOnce() 或 ros::spin()，订阅回调、定时器回调等都不会触发。
-    rclcpp::spin_some(node);
+    rclcpp::spin_some(nh_);
     loop_rate.sleep();
 
     if (!image_recv_ || !point_recv_) {
@@ -162,8 +164,8 @@ void Ros2Convert::Run() {
 
       fusion->SetProjectionMatrix(matrix.at(0)->projection_matrix);
 
-      if (param_->b_do_undistort) {
-        camera_undistort->InitModel(CameraDistortionModel::Brown);
+      if (rparam_->b_do_undistort) {
+        camera_undistort->InitModel(camera::CameraDistortionModel::Brown);
         camera_undistort->InitParams(img.cols, img.rows, params);
         camera_undistort->Init("camera");
       }
@@ -177,7 +179,7 @@ void Ros2Convert::Run() {
       first_create = true;
     }
 
-    if (param_->b_do_undistort) {
+    if (rparam_->b_do_undistort) {
       camera_undistort->Handle(img, &dst_img);
     } else {
       dst_img = img;
@@ -198,7 +200,7 @@ void Ros2Convert::Run() {
     }
     */
 
-    if (param_->b_lt_none_rt == 1) {
+    if (rparam_->b_lt_none_rt == 1) {
       // nothing
       dst_cloud_ptr = raw_cloud_ptr;
     } else {

@@ -24,7 +24,6 @@ The docker image is not available as `Dockerfile` yet, so you need to build it y
 
   "--volume=/home/jojo/Workspace/CodexOpenExtra:/workspaces/CodexOpenExtra",
   "--volume=/home/jojo/Workspace/CodexOpenData:/workspaces/CodexOpenData",
-  "--volume=/media/jojo/WorkStation/test:/workspaces/CodexOpenExtraData",
 ...
   "--runtime=nvidia",
   "--gpus=all"
@@ -47,6 +46,7 @@ If you want to compile the image yourself, please refer to the "Image Building" 
 **把 Apollo 从“一体化系统”降级为“算法库”**；转向 **ROS1**、**ROS2**、**DDS**；
 
 ## Features
+- [X] Localization: odometry, map_localization
 - [X] Perception: object detection, tracking, and recognition
 - [ ] Planning: path planning, trajectory planning, and behavior planning
 - [ ] Control: vehicle control, including acceleration, steering, and braking
@@ -83,6 +83,16 @@ If you want to compile the image yourself, please refer to the "Image Building" 
   <img src="assets/images/map_center_view.gif" width="300">
 </div>
 
+- [ ] 定位：
+  - [x] fast-lio 雷达+IMU里程计
+    <div style="display:flex; justify-content:center; align-items:center; gap:10px;">
+      <img src="assets/images/lidar_odometry.gif" width="350">
+    </div>
+  - [x] fast-lio 高精地图+局部观测
+    <div style="display:flex; justify-content:center; align-items:center; gap:10px;">
+      <img src="assets/images/map_localization.gif" width="350">
+    </div>
+  
 - [ ] 图像检测定位：
   - [x] frame 检测定位
     <div style="display:flex; justify-content:center; align-items:center; gap:10px;">
@@ -105,11 +115,10 @@ If you want to compile the image yourself, please refer to the "Image Building" 
   - [x] 三维建图、彩色建图与道路边缘表征
     <div style="display:flex; justify-content:center; align-items:center; gap:10px;">
       <img src="assets/images/mapper.gif" width="400">
-      <img src="assets/images/mapper_color.gif" width="400">
       <img src="assets/images/map_visualization.gif" width="300">
     </div>
-
-  - [x] Rolling Map
+    
+  - [x] Rolling Map：地面滤除
     <div style="display:flex; justify-content:center; align-items:center; gap:10px;">
       <img src="assets/images/color_map_rot.gif" width="300">
       <img src="assets/images/ground_remove.gif" width="300">
@@ -129,3 +138,10 @@ If you want to compile the image yourself, please refer to the "Image Building" 
 - Apollo CMAKE 环境搭建：[easy_apollo](https://github.com/pickteemo/easy_apollo.git)、[CyberRT](https://github.com/minhanghuang/CyberRT.git)
 - 速腾激光雷达驱动：[rslidar_sdk](https://github.com/RoboSense-LiDAR/rslidar_sdk.git)
 - NVIDIA 开发板系统基础：[rootOnNVMe](https://github.com/jetsonhacks/rootOnNVMe.git)
+
+## Version
+
+本项目采用 **CalVer (vYYYY.MM.DD)** 版本命名规范。
+
+- **Current Version**: `v2026.08.02`
+- 详细的历史版本更新日志请参阅 [CHANGELOG](./CHANGELOG.md)。

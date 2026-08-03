@@ -23,7 +23,8 @@ cd CodexOpen/build
 cmake -G Ninja .. \
   -DCMAKE_C_COMPILER=/usr/bin/gcc \
   -DCMAKE_CXX_COMPILER=/usr/bin/g++ \
-  -DBUILD_TESTING=OFF
+  -DBUILD_TESTING=OFF \
+  -DCMAKE_INSTALL_PREFIX=/path/to/CodexOpen/install
 # 使用 ros1 环境
 cmake -G Ninja .. \
   -DBUILD_ROS1=ON \
@@ -100,3 +101,4 @@ colcon build  --symlink-install  --parallel-workers 8
 ## 其余文档
 
 - [C++风格说明](./C++风格补充说明.md)
+- [代码自动化流程](./../../docs/更新说明/代码自动化流程.md)

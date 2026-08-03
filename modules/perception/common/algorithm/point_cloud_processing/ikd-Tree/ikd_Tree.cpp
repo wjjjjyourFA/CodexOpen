@@ -439,12 +439,28 @@ void KD_TREE<PointType>::Build(PointVector point_cloud){
 
 // K近邻搜索
 template <typename PointType>
-void KD_TREE<PointType>::Nearest_Search(PointType point, int k_nearest, PointVector& Nearest_Points, vector<float> & Point_Distance, double max_dist){   
+void KD_TREE<PointType>::Nearest_Search(PointType point, int k_nearest, PointVector& Nearest_Points, vector<float> & Point_Distance, double max_dist){
+    /* way 1 源代码，每次查询都会new[]/delete[]，效率较低
     // 初始化自定义的大顶堆，容量为2*k_nearest
     MANUAL_HEAP q(2*k_nearest);
     q.clear();
     // 清空Point_Distance
     vector<float> ().swap(Point_Distance);
+    */
+
+    // /* way 2
+    Nearest_Points.clear();
+    Point_Distance.clear();
+    if (k_nearest <= 0 || Root_Node == nullptr) return;
+
+    Nearest_Points.reserve(k_nearest);
+    Point_Distance.reserve(k_nearest);
+
+    // 每个查询线程复用一个大顶堆，避免每次最近邻查询都 new[]/delete[]。
+    thread_local MANUAL_HEAP q;
+    q.reset(2*k_nearest);
+    // */
+
     // 开始搜索
     if (Rebuild_Ptr == nullptr || *Rebuild_Ptr != Root_Node){  // 重建没有进行
         Search(Root_Node, k_nearest, point, q, max_dist);
@@ -464,7 +480,9 @@ void KD_TREE<PointType>::Nearest_Search(PointType point, int k_nearest, PointVec
         pthread_mutex_unlock(&search_flag_mutex);      
     }
     int k_found = min(k_nearest,int(q.size()));
-    // 清空Nearest_Points和Point_Distance
+
+    /* way 1
+    // 清空 Nearest_Points 和 Point_Distance
     PointVector ().swap(Nearest_Points);
     vector<float> ().swap(Point_Distance);
     // 存储
@@ -474,6 +492,19 @@ void KD_TREE<PointType>::Nearest_Search(PointType point, int k_nearest, PointVec
         Point_Distance.insert(Point_Distance.begin(), q.top().dist);
         q.pop();
     }
+    */
+
+    // /* way 2
+    Nearest_Points.resize(k_found);
+    Point_Distance.resize(k_found);
+    // 大顶堆先弹出最远点，倒序写入后保持结果由近到远排列。
+    for (int i = k_found - 1; i >= 0; --i) {
+        Nearest_Points[i] = q.top().point;
+        Point_Distance[i] = q.top().dist;
+        q.pop();
+    }
+    // */
+
     return;
 }
 

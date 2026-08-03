@@ -17,7 +17,9 @@ void RuntimeConfig::LoadConfig(const std::string& config_path) {
     wts_file = pt.get<std::string>("general.wts_file", "");
     engine_file = pt.get<std::string>("general.engine_file", "");
     onnx_file = pt.get<std::string>("general.onnx_file", "");
-    
+
+    b_undistort = pt.get<bool>("general.b_undistort", false);
+    calib_file_path = pt.get<std::string>("calibration.calib_file_path", "");
     // 打印其他参数...
     // clang-format on
   } catch (const std::exception& e) {
@@ -25,6 +27,6 @@ void RuntimeConfig::LoadConfig(const std::string& config_path) {
   }
 }
 
-}
-}  // namespace
+}  // namespace cdss
+}  // namespace perception
 }  // namespace jojo

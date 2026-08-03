@@ -1,21 +1,21 @@
-#ifndef __CONFIG_H
-#define __CONFIG_H
+#ifndef DATA_PROCESSOR_SENSOR_CONFIG_H
+#define DATA_PROCESSOR_SENSOR_CONFIG_H
 
-#include <iostream>
-#include <fstream>
-#include <sys/stat.h>
 #include <semaphore.h>
+#include <sys/stat.h>
 
-#include <opencv2/opencv.hpp>
+#include <fstream>
+#include <iostream>
+
 #include <opencv2/highgui/highgui_c.h>
-
+#include <opencv2/opencv.hpp>
+#include <pcl/common/transforms.h>
+#include <pcl/filters/approximate_voxel_grid.h>
+#include <pcl/filters/voxel_grid.h>
+#include <pcl/io/pcd_io.h>
+#include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include <pcl/filters/voxel_grid.h>
-#include <pcl/kdtree/kdtree_flann.h>
-#include <pcl/filters/approximate_voxel_grid.h>
-#include <pcl/common/transforms.h>
-#include <pcl/io/pcd_io.h>
 
 using namespace std;
 
@@ -54,4 +54,4 @@ class SensorRegistry {
   std::unordered_map<std::string, LidarType> lidar_map_;
 };
 
-#endif  // __CONFIG_H
+#endif  // DATA_PROCESSOR_SENSOR_CONFIG_H

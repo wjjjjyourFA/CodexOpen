@@ -82,7 +82,7 @@ HEADERS += \
   $$SELF_PATH/data_processor.h \
   $$files($$SELF_PATH/config/*.h) \
   $$SELF_PATH/config/sensor_config.h \
-  $$SELF_PATH/ros1_convert.h
+  $$SELF_PATH/ros1_convert_legacy.h
 
 HEADERS -= \
   $$SELF_PATH/config/runtime_config_legacy.h

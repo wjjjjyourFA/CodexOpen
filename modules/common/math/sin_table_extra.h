@@ -1,5 +1,5 @@
-#ifndef ANGLE_TABLE_H
-#define ANGLE_TABLE_H
+#ifndef SIN_TABLE_EXTRA_H
+#define SIN_TABLE_EXTRA_H
 
 #pragma once
 

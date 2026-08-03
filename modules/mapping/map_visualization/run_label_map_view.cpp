@@ -1,7 +1,7 @@
-#include "toolz/data_loader/group_convert.h"
-#include "modules/perception/common/fusion/lidar2camera/lidar_camera_fusion.h"
 #include "modules/mapping/map_visualization/config/runtime_config.h"
 #include "modules/mapping/map_visualization/map_visualization.h"
+#include "modules/perception/common/fusion/lidar2camera/lidar_camera_fusion.h"
+#include "toolz/data_loader/group_convert.h"
 
 using namespace jojo::tools;
 using namespace jojo::perception::camera;
@@ -41,18 +41,23 @@ int main(int argc, char** argv) {
   view->Init(runtime_config, static_config);
   view->InitViewer();
 
-  std::string dl_config_path = "./../../../config/MapVisualization/DataLoader.ini";
+  std::string dl_rc_path = "./../../../config/MapVisualization/DataLoader.ini";
+  std::string dl_ic_path = "./../../../config/MapVisualization/Interface.ini";
 
   auto dl_runtime_config = std::make_shared<RuntimeConfigOffline>();
   dl_runtime_config->set_name(name);
-  dl_runtime_config->LoadConfig(dl_config_path);
+  dl_runtime_config->LoadConfig(dl_rc_path);
+
+  auto dl_interface_config = std::make_shared<jojo::tools::InterfaceConfig>();
+  dl_interface_config->set_name(name);
+  dl_interface_config->LoadConfig(dl_ic_path);
 
   auto group_convert = std::make_shared<GroupConvertDataSet>();
-  group_convert->Init(dl_runtime_config);
-  
+  group_convert->Init(dl_runtime_config, dl_interface_config);
+
   view->LoadMapLabel();
 
-  bool init_flag = false;
+  bool init_flag   = false;
   bool b_first_run = true;
 
   int frame_idx = 0;
@@ -74,7 +79,7 @@ int main(int argc, char** argv) {
     }
 
     const auto& frame = group->lidar.data;
-    const auto& pose = group->se3_pose.data.matrix();
+    const auto& pose  = group->se3_pose.data.matrix();
 
     view->Run(frame, pose);
 

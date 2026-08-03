@@ -1,5 +1,5 @@
-#ifndef READ_SENSOR_PARAMS_JSON_H
-#define READ_SENSOR_PARAMS_JSON_H
+#ifndef SENSOR_EXTRINSICS_JSON_H
+#define SENSOR_EXTRINSICS_JSON_H
 
 #pragma once
 
@@ -27,4 +27,4 @@ class SensorExtrinsicsJson : public SensorExtrinsics {
 }  // namespace perception
 }  // namespace jojo
 
-#endif  // READ_BASE_PARAMS_H
+#endif  // SENSOR_EXTRINSICS_JSON_H

@@ -30,5 +30,5 @@ void RuntimeConfig::LoadConfig(const std::string& config_path) {
   }
 }
 
-}  // namespace tools
+}  // namespace localization
 }  // namespace jojo

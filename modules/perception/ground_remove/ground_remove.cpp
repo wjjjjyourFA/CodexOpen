@@ -57,8 +57,12 @@ void GroundRemove::Init(
 */
 void GroundRemove::Run(const pcl::PointCloud<pcl::PointXYZI>::Ptr& frame,
                        const Eigen::Matrix4f& in_pose) {
-  auto& pose_x = in_pose(0, 3);
-  auto& pose_y = in_pose(1, 3);
+  // 先从当前帧分割地面，再统计栅格图
+
+  // 将当前点云变换到全局坐标系
+  if (rparam_->b_use_legacy) {
+    pcl::transformPointCloud(*frame, *frame, in_pose);
+  }
 
   // 确保雷达点云数据是水平系
   // TODO：点云变换 ==> 车辆中心
@@ -71,7 +75,10 @@ void GroundRemove::Run(const pcl::PointCloud<pcl::PointXYZI>::Ptr& frame,
 
   // this->remove_noise_points();
 
-  if (rparam_->b_use_legacy) {
+  auto& pose_x = in_pose(0, 3);
+  auto& pose_y = in_pose(1, 3);
+
+  if (!rparam_->b_use_legacy) {
     obstacle_grid_map->ResetMap();
   }
   obstacle_grid_map->ReCenterByPose(pose_x, pose_y);

@@ -1,6 +1,7 @@
+#include "tools/data_loader/config/interface_config.h"
+#include "tools/data_loader/config/runtime_config.h"
 #include "tools/data_loader/data_loader.h"
 #include "tools/data_loader/group_convert.h"
-#include "tools/data_loader/config/runtime_config_offline.h"
 
 // #include "modules/perception/camera_location_estimation/camera_location_estimation_legacy.h"
 #include "modules/perception/camera_location_estimation/camera_location_estimation.h"
@@ -49,15 +50,19 @@ int main(int argc, char** argv) {
   image_locator->SetProjectionMatrix(matrix.at(0)->projection_matrix);
   image_locator->Start();
 
-  std::string dl_config_path = "./../../../config/DataLoader/DataLoader.ini";
+  std::string dl_rc_path = "./../../../config/DataLoader/DataLoader.ini";
+  std::string dl_ic_path = "./../../../config/DataLoader/Interface.ini";
 
-  auto dl_runtime_config =
-      std::make_shared<jojo::tools::RuntimeConfigOffline>();
+  auto dl_runtime_config = std::make_shared<jojo::tools::RuntimeConfig>();
   dl_runtime_config->set_name(name);
-  dl_runtime_config->LoadConfig(dl_config_path);
+  dl_runtime_config->LoadConfig(dl_rc_path);
+
+  auto dl_interface_config = std::make_shared<jojo::tools::InterfaceConfig>();
+  dl_interface_config->set_name(name);
+  dl_interface_config->LoadConfig(dl_ic_path);
 
   auto data_loader = std::make_shared<GroupConvert>();
-  data_loader->Init(dl_runtime_config);
+  data_loader->Init(dl_runtime_config, dl_interface_config);
 
   std::cout << std::fixed << std::setprecision(0);
 

@@ -50,7 +50,7 @@ void from_json(const nlohmann::json& j, StaticConfig& c) {
   c.map_min_x  = t.at("min_x").get<double>();
   c.map_min_y  = t.at("min_y").get<double>();
 
-  c.map_resolution  = t.at("resolution").get<float>();
+  c.map_resolution = t.at("resolution").get<float>();
 
   c.width  = j.at("width").get<int>();
   c.height = j.at("height").get<int>();

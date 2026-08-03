@@ -12,16 +12,14 @@
 #ifndef __COLOR_POINT_H__
 #define __COLOR_POINT_H__
 
-#include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/filters/crop_box.h>
+#include <pcl/visualization/pcl_visualizer.h>
 
 #include "modules/perception/common/camera/params/camera_params.h"
 #include "modules/perception/common/fusion/lidar2camera/lidar_camera_fusion.h"
-
-#include "modules/perception/similarity_map/ColorCell.h"
 #include "modules/perception/similarity_map/CGridMap/CLocalWindowMap.h"
+#include "modules/perception/similarity_map/ColorCell.h"
 #include "modules/perception/similarity_map/config/runtime_config.h"
-
 #include "toolz/data_loader/group_convert.h"
 
 namespace jojo {

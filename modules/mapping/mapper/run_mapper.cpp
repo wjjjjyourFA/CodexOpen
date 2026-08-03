@@ -1,5 +1,5 @@
-#include "toolz/data_loader/group_convert.h"
 #include "modules/mapping/mapper/mapper.h"
+#include "toolz/data_loader/group_convert.h"
 
 using namespace jojo::tools;
 using namespace jojo::mapping;
@@ -22,14 +22,19 @@ int main(int argc, char** argv) {
   std::shared_ptr<Mapper> mapper = std::make_shared<Mapper>();
   mapper->Init(runtime_config, static_config);
 
-  std::string dl_config_path = "./../../../config/Mapper/DataLoader.ini";
+  std::string dl_rc_path = "./../../../config/Mapper/DataLoader.ini";
+  std::string dl_ic_path = "./../../../config/Mapper/Interface.ini";
 
-  auto dl_runtime_config = std::make_shared<RuntimeConfigOffline>();
+  auto dl_runtime_config = std::make_shared<jojo::tools::RuntimeConfig>();
   dl_runtime_config->set_name(name);
-  dl_runtime_config->LoadConfig(dl_config_path);
+  dl_runtime_config->LoadConfig(dl_rc_path);
+
+  auto dl_interface_config = std::make_shared<jojo::tools::InterfaceConfig>();
+  dl_interface_config->set_name(name);
+  dl_interface_config->LoadConfig(dl_ic_path);
 
   auto group_convert = std::make_shared<GroupConvertDataSet>();
-  group_convert->Init(dl_runtime_config);
+  group_convert->Init(dl_runtime_config, dl_interface_config);
 
   bool b_first_run = true;
 
@@ -58,8 +63,8 @@ int main(int argc, char** argv) {
       mapper->Run(frame, pose);
     }
   }
-  mapper->VisualizeMap();
   mapper->UpdateIncrementalMap();
+  mapper->VisualizeMap();
   mapper->SaveMap(static_config->map_save_path);
 
   return 0;

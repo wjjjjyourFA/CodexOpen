@@ -119,7 +119,7 @@ bool CLocalWindowMap<CellType>::ReCenterByPose(double pose_x, double pose_y) {
 
     map_anchor_c_ = world_grid_c;
     map_anchor_r_ = world_grid_r;
-  } 
+  }
   // 这里进行窗口的滚动，才是真正在物理坐标上移动，即数学坐标和物理坐标对应
   else {
     // north/south rolling

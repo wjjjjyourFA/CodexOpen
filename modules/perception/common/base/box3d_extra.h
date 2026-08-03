@@ -1,5 +1,5 @@
-#ifndef BOX3D_EXTRA_H_
-#define BOX3D_EXTRA_H_
+#ifndef BOX3D_EXTRA_H
+#define BOX3D_EXTRA_H
 //            7 -------- 4
 //           /|         /|
 //          6 -------- 5 .
@@ -11,8 +11,9 @@
 
 #pragma once
 
-#include <Eigen/Dense>
 #include <vector>
+
+#include <Eigen/Dense>
 
 #include "modules/perception/common/base/box3d.h"
 #include "modules/perception/common/base/comparison_traits.h"
@@ -55,7 +56,7 @@ struct BBox3DExtra {
   Point3DF corners[8];
 
   float length = 0;
-  float width = 0;
+  float width  = 0;
   float height = 0;
 
   float k[4] = {0};
@@ -146,7 +147,9 @@ struct BBox3DRotated {
   }
 
   // 计算3D Box的体积
-  float Volume() const { return dimensions.x() * dimensions.y() * dimensions.z(); }
+  float Volume() const {
+    return dimensions.x() * dimensions.y() * dimensions.z();
+  }
 
   // Sets the orientation using a quaternion.
   void SetOrientation(const Eigen::Quaternionf& new_orientation) {
@@ -212,4 +215,4 @@ inline float Distance(const BBox3DRotated& box1, const BBox3DRotated& box2) {
 }  // namespace perception
 }  // namespace jojo
 
-#endif  // BOX3D_EXTRA_H_
+#endif  // BOX3D_EXTRA_H

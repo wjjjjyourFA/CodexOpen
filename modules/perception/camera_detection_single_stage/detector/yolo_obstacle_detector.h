@@ -1,15 +1,15 @@
 #pragma once
 
 #include <unistd.h>
+
 #include <atomic>
 
-#include <opencv2/opencv.hpp>
+#include <opencv2/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgcodecs/imgcodecs.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/imgproc/types_c.h>
-#include <opencv2/core.hpp>
-#include "eigen3/Eigen/Core"
+#include <opencv2/opencv.hpp>
 
 #include "NvInfer.h"
 #include "NvOnnxConfig.h"
@@ -18,6 +18,7 @@
 #include "cuda_device_runtime_api.h"
 #include "cuda_runtime_api.h"
 #include "cudnn.h"
+#include "eigen3/Eigen/Core"
 
 // #define YOLOV5
 #define YOLOV8
@@ -28,8 +29,8 @@
 #include "modules/perception/camera_detection_single_stage/detector/yolov8/yolov8_wrapper.h"
 #endif
 
-#include "modules/perception/common/base/object.h"
 #include "modules/perception/common/base/box_extra.h"
+#include "modules/perception/common/base/object.h"
 
 // 工作空间粒度必须远大于模块粒度。
 namespace jojo {

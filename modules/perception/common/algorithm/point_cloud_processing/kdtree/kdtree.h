@@ -1,12 +1,12 @@
-#ifndef __KD_TREE_FH_H
-#define __KD_TREE_FH_H
+#ifndef __KD_TREE_FH_H__
+#define __KD_TREE_FH_H__
 
 #pragma once
 
-#include <iostream>
-#include <vector>
 #include <algorithm>
 #include <cmath>
+#include <iostream>
+#include <vector>
 
 #include "modules/common/math/math_utils.h"
 // #include "modules/perception/common/base/point.h"
@@ -41,58 +41,58 @@ class KDTree {
   KDTree();
   ~KDTree();
 
-  void init(float *data_in, int dim_in, int max_sample_size, bool sort_results);
+  void init(float* data_in, int dim_in, int max_sample_size, bool sort_results);
   void build_tree(int num_in);
 
   void FreeTree();
 
-  void radius_search(std::vector<float> &qv, float r2,
-                     KDTreeResultVector &result);
+  void radius_search(std::vector<float>& qv, float r2,
+                     KDTreeResultVector& result);
   // search for all neighbors in ball of size (square Euclidean distance)
   // r2. Return number of neighbors in 'result.size()',
   void radius_search_around_point(int idx_in, int index_range, float r2,
-                                  KDTreeResultVector &result);
-  int r_count(std::vector<float> &qv, float r2);
+                                  KDTreeResultVector& result);
+  int r_count(std::vector<float>& qv, float r2);
   int r_count_around_point(int idxin, int correltime, float r2);
 
-  void knn_search(std::vector<float> &qv, int nn, KDTreeResultVector &result);
+  void knn_search(std::vector<float>& qv, int nn, KDTreeResultVector& result);
   // default ball_size == infinity
   void knn_search_around_point(int idx_in, int index_range, int nn,
-                               KDTreeResultVector &result);
-  void knn_search_brute_force(std::vector<float> &qv, int nn,
-                              KDTreeResultVector &result);
+                               KDTreeResultVector& result);
+  void knn_search_brute_force(std::vector<float>& qv, int nn,
+                              KDTreeResultVector& result);
 
  protected:
   // 这是一块外部传入的内存，在构建 KD 树时，会直接使用这块内存，而不是重新分配内存。
   // 对于实际数据的操作是通过索引进行的，直接指向这块内存。
-  float *buff_;
+  float* buff_;
   int max_sample_size_;
-  int *indices_;  // 指向数据的索引
+  int* indices_;  // 指向数据的索引
 
   SplitMethod split_method_ = SplitMethod::MEDIAN;
 
  private:
   int dim_;
   bool sort_results_;  // sorting result?
-  KDTreeNode *root_ = nullptr;  // the root pointer
+  KDTreeNode* root_ = nullptr;  // the root pointer
 
   int data_num_;  // number of data points
 
   static const int bucket_size = 12;  // 叶子节点中存储的点数量
 
   virtual void build_tree() {}  // builds the tree.  Used upon construction.
-  KDTreeNode *build_tree_for_range(int l, int u, KDTreeNode *parent);
+  KDTreeNode* build_tree_for_range(int l, int u, KDTreeNode* parent);
 
-  void spread_in_coordinate_box(int c, int l, int u, interval &interv);
+  void spread_in_coordinate_box(int c, int l, int u, interval& interv);
   // 适用于 寻找中位数（Median）作为切分点
   void select_on_coordinate_index(int c, int k, int l, int u);
   // 适用于 基于数值阈值的切分
   int select_on_coordinate_value(int c, float alpha, int l, int u);
 
-  void search(KDTreeNode *node, SearchRecord &sr);
+  void search(KDTreeNode* node, SearchRecord& sr);
   // recursive innermost core routine for searching..
 
-  bool box_in_search_range(KDTreeNode *node, SearchRecord &sr);
+  bool box_in_search_range(KDTreeNode* node, SearchRecord& sr);
   // return true if the bounding box for this node is within the
   // search range given by the searchvector and maximum ballsize in 'sr'.
   inline float distance_from_boundary(float x, float amin, float amax) {
@@ -109,10 +109,10 @@ class KDTree {
   }
 
   // for processing final buckets.
-  void process_terminal_node_knn(KDTreeNode *node, SearchRecord &sr);
-  void process_terminal_node_fixedball(KDTreeNode *node, SearchRecord &sr);
+  void process_terminal_node_knn(KDTreeNode* node, SearchRecord& sr);
+  void process_terminal_node_fixedball(KDTreeNode* node, SearchRecord& sr);
 
-  void check_query_in_bound(SearchRecord &sr);  // debugging only
+  void check_query_in_bound(SearchRecord& sr);  // debugging only
 
   friend class KDTreeNode;
   friend class SearchRecord;
@@ -149,7 +149,7 @@ class KDTreeNode {
   friend class SearchRecord;
 
   // 存储点
-  // PointF point;  
+  // PointF point;
 };
 
 //
@@ -164,7 +164,7 @@ struct KDTreeResult {
   int idx;  // neighbor index
 
   // for priority_queue
-  bool operator<(const KDTreeResult &other) const {
+  bool operator<(const KDTreeResult& other) const {
     // 返回 true：表示 a 的优先级比 b 低（即 a.dis < b.dis 时，b 应该排在前面）。
     // 结果：最大 dis 在 results_[0]（即堆顶）。
     return dis > other.dis;  // 使 priority_queue 维护最大堆
@@ -189,7 +189,7 @@ class KDTreeResultVector {
   // keep it in heap order.  To keep it in ordinary, as inserted,
   // order, then simply use push_back() as inherited
   // via std::vector<>
-  void push_element_and_heapify(KDTreeResult &e) {
+  void push_element_and_heapify(KDTreeResult& e) {
     data.push_back(e);  // what a vector does.
     // push_heap 的默认比较规则是 <
     std::push_heap(data.begin(),
@@ -197,7 +197,7 @@ class KDTreeResultVector {
   }
 
   // for knn
-  float replace_maxpri_elt_return_new_maxpri(KDTreeResult &e) {
+  float replace_maxpri_elt_return_new_maxpri(KDTreeResult& e) {
     // remove the maximum priority element on the queue and replace it
     // with 'e', and return its priority.
     // here, it means replacing the first element [0] with e, and re heapifying.
@@ -224,8 +224,8 @@ class KDTreeResultVector {
 
 class SearchRecord {
  public:
-  SearchRecord(std::vector<float> &qv_in, KDTree &tree_in /*树指针*/,
-               KDTreeResultVector &result_in)
+  SearchRecord(std::vector<float>& qv_in, KDTree& tree_in /*树指针*/,
+               KDTreeResultVector& result_in)
       : qv(qv_in),
         result(result_in),
         buff_(tree_in.buff_),
@@ -236,12 +236,12 @@ class SearchRecord {
   }
 
  public:
-  float *buff_;
-  int *indices_;
+  float* buff_;
+  int* indices_;
 
  private:
   int dim;
-  std::vector<float> &qv;  // query vector
+  std::vector<float>& qv;  // query vector
   // float *qv;
 
   unsigned int nn;  // nfound;
@@ -250,7 +250,7 @@ class SearchRecord {
   // 表示某种相关性，优化搜索过程
   // 如果一个密集点云被用于查找，那么一个点符合要求时，它附近的点也符合要求。
   int index_range = 1;
-  KDTreeResultVector &result;  // results
+  KDTreeResultVector& result;  // results
 
   friend class KDTree;
   friend class KDTreeNode;

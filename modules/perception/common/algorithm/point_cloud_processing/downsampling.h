@@ -10,7 +10,7 @@ namespace algorithm {
 
 template <typename PointT>
 void DownsamplingVoxelGrid(typename pcl::PointCloud<PointT>::Ptr cloud,
-                  typename pcl::PointCloud<PointT>::Ptr down_cloud) {
+                           typename pcl::PointCloud<PointT>::Ptr down_cloud) {
   // 创建降采样后的点云对象
   // pcl::PointCloud<PointT>::Ptr down_cloud(new pcl::PointCloud<PointT>);
 

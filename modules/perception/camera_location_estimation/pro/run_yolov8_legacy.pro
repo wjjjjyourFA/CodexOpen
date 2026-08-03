@@ -57,7 +57,7 @@ SOURCES += \
   # $$PREFIX/tools/common/show_data_3d.cpp \
   $$PREFIX/tools/common/show_data_2d.cpp \
   $$CODEX_PATH/tools/data_loader/data_loader.cpp \
-  $$CODEX_PATH/tools/data_loader/config/runtime_config_offline.cpp \
+  $$CODEX_PATH/tools/data_loader/config/runtime_config.cpp \
   $$CODEX_PATH/tools/data_loader/group_convert.cpp \
   $$CODEX_PATH/tools/data_processor/config/sensor_config.cc \
   $$DETECTOR_PATH/detector/yolo_obstacle_detector.cpp \
@@ -95,7 +95,7 @@ HEADERS += \
   # $$PREFIX/tools/common/show_data_3d.h \
   $$PREFIX/tools/common/show_data_2d.h \
   $$CODEX_PATH/tools/data_loader/data_loader.h \
-  $$CODEX_PATH/tools/data_loader/config/runtime_config_offline.h \
+  $$CODEX_PATH/tools/data_loader/config/runtime_config.h \
   $$CODEX_PATH/tools/data_loader/data_container.h \
   $$CODEX_PATH/tools/data_loader/group_convert.h \
   $$CODEX_PATH/tools/data_processor/config/sensor_config.h \

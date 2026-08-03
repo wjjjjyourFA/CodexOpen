@@ -1,5 +1,5 @@
-#ifndef __PCL_TYPES
-#define __PCL_TYPES
+#ifndef PERCEPTION_TOOLS_PCL_TYPES_H
+#define PERCEPTION_TOOLS_PCL_TYPES_H
 
 #pragma once
 

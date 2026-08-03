@@ -1,26 +1,24 @@
 #pragma once
 
-#include <vector>
-
 #include <omp.h>
 
-#include <pcl/io/pcd_io.h>
-#include <pcl/registration/ndt.h>
-#include <pcl/registration/icp.h>
+#include <vector>
+
 #include <pcl/filters/voxel_grid.h>
+#include <pcl/io/pcd_io.h>
 
 #define PCL_NO_PRECOMPILE
-#include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/visualization/cloud_viewer.h>
-
+#include <pcl/visualization/pcl_visualizer.h>
 #include <yaml-cpp/yaml.h>
 
 #include "cyber/common/file.h"
-#include "modules/perception/common/algorithm/point_cloud_processing/ikd-Tree/ikd_Tree.h"
 #include "modules/localization/fast_lio/include/imu_processing.hpp"
 // #include "modules/localization/fast_lio/include/imu_processing_legacy.hpp"
-#include "modules/localization/fast_lio/config/runtime_config.h"
 #include "modules/common/transform/geometry/rotation_conversions.h"
+#include "modules/localization/fast_lio/config/runtime_config.h"
+#include "modules/localization/fast_lio/config/static_config.h"
+#include "modules/perception/common/algorithm/point_cloud_processing/ikd-Tree/ikd_Tree.h"
 
 using namespace std;
 
@@ -34,7 +32,7 @@ namespace fastlio {
 class LidarOdometry {
  public:
   LidarOdometry();
-  ~LidarOdometry();
+  virtual ~LidarOdometry();
 
   void SetGravityImuExtrinsicMatrix(const Eigen::Matrix4f& extrinsic_matrix);
   void SetExtrinsicMatrix(const Eigen::Matrix4f& extrinsic_matrix);
@@ -43,13 +41,18 @@ class LidarOdometry {
 
   void Init(std::shared_ptr<jojo::localization::RuntimeConfig> param);
 
+  virtual void Init(std::shared_ptr<jojo::localization::RuntimeConfig> rparam,
+                    std::shared_ptr<jojo::localization::StaticConfig> sparam);
+
+  bool InitStaticConfig();
+
   void pointBodyToWorld(PointType const* const pi, PointType* const po);
 
   void points_cache_collect();
 
   virtual void lasermap_fov_segment();
 
-  bool sync_packages(MeasureGroup& meas);
+  // bool sync_packages(MeasureGroup& meas);
 
   virtual void map_incremental();
 
@@ -59,10 +62,11 @@ class LidarOdometry {
   static void h_share_model_static(
       state_ikfom& s, esekfom::dyn_share_datastruct<double>& ekfom_data) {
     auto* self = static_cast<LidarOdometry*>(ekfom_data.user_ptr);
+    // 通过 虚函数，在子类中调用子类方法
     self->h_share_model(s, ekfom_data);
   }
 
-  void run_odometry(MeasureGroup& Measures);
+  bool run_odometry(MeasureGroup& Measures);
 
   virtual void save_result(bool b_save_pcd = false);
 
@@ -81,6 +85,10 @@ class LidarOdometry {
   PointCloudXYZI::Ptr laserCloudOri;
   PointCloudXYZI::Ptr corr_normvect;
   PointCloudXYZI::Ptr _featsArray;  // ikd-tree 中，locl_map 需要移除的点云序列
+
+  // 可视化缓存。局部地图从 ikd-tree 周期性展开，避免每帧复制整张地图。
+  PointCloudXYZI::Ptr local_map_cloud_;
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr traj_cloud;
 
   pcl::VoxelGrid<PointType> downSizeFilterSurf;
   pcl::VoxelGrid<PointType> downSizeFilterMap;
@@ -113,7 +121,9 @@ class LidarOdometry {
   std::ofstream ofs_runtime;
 
  protected:
-  std::shared_ptr<jojo::localization::RuntimeConfig> param_;
+  std::shared_ptr<jojo::localization::RuntimeConfig> rparam_;
+  std::shared_ptr<jojo::localization::StaticConfig> sparam_;
+
   int lidar_type = 1;
   // float LASER_POINT_COV = 0.001;
   int point_filter_num = 5;
@@ -146,6 +156,7 @@ class LidarOdometry {
   int add_point_size = 0;
 
   float filter_size_surf_min = 0.5, filter_size_map_min = 0.5;
+  // 此数值会随过滤后的点云的大小动态更新
   int feats_down_size = 0;
 
   // update_iterated_dyn_share_modified
@@ -160,6 +171,14 @@ class LidarOdometry {
   /**************************/
 
   pcl::visualization::PCLVisualizer::Ptr vis = NULL;
+
+  int visualization_frame_count_ = 0;
+  // 调整地图刷新速度，设为 1 即每帧刷新
+  int local_map_refresh_period_  = 5;
+
+  bool local_map_added_to_viewer_    = false;
+  bool current_scan_added_to_viewer_ = false;
+  bool trajectory_added_to_viewer_   = false;
 
   bool pose_inited = false;
   // for filter useless .pcd

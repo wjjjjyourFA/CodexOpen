@@ -7,7 +7,7 @@ namespace math {
 // 初始化静态成员
 double UnitConverter::PI = M_PI;
 // double UnitConverter::RAW_PI_2  = UnitConverter::PI / 2.0;
-double UnitConverter::RAW_PI_2  = M_PI_2;
+double UnitConverter::RAW_PI_2   = M_PI_2;
 double UnitConverter::DEG_TO_RAD = UnitConverter::PI / 180.0;
 double UnitConverter::RAD_TO_DEG = 180.0 / UnitConverter::PI;
 

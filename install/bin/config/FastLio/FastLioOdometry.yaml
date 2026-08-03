@@ -1,0 +1,26 @@
+
+filter_size_surf: 0.5
+filter_size_map: 0.5
+cube_side_length: 1000
+
+point_filter_num: 3
+feature_extract_enable: false
+
+mapping:
+  max_iteration: 5
+  det_range: 100.0
+  gyr_cov: 0.1
+  acc_cov: 0.1
+  b_gyr_cov: 0.0001
+  b_acc_cov: 0.0001
+  # true: enable the online estimation of IMU-LiDAR extrinsic
+  extrinsic_est_en: false
+
+preprocess:
+  lidar_type: 5
+  blind: 5
+  scan_line: 128
+  # the unit of time/t field in the PointCloud2 rostopic:
+  # 0-second, 1-milisecond, 2-microsecond, 3-nanosecond.
+  timestamp_unit: 0
+  scan_rate: 10

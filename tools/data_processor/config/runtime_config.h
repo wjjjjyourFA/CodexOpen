@@ -1,5 +1,5 @@
-#ifndef DATA_PROCESSOR_CONFIG_H
-#define DATA_PROCESSOR_CONFIG_H
+#ifndef DATA_PROCESSOR_RUNTIME_CONFIG_H
+#define DATA_PROCESSOR_RUNTIME_CONFIG_H
 
 #pragma once
 
@@ -29,11 +29,6 @@ class RuntimeConfig : public jojo::common::config::ConfigFileBase {
   float distance_epsilon = 1e-3;  // 小于这个就当作 0, 并移除
   int intensity_epsilon  = 1e-3;  // 小于这个就当作 0, 并移除
 
-  bool b_local_pose, b_global_pose, b_imu_data;
-  bool b_lidar;
-  int b_radar, b_radar4d;
-  int b_camera, b_infra, b_star;
-
   bool use_bin_or_pcd, use_txt_or_pcd;
   int use_jpg_or_png;
 
@@ -51,26 +46,9 @@ class RuntimeConfig : public jojo::common::config::ConfigFileBase {
   std::vector<std::string> star_name;
   std::string radar_type;
   std::string radar4d_type;
-
-  std::string topic_local_pose_sub;
-  std::string topic_global_pose_sub;
-  std::string topic_imu_data_sub;
-  std::string topic_pose_sub;
-
-  bool b_difop;
-  std::string topic_lidar_sub;
-  std::string topic_lidar_ori_sub, topic_lidar_difop_sub;
-
-  bool b_compressed;
-  std::vector<std::string> topic_camera_sub;
-  std::vector<std::string> topic_infra_sub;
-  std::vector<std::string> topic_star_sub;
-
-  std::string topic_radar_sub;
-  std::vector<std::string> topic_radar4d_sub;
 };
 
 }  // namespace tools
 }  // namespace jojo
 
-#endif  // DATA_PROCESSOR_CONFIG_H
+#endif  // DATA_PROCESSOR_RUNTIME_CONFIG_H

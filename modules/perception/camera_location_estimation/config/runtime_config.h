@@ -1,5 +1,5 @@
-#ifndef CAMERA_DETECTION_ESTIMATION_CONFIG_H
-#define CAMERA_DETECTION_ESTIMATION_CONFIG_H
+#ifndef CAMERA_LOCATION_ESTIMATION_RUNTIME_CONFIG_H
+#define CAMERA_LOCATION_ESTIMATION_RUNTIME_CONFIG_H
 
 #pragma once
 
@@ -22,13 +22,16 @@ class RuntimeConfig : public jojo::common::config::ConfigFileBase {
   std::string engine_file;
   std::string onnx_file;
 
+  bool b_undistort;
   std::string calib_file_path = "";
 
   int use_det_or_track;
+
+  int dist_threshold = 100;
 };
 
-}
-}  // namespace
+}  // namespace cle
+}  // namespace perception
 }  // namespace jojo
 
 #endif

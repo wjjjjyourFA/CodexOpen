@@ -1,5 +1,5 @@
-#ifndef IMAGE_LOCATION_H
-#define IMAGE_LOCATION_H
+#ifndef CAMERA_LOCATION_ESTIMATION_H
+#define CAMERA_LOCATION_ESTIMATION_H
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
@@ -8,13 +8,13 @@
 #include "modules/perception/camera_detection_single_stage/detector/yolo_obstacle_detector.h"
 #include "modules/perception/camera_tracking/camera_tracking.h"
 // 投影定位线程，可以是该模块的子线程，也可以是独立的线程
-#include "modules/perception/common/base/box3d_extra.h"
-#include "modules/perception/common/base/segment.h"
 #include "modules/perception/common/algorithm/image_processing/util/utils.h"
 #include "modules/perception/common/algorithm/point_cloud_processing/cluster_postprocess.h"
-#include "modules/perception/common/lidar/cluster/object_cluster.h"
+#include "modules/perception/common/base/box3d_extra.h"
+#include "modules/perception/common/base/segment.h"
 #include "modules/perception/common/fusion/lidar2camera/lidar_camera_fusion.h"
 // #include "modules/perception/common/fusion/radar2camera/radar_camera_fusion.h"
+#include "modules/perception/common/lidar/cluster/object_cluster.h"
 #include "modules/perception/tools/common/show_data_2d.h"
 
 namespace jojo {

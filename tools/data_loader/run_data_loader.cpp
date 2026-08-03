@@ -1,27 +1,35 @@
 #include <chrono>
 
 #include <opencv2/opencv.hpp>
-#include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/common/io.h>
+#include <pcl/visualization/pcl_visualizer.h>
 
 #include "tools/data_loader/group_convert.h"
 
 using namespace jojo::tools;
 
 int main(int argc, char** argv) {
-  std::string name        = "DataLoader";
+  // clang-format off
+  std::string name = "DataLoader";
   std::string config_path = "./../../config/DataLoader/DataLoader.ini";
+  // clang-format on
 
   if (argc > 1) {
     config_path = argv[1];
   }
 
-  auto runtime_config = std::make_shared<RuntimeConfigOffline>();
+  auto runtime_config = std::make_shared<jojo::tools::RuntimeConfig>();
   runtime_config->set_name(name);
   runtime_config->LoadConfig(config_path);
 
+  std::string if_config_path = "./../../config/DataLoader/Interface.ini";
+
+  auto interface_config = std::make_shared<jojo::tools::InterfaceConfig>();
+  interface_config->set_name(name);
+  interface_config->LoadConfig(if_config_path);
+
   auto group_convert = std::make_shared<GroupConvert>();
-  group_convert->Init(runtime_config);
+  group_convert->Init(runtime_config, interface_config);
 
   pcl::visualization::PCLVisualizer::Ptr viewer(
       new pcl::visualization::PCLVisualizer("Lidar Viewer"));

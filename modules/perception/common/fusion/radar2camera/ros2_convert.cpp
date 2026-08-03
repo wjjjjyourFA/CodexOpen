@@ -1,6 +1,8 @@
 #include "modules/perception/common/fusion/radar2camera/ros2_convert.h"
 
-Ros2Convert::Ros2Convert() {
+Ros2Convert::Ros2Convert(std::shared_ptr<rclcpp::Node> nh) {
+  nh_ = nh;
+
   radar_params  = std::make_shared<cfg::SensorExtrinsics>();
   camera_params = std::make_shared<camera::CameraParams>();
   fusion        = std::make_shared<fusion::RadarCameraFusion>();
@@ -21,7 +23,7 @@ void Ros2Convert::ImageCallback(const sensor_msgs::msg::Image::SharedPtr msg) {
 
     image_recv_ = true;
   } catch (cv_bridge::Exception& e) {
-    RCLCPP_ERROR(node->get_logger(), "Could not convert from '%s' to 'bgr8'.",
+    RCLCPP_ERROR(nh_->get_logger(), "Could not convert from '%s' to 'bgr8'.",
                  msg->encoding.c_str());
   }
 }
@@ -42,7 +44,7 @@ void Ros2Convert::ImageCompressedCallback(
 
     image_recv_ = true;
   } catch (cv_bridge::Exception& e) {
-    RCLCPP_ERROR(node->get_logger(),
+    RCLCPP_ERROR(nh_->get_logger(),
                  "Could not convert from compressed image to 'bgr8'.");
     return;
   }
@@ -83,42 +85,43 @@ void Ros2Convert::PointCloudCallback(
   point_recv_ = true;
 }
 
-bool Ros2Convert::Init(std::shared_ptr<rclcpp::Node> nh,
-                       std::shared_ptr<perception::RuntimeConfig> param) {
-  node   = nh;
-  param_ = param;
+bool Ros2Convert::Init(
+    std::shared_ptr<perception::RuntimeConfig> param,
+    std::shared_ptr<jojo::perception::InterfaceConfig> interface) {
+  rparam_ = param;
+  iparam_ = interface;
 
-  if (!param_->b_compressed) {
-    image_sub = node->create_subscription<sensor_msgs::msg::Image>(
-        param_->image_topic, 1,
+  if (!iparam_->b_compressed) {
+    image_sub = nh_->create_subscription<sensor_msgs::msg::Image>(
+        iparam_->image_topic, 1,
         std::bind(&Ros2Convert::ImageCallback, this, std::placeholders::_1));
   } else {
-    image_sub = node->create_subscription<sensor_msgs::msg::CompressedImage>(
-        param_->image_topic, 1,
+    image_sub = nh_->create_subscription<sensor_msgs::msg::CompressedImage>(
+        iparam_->image_topic, 1,
         std::bind(&Ros2Convert::ImageCompressedCallback, this,
                   std::placeholders::_1));
   }
 
-  if (param_->b_pointcloud2) {
-    cloud_sub = node->create_subscription<sensor_msgs::msg::PointCloud2>(
-        param_->radar_topic, 1,
+  if (iparam_->b_pointcloud2) {
+    cloud_sub = nh_->create_subscription<sensor_msgs::msg::PointCloud2>(
+        iparam_->radar_topic, 1,
         std::bind(&Ros2Convert::PointCloud2Callback, this,
                   std::placeholders::_1));
   } else {
     std::cout << "radar is using pointcloud " << std::endl;
-    cloud_sub = node->create_subscription<sensor_msgs::msg::PointCloud>(
-        param_->radar_topic, 1,
+    cloud_sub = nh_->create_subscription<sensor_msgs::msg::PointCloud>(
+        iparam_->radar_topic, 1,
         std::bind(&Ros2Convert::PointCloudCallback, this,
                   std::placeholders::_1));
   }
 
-  if (param_->b_do_undistort) {
+  if (rparam_->b_do_undistort) {
     camera_undistort = std::make_shared<camera::UndistortionHandler>();
   }
 
   InitTransfParams();
 
-  fusion->set_params("Radar", param_->dist_threshold);
+  fusion->set_params("Radar", rparam_->dist_threshold);
 
   if (!raw_cloud_ptr) {
     // raw_cloud_ptr = boost::make_shared<CloudT>();  // 推荐写法
@@ -133,10 +136,10 @@ bool Ros2Convert::Init(std::shared_ptr<rclcpp::Node> nh,
 }
 
 void Ros2Convert::Run() {
-  rclcpp::Rate loop_rate(param_->rate);
+  rclcpp::Rate loop_rate(iparam_->rate);
 
   while (rclcpp::ok()) {
-    rclcpp::spin_some(node);
+    rclcpp::spin_some(nh_);
     loop_rate.sleep();
 
     if (!image_recv_ || !point_recv_) {
@@ -155,8 +158,8 @@ void Ros2Convert::Run() {
 
       fusion->SetProjectionMatrix(matrix.at(0)->projection_matrix);
 
-      if (param_->b_do_undistort) {
-        camera_undistort->InitModel(CameraDistortionModel::Brown);
+      if (rparam_->b_do_undistort) {
+        camera_undistort->InitModel(camera::CameraDistortionModel::Brown);
         camera_undistort->InitParams(img.cols, img.rows, params);
         camera_undistort->Init("camera");
       }
@@ -170,7 +173,7 @@ void Ros2Convert::Run() {
       first_create = true;
     }
 
-    if (param_->b_do_undistort) {
+    if (rparam_->b_do_undistort) {
       camera_undistort->Handle(img, &dst_img);
     }
 
@@ -196,8 +199,7 @@ void Ros2Convert::Run() {
     fusion->SetCameraImage(dst_img);
     fusion->fuse(1, false);
 
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr fused_point_cloud_color(
-        new pcl::PointCloud<pcl::PointXYZRGB>);
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr fused_point_cloud_color;
     cv::Mat fused_image;
     fusion->GetFusedImage(fused_image);
     fusion->GetFusedPointCloudColor(fused_point_cloud_color);
@@ -214,8 +216,8 @@ void Ros2Convert::Run() {
 }
 
 void Ros2Convert::InitTransfParams() {
-  camera_params->LoadFromFile(param_->camera_calib_file_path /*kk.ini*/);
-  radar_params->LoadFromFile(param_->radar_calib_file_path /*radar.ini*/);
+  camera_params->LoadFromFile(rparam_->camera_calib_file_path /*kk.ini*/);
+  radar_params->LoadFromFile(rparam_->radar_calib_file_path /*radar.ini*/);
 
   // radar => lidar => image
   auto camera_matrix = camera_params->GetMatrixVector();

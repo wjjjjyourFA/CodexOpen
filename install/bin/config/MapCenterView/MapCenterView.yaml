@@ -1,14 +1,14 @@
 
 # 无人机提供的先验地图
 # map_file_path: /workspaces/CodexOpen/install/map/MiLuo/cloud_merged.pcd
-map_file_path: /workspaces/CodexOpenExtraData/DataSet/2026-01-28/2026-01-28-09-31-37/uav/map/cloud_merged.pcd
-# map_file_path: /workspaces/CodexOpenExtraData/DataSet/2024-12-16/2024-12-16-11-19-11/uav/map/uav_map_point_cloud.pcd
+map_file_path: /workspaces/CodexOpenExtraData/data/2026-01-28/2026-01-28-09-31-37/uav/map/cloud_merged.pcd
+# map_file_path: /workspaces/CodexOpenExtraData/data/2024-12-16/2024-12-16-11-19-11/uav/map/uav_map_point_cloud.pcd
 
 # 自身构建的地图
-# map_file_path: /workspaces/CodexOpenExtraData/DataSet/2026-04-21/16102220208346880_1420_000_1440_000-O/map_data/map3d/colored_map_top_5cams.pcd
-# map_file_path: /workspaces/CodexOpenExtraData/DataSet/2026-04-21/16102220208346880_1420_000_1440_000-O/map_data/map3d/colorized_map_point_cloud.pcd
-# map_file_path: /workspaces/CodexOpenExtraData/DataSet/2026-04-21/16102220208346880_1420_000_1440_000-O/map_data/map3d/map_point_cloud.pcd
-# map_file_path: /workspaces/CodexOpenExtraData/DataSet/2024-12-16/2024-12-16-11-19-11-O/map_data/map3d/colorized_map_point_cloud.pcd
+# map_file_path: /workspaces/CodexOpenExtraData/data/2026-04-21/16102220208346880_1420_000_1440_000-O/map_data/map3d/colored_map_top_5cams.pcd
+# map_file_path: /workspaces/CodexOpenExtraData/data/2026-04-21/16102220208346880_1420_000_1440_000-O/map_data/map3d/colorized_map_point_cloud.pcd
+# map_file_path: /workspaces/CodexOpenExtraData/data/2026-04-21/16102220208346880_1420_000_1440_000-O/map_data/map3d/map_point_cloud.pcd
+# map_file_path: /workspaces/CodexOpenExtraData/data/2024-12-16/2024-12-16-11-19-11-O/map_data/map3d/colorized_map_point_cloud.pcd
 
 init:
   # 先验地图：false ; 构建地图：true

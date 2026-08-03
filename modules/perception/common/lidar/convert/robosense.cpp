@@ -4,6 +4,7 @@
 // Qt/CMake
 #ifdef _OPENMP
 #include <omp.h>
+
 #include <atomic>
 #endif
 
@@ -402,17 +403,17 @@ bool RsToPcl(pcl::PointCloud<robosense_ros::PointII>::Ptr point_rs_,
 
   // clang-format off
   /* debug ==== 可视化 ====
-  static pcl::visualization::PCLVisualizer::Ptr viewer;
+  static pcl::visualization::PCLVisualizer::Ptr viewer1;
   static pcl::visualization::PCLVisualizer::Ptr viewer2;
-  if (!viewer) {
+  if (!viewer1) {
     // 第一次创建
-    viewer.reset(new pcl::visualization::PCLVisualizer("Colored Cloud"));
-    viewer->setBackgroundColor(0, 0, 0);
-    viewer->addPointCloud(colored, "colored_cloud");
-    viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "colored_cloud");
+    viewer1.reset(new pcl::visualization::PCLVisualizer("Colored Cloud"));
+    viewer1->setBackgroundColor(0, 0, 0);
+    viewer1->addPointCloud(colored, "colored_cloud");
+    viewer1->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "colored_cloud");
   } else {
     // 更新点云数据
-    viewer->updatePointCloud(colored, "colored_cloud");
+    viewer1->updatePointCloud(colored, "colored_cloud");
   }
   if (!viewer2) {
     viewer2.reset(new pcl::visualization::PCLVisualizer("Colored Cloud2"));
@@ -424,7 +425,7 @@ bool RsToPcl(pcl::PointCloud<robosense_ros::PointII>::Ptr point_rs_,
   }
 
   // 刷新显示（可以放在循环里调用）
-  viewer->spinOnce(10);
+  viewer1->spinOnce(10);
   std::this_thread::sleep_for(std::chrono::milliseconds(10));
   viewer2->spinOnce(10);
   std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -624,7 +625,7 @@ bool RsToPcl(pcl::PointCloud<robosense_ros::PointII>::Ptr point_in_,
               << "time_start: " << time_start << " time_end: " << time_end
               << " time_diff: " << time_diff << std::endl;
     */
-   
+
     if (time_diff > 1e-9) {
       const double inv_diff = 100.0 / time_diff;
       for (auto& p : point_out_->points) {

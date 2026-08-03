@@ -1,8 +1,8 @@
 #pragma once
 
-#include "tools/data_loader/group_convert.h"
 #include "modules/localization/fast_lio/include/common_lib.h"
 #include "modules/perception/common/config/vehicle_config.h"
+#include "tools/data_loader/group_convert.h"
 
 void ConvertMeasureGroup(
     const std::shared_ptr<const jojo::tools::MeasureGroup> group,

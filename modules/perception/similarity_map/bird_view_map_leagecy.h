@@ -3,19 +3,14 @@
 
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/Eigen>
-
-#include <pcl/visualization/pcl_visualizer.h>
-#include <pcl/filters/crop_box.h>
-
 #include <opencv2/opencv.hpp>
-
-#include "modules/perception/lidar_local_mapping/local_mapping_base.h"
+#include <pcl/filters/crop_box.h>
+#include <pcl/visualization/pcl_visualizer.h>
 
 #include "modules/perception/common/camera/params/camera_params.h"
 #include "modules/perception/common/fusion/lidar2camera/lidar_camera_fusion.h"
-
+#include "modules/perception/lidar_local_mapping/local_mapping_base.h"
 #include "modules/perception/similarity_map/config/runtime_config.h"
-
 #include "toolz/data_loader/group_convert.h"
 
 using namespace std;

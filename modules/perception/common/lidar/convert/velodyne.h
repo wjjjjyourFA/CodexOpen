@@ -1,7 +1,7 @@
 /* -*- mode: C++ -*- */
 
-#ifndef __VELODYNE_POINTCLOUD_POINT_TYPES_H
-#define __VELODYNE_POINTCLOUD_POINT_TYPES_H
+#ifndef __VELODYNE_H__
+#define __VELODYNE_H__
 
 #include <pcl/point_types.h>
 

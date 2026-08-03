@@ -58,7 +58,8 @@ SOURCES += \
   $$CODEX_PATH/modules/perception/tools/opencv/cv_colors.cpp \
   $$OTHER_PATH/data_loader.cpp \
   $$OTHER_PATH/group_convert.cpp \
-  $$OTHER_PATH/config/runtime_config_offline.cpp \
+  $$OTHER_PATH/config/runtime_config.cpp \
+  $$OTHER_PATH/config/interface_config.cpp \
   $$SELF_PATH/config/runtime_config.cpp \
   $$SELF_PATH/config/static_config.cpp \
   $$SELF_PATH/src/imu_processing.cpp \
@@ -89,7 +90,8 @@ HEADERS += \
   $$OTHER_PATH/data_loader.h \
   $$OTHER_PATH/data_container.h \
   $$OTHER_PATH/group_convert.h \
-  $$OTHER_PATH/config/runtime_config_offline.h \
+  $$OTHER_PATH/config/runtime_config.h \
+  $$OTHER_PATH/config/interface_config.h \
   $$DATA_PROCESSOR_PATH/config/sensor_config.h \
   $$BRANCH_PATH/data_loader.h \
   $$BRANCH_PATH/group_convert.h \

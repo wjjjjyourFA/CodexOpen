@@ -1,5 +1,5 @@
-#ifndef FAST_LIO_PARAMS_H
-#define FAST_LIO_PARAMS_H
+#ifndef FAST_LIO_RUNTIME_CONFIG_H
+#define FAST_LIO_RUNTIME_CONFIG_H
 
 #pragma once
 
@@ -23,11 +23,11 @@ class RuntimeConfig : public jojo::common::config::ConfigFileBase {
   std::string gravity_imu_calib_file_path;
   std::string vehicle_config_file_path;
 
-  bool b_save_pcd = false;
-  bool b_only_times;  // 是否只输出时间戳
+  bool b_save_pcd   = false;
+  bool b_only_times = false;  // 是否只输出时间戳
 };
 
-}  // namespace tools
+}  // namespace localization
 }  // namespace jojo
 
 #endif

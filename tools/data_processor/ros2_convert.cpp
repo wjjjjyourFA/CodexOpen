@@ -10,42 +10,44 @@
 namespace jojo {
 namespace tools {
 
-Ros2Convert::Ros2Convert() {}
+Ros2Convert::Ros2Convert(std::shared_ptr<rclcpp::Node> nh) { nh_ = nh; }
 
 Ros2Convert::~Ros2Convert() {}
 
-void Ros2Convert::Init(std::shared_ptr<rclcpp::Node> nh,
-                       std::shared_ptr<RuntimeConfig> param) {
-  node   = nh;
-  param_ = param;
+void Ros2Convert::Init(std::shared_ptr<jojo::tools::RuntimeConfig> rparam,
+                       std::shared_ptr<jojo::tools::InterfaceConfig> iparam) {
+  rparam_ = rparam;
+  iparam_ = iparam;
 
   data_processor = std::make_shared<DataProcessor>();
-  data_processor->Init(param_);
+  data_processor->Init(rparam_, iparam_);
 
   // 这个要提前很久初始化，可能和ROS启动有关
-  if (param_->b_lidar) {
-    if (param_->b_difop) {
+  if (iparam_->b_lidar) {
+    if (iparam_->b_difop) {
       this->InitRslidar();
     }
   }
 
   // mode = 1 2 3 ==> camera infra star
-  ds_camera.resize(param_->b_camera, DataStatistic<cv::Mat>("camera", 1));
-  ds_infra.resize(param_->b_infra, DataStatistic<cv::Mat>("infra", 2));
-  ds_star.resize(param_->b_star, DataStatistic<cv::Mat>("star", 3));
-  ds_radar4d.resize(param_->b_radar4d, DataStatistic<uint>("radar4d"));
+  ds_camera.resize(iparam_->b_camera, DataStatistic<cv::Mat>("camera", 1));
+  ds_infra.resize(iparam_->b_infra, DataStatistic<cv::Mat>("infra", 2));
+  ds_star.resize(iparam_->b_star, DataStatistic<cv::Mat>("star", 3));
+  ds_radar4d.resize(iparam_->b_radar4d, DataStatistic<uint>("radar4d"));
+
+  return true;
 }
 
 void Ros2Convert::Run() {
   sleep(1);
-  if (!param_->b_save_data) {
+  if (!rparam_->b_save_data) {
     std::cout << "b_save_data is false! " << std::endl;
     abort();
   }
 
   rosbag2_cpp::StorageOptions storage_options;
   std::string rosbag_read_path =
-      param_->rosbag_path + "/" + param_->rosbag_name;
+      rparam_->rosbag_path + "/" + rparam_->rosbag_name;
   std::cout << rosbag_read_path << std::endl;
 
   storage_options.uri = rosbag_read_path;
@@ -62,29 +64,28 @@ void Ros2Convert::Run() {
   data_processor->Start();
 
   /* ---------------- topic map ---------------- */
-  for (size_t i = 0; i < param_->topic_camera_sub.size(); i++)
-    camera_topic_map[param_->topic_camera_sub[i]] = i;
-  for (size_t i = 0; i < param_->topic_infra_sub.size(); i++)
-    infra_topic_map[param_->topic_infra_sub[i]] = i;
-  for (size_t i = 0; i < param_->topic_star_sub.size(); i++)
-    star_topic_map[param_->topic_star_sub[i]] = i;
-  for (size_t i = 0; i < param_->topic_radar4d_sub.size(); i++)
-    radar4d_topic_map[param_->topic_radar4d_sub[i]] = i;
+  for (size_t i = 0; i < iparam_->topic_camera_sub.size(); i++)
+    camera_topic_map[iparam_->topic_camera_sub[i]] = i;
+  for (size_t i = 0; i < iparam_->topic_infra_sub.size(); i++)
+    infra_topic_map[iparam_->topic_infra_sub[i]] = i;
+  for (size_t i = 0; i < iparam_->topic_star_sub.size(); i++)
+    star_topic_map[iparam_->topic_star_sub[i]] = i;
+  for (size_t i = 0; i < iparam_->topic_radar4d_sub.size(); i++)
+    radar4d_topic_map[iparam_->topic_radar4d_sub[i]] = i;
 
   // 仅限简单消息处理
   std::vector<std::string> topics;
-  if (param_->b_local_pose) {
-    topics.push_back(param_->topic_local_pose_sub);
-    RCLCPP_INFO(node->get_logger(), "\033[1;32m----> start local_pose.\033[0m");
+  if (iparam_->b_local_pose) {
+    topics.push_back(iparam_->topic_local_pose_sub);
+    RCLCPP_INFO(nh_->get_logger(), "\033[1;32m----> start local_pose.\033[0m");
   }
-  if (param_->b_global_pose) {
-    topics.push_back(param_->topic_global_pose_sub);
-    RCLCPP_INFO(node->get_logger(),
-                "\033[1;32m----> start global_pose.\033[0m");
+  if (iparam_->b_global_pose) {
+    topics.push_back(iparam_->topic_global_pose_sub);
+    RCLCPP_INFO(nh_->get_logger(), "\033[1;32m----> start global_pose.\033[0m");
   }
-  if (param_->b_imu_data) {
-    topics.push_back(param_->topic_imu_data_sub);
-    RCLCPP_INFO(node->get_logger(), "\033[1;32m----> start imu_data.\033[0m");
+  if (iparam_->b_imu_data) {
+    topics.push_back(iparam_->topic_imu_data_sub);
+    RCLCPP_INFO(nh_->get_logger(), "\033[1;32m----> start imu_data.\033[0m");
   }
 
   // 第一次读取ros2bag，获取雷达的采样时间戳
@@ -100,14 +101,14 @@ void Ros2Convert::Run() {
 
     rosbag2_cpp::Reader reader(std::move(reader_impl));  // 读取ros2bag
 
-    if (param_->b_lidar) {
-      RCLCPP_INFO(node->get_logger(), "\033[1;32m----> start lidar.\033[0m");
+    if (iparam_->b_lidar) {
+      RCLCPP_INFO(nh_->get_logger(), "\033[1;32m----> start lidar.\033[0m");
 
-      if (param_->b_difop == 0) {
+      if (iparam_->b_difop == 0) {
         while (reader.has_next()) {
           auto bag_msg = reader.read_next();
           auto& topic  = bag_msg->topic_name;
-          if (topic == param_->topic_lidar_sub) {
+          if (topic == iparam_->topic_lidar_sub) {
             auto msg = DeserializeMsg<sensor_msgs::msg::PointCloud2>(bag_msg);
             this->LidarHandler(msg);
           }
@@ -131,24 +132,24 @@ void Ros2Convert::Run() {
   }
 
   topics.clear();
-  if (param_->b_camera) {
-    for (size_t i = 0; i < param_->b_camera; ++i) {
-      topics.push_back(param_->topic_camera_sub[i]);
-      RCLCPP_INFO(node->get_logger(),
-                  "\033[1;32m----> start camera_%zu.\033[0m", i + 1);
-    }
-  }
-  if (param_->b_infra) {
-    for (size_t i = 0; i < param_->b_infra; ++i) {
-      topics.push_back(param_->topic_infra_sub[i]);
-      RCLCPP_INFO(node->get_logger(), "\033[1;32m----> start infra_%zu.\033[0m",
+  if (iparam_->b_camera) {
+    for (size_t i = 0; i < iparam_->b_camera; ++i) {
+      topics.push_back(iparam_->topic_camera_sub[i]);
+      RCLCPP_INFO(nh_->get_logger(), "\033[1;32m----> start camera_%zu.\033[0m",
                   i + 1);
     }
   }
-  if (param_->b_star) {
-    for (size_t i = 0; i < param_->b_star; ++i) {
-      topics.push_back(param_->topic_star_sub[i]);
-      RCLCPP_INFO(node->get_logger(), "\033[1;32m----> start star_%zu.\033[0m",
+  if (iparam_->b_infra) {
+    for (size_t i = 0; i < iparam_->b_infra; ++i) {
+      topics.push_back(iparam_->topic_infra_sub[i]);
+      RCLCPP_INFO(nh_->get_logger(), "\033[1;32m----> start infra_%zu.\033[0m",
+                  i + 1);
+    }
+  }
+  if (iparam_->b_star) {
+    for (size_t i = 0; i < iparam_->b_star; ++i) {
+      topics.push_back(iparam_->topic_star_sub[i]);
+      RCLCPP_INFO(nh_->get_logger(), "\033[1;32m----> start star_%zu.\033[0m",
                   i + 1);
     }
   }
@@ -172,24 +173,24 @@ void Ros2Convert::Run() {
 
       Ros2bagParseBase(bag_msg);
 
-      if (param_->b_camera) {
+      if (iparam_->b_camera) {
         Ros2bagParseImageWrapper(bag_msg, topic, camera_topic_map, ds_camera);
       }
 
-      if (param_->b_infra) {
+      if (iparam_->b_infra) {
         Ros2bagParseImageWrapper(bag_msg, topic, infra_topic_map, ds_infra);
       }
 
-      if (param_->b_star) {
+      if (iparam_->b_star) {
         Ros2bagParseImageWrapper(bag_msg, topic, star_topic_map, ds_star);
       }
 
       // 数据量较小，所以一块处理。
-      if (param_->b_radar) {
+      if (iparam_->b_radar) {
         RadarHandler(bag_msg);
       }
 
-      if (param_->b_radar4d) {
+      if (iparam_->b_radar4d) {
         auto it = radar4d_topic_map.find(topic);
         if (it != radar4d_topic_map.end()) {
           Radar4DHandler(bag_msg, it->second);
@@ -204,34 +205,35 @@ void Ros2Convert::Run() {
   sleep(2);
 
   // clang-format off
-  RCLCPP_INFO(node->get_logger(), "----> message global num %d", num_global_pose);
-  RCLCPP_INFO(node->get_logger(), "----> message local num %d", num_local_pose);
-  RCLCPP_INFO(node->get_logger(), "----> message imu num %d", num_imu_data);
-  RCLCPP_INFO(node->get_logger(), "----> message lidar send num %d", num_lidar_send);
-  RCLCPP_INFO(node->get_logger(), "----> message lidar recv num %d", num_lidar_recv);
+  RCLCPP_INFO(nh_->get_logger(), "----> message global num %d", num_global_pose);
+  RCLCPP_INFO(nh_->get_logger(), "----> message local num %d", num_local_pose);
+  RCLCPP_INFO(nh_->get_logger(), "----> message imu num %d", num_imu_data);
+  RCLCPP_INFO(nh_->get_logger(), "----> message lidar send num %d", num_lidar_send);
+  RCLCPP_INFO(nh_->get_logger(), "----> message lidar recv num %d", num_lidar_recv);
   PrintParserCount(ds_camera, "camera");
   PrintParserCount(ds_infra, "infra");
   PrintParserCount(ds_star, "star");
-  RCLCPP_INFO(node->get_logger(), "----> message radar num %d", ds_radar.num);
+  RCLCPP_INFO(nh_->get_logger(), "----> message radar num %d", ds_radar.num);
   PrintParserCount(ds_radar4d, "radar4d");
 
-  RCLCPP_INFO(node->get_logger(), "\033[1;32m----> txt file generated over.\033[0m");
+  RCLCPP_INFO(nh_->get_logger(), "\033[1;32m----> txt file generated over.\033[0m");
   // clang-format on
   std::cout.flush();
-  RCLCPP_INFO(node->get_logger(), "...");  // ROS日志自带刷新
+  RCLCPP_INFO(nh_->get_logger(), "...");  // ROS日志自带刷新
   exit(1);
 }
 
 void Ros2Convert::Ros2bagParseBase(
     const std::shared_ptr<rosbag2_storage::SerializedBagMessage> m) {
   const std::string& topic = m->topic_name;
-  if (param_->b_local_pose && topic == param_->topic_local_pose_sub) {
+  if (iparam_->b_local_pose && topic == iparam_->topic_local_pose_sub) {
     auto msg = DeserializeMsg<self_state::msg::LocalPose>(m);
     LocalPoseHandler(msg);
-  } else if (param_->b_global_pose && topic == param_->topic_global_pose_sub) {
+  } else if (iparam_->b_global_pose &&
+             topic == iparam_->topic_global_pose_sub) {
     auto msg = DeserializeMsg<self_state::msg::GlobalPose>(m);
     GlobalPoseHandler(msg);
-  } else if (param_->b_imu_data && topic == param_->topic_imu_data_sub) {
+  } else if (iparam_->b_imu_data && topic == iparam_->topic_imu_data_sub) {
     auto msg = DeserializeMsg<sensor_msgs::msg::Imu>(m);
     ImuDataHandler(msg);
   }
@@ -269,7 +271,7 @@ void Ros2Convert::LocalPoseHandler(
 
     num_local_pose++;
   } else {
-    RCLCPP_WARN(node->get_logger(), "the null local_pose message ...");
+    RCLCPP_WARN(nh_->get_logger(), "the null local_pose message ...");
   }
 }
 
@@ -310,7 +312,7 @@ void Ros2Convert::GlobalPoseHandler(
 
     num_global_pose++;
   } else {
-    RCLCPP_WARN(node->get_logger(), "the null global_pose message ...");
+    RCLCPP_WARN(nh_->get_logger(), "the null global_pose message ...");
   }
 }
 
@@ -344,7 +346,7 @@ void Ros2Convert::ImuDataHandler(
 
     num_imu_data++;
   } else {
-    RCLCPP_WARN(node->get_logger(), "the null imu_data message ...");
+    RCLCPP_WARN(nh_->get_logger(), "the null imu_data message ...");
   }
 }
 
@@ -358,7 +360,7 @@ void Ros2Convert::Ros2bagParseImageWrapper(
 
   size_t idx = it->second;
 
-  if (param_->prepare_data_num != -1 &&
+  if (rparam_->prepare_data_num != -1 &&
       data_processor->IsEnd(ds_vec[idx].sampled_index)) {
     return;
   }
@@ -368,7 +370,7 @@ void Ros2Convert::Ros2bagParseImageWrapper(
   task.ds          = &ds_vec[idx];
   task.sensor_mode = ds_vec[idx].mode;
 
-  if (param_->b_compressed) {
+  if (iparam_->b_compressed) {
     task.type = ImageTask::ImageType::COMPRESSED;
     // 反序列化成 CompressedImage
     task.compressed_msg = DeserializeMsg<sensor_msgs::msg::CompressedImage>(m);
@@ -380,7 +382,7 @@ void Ros2Convert::Ros2bagParseImageWrapper(
     if (!task.raw_msg) return;
   }
 
-  ImageWorkerFunc(task, data_processor.get(), param_.get());
+  ImageWorkerFunc(task, data_processor.get(), rparam_.get());
 }
 
 void Ros2Convert::ImageWorkerFunc(const ImageTask& task, DataProcessor* proc,
@@ -392,7 +394,7 @@ void Ros2Convert::ImageWorkerFunc(const ImageTask& task, DataProcessor* proc,
   try {
     if (task.type == ImageTask::ImageType::RAW) {
       const auto& msg = task.raw_msg;
-      // RCLCPP_INFO(node->get_logger(), "encoding: %s", msg->encoding.c_str());
+      // RCLCPP_INFO(nh_->get_logger(), "encoding: %s", msg->encoding.c_str());
 
       if (msg->encoding == sensor_msgs::image_encodings::BGR8 ||
           msg->encoding == sensor_msgs::image_encodings::RGB8 ||
@@ -403,7 +405,7 @@ void Ros2Convert::ImageWorkerFunc(const ImageTask& task, DataProcessor* proc,
         // 深度图：不能转 BGR8
         cv_ptr = cv_bridge::toCvCopy(msg, msg->encoding);
       } else {
-        RCLCPP_WARN(node->get_logger(), "Unsupported encoding: %s",
+        RCLCPP_WARN(nh_->get_logger(), "Unsupported encoding: %s",
                     msg->encoding.c_str());
         return;
       }
@@ -412,7 +414,7 @@ void Ros2Convert::ImageWorkerFunc(const ImageTask& task, DataProcessor* proc,
                                    sensor_msgs::image_encodings::BGR8);
     }
   } catch (const cv_bridge::Exception& e) {
-    RCLCPP_INFO(node->get_logger(), "cv_bridge exception in worker: %s",
+    RCLCPP_INFO(nh_->get_logger(), "cv_bridge exception in worker: %s",
                 e.what());
     return;
   }
@@ -460,7 +462,7 @@ void Ros2Convert::ImageWorkerFunc(const ImageTask& task, DataProcessor* proc,
 
 void Ros2Convert::RadarHandler(
     const std::shared_ptr<rosbag2_storage::SerializedBagMessage> m) {
-  auto type = SensorRegistry::Instance().GetRadarType(param_->radar_type);
+  auto type = SensorRegistry::Instance().GetRadarType(rparam_->radar_type);
   auto& path_radar = data_processor->path_radar;
 
   // /* ESR_Radar
@@ -487,7 +489,7 @@ void Ros2Convert::RadarHandler(
       }
 
       char file_radar[300];
-      if (param_->use_txt_or_pcd == 0) {
+      if (rparam_->use_txt_or_pcd == 0) {
         sprintf(file_radar, "%s/%ld.txt", path_radar.c_str(), msg_time);
         FILE* fp_radar;
         fp_radar = fopen(file_radar, "w");
@@ -518,7 +520,7 @@ void Ros2Convert::RadarHandler(
 void Ros2Convert::Radar4DHandler(
     const std::shared_ptr<rosbag2_storage::SerializedBagMessage> m, int idx) {
   // 4D毫米波雷达带速度和速度残差
-  auto type = SensorRegistry::Instance().GetRadar4dType(param_->radar4d_type);
+  auto type = SensorRegistry::Instance().GetRadar4dType(rparam_->radar4d_type);
   auto& path_radar4d = data_processor->path_radar4d[idx];
 
   auto& ds = ds_radar4d[idx];
@@ -548,7 +550,7 @@ void Ros2Convert::Radar4DHandler(
       }
       // clang-format on
       char file_radar4d[300];
-      if (param_->use_txt_or_pcd == 0) {
+      if (rparam_->use_txt_or_pcd == 0) {
         sprintf(file_radar4d, "%s/%ld.txt", path_radar4d.c_str(), msg_time);
         FILE* fp_radar4d;
         fp_radar4d = fopen(file_radar4d, "w");
@@ -582,7 +584,7 @@ void Ros2Convert::Radar4DHandler(
       PointCloud.timestamp = msg_time;
 
       char file_radar4d[300];
-      if (param_->use_txt_or_pcd == 0) {
+      if (rparam_->use_txt_or_pcd == 0) {
         sprintf(file_radar4d, "%s/%ld.txt", path_radar4d.c_str(), msg_time);
         FILE* fp_radar4d;
         fp_radar4d = fopen(file_radar4d, "w");
@@ -635,9 +637,9 @@ void Ros2Convert::LidarHandler(
 
     // warning
     pcl::transformPointCloud(*Cloud, *Cloud,
-                             GetTransMatrix(param_->b_lt_none_rt));
+                             GetTransMatrix(rparam_->b_lt_none_rt));
 
-    if (param_->b_save_data) {
+    if (rparam_->b_save_data) {
       data_processor->SaveLidarData(Cloud, msg_time);
     }
 
@@ -649,12 +651,12 @@ void Ros2Convert::InitRslidar() {
   sem_init(&sem_a, 0, 1);
   // sem_init(&sem_b, 0, 1);
 
-  sub_cloud = node->create_subscription<sensor_msgs::msg::PointCloud2>(
-      param_->topic_lidar_sub, rclcpp::QoS(10),
+  sub_cloud = nh_->create_subscription<sensor_msgs::msg::PointCloud2>(
+      iparam_->topic_lidar_sub, rclcpp::QoS(10),
       std::bind(&Ros2Convert::RecvLidarHandler, this, std::placeholders::_1));
 
-  pub_difop = node->create_publisher<rslidar_msg::msg::RslidarPacket>(
-      param_->topic_lidar_difop_sub /*rslidar_packets_difop*/, 10);
+  pub_difop = nh_->create_publisher<rslidar_msg::msg::RslidarPacket>(
+      iparam_->topic_lidar_difop_sub /*rslidar_packets_difop*/, 10);
 
   b_first_pub_difop = true;
 }
@@ -664,11 +666,11 @@ void Ros2Convert::SendLidarHandler(
     const std::string& topic) {
   // std::cout << "topic: " << topic << std::endl;
 
-  auto type     = SensorRegistry::Instance().GetLidarType(param_->lidar_type);
+  auto type     = SensorRegistry::Instance().GetLidarType(rparam_->lidar_type);
   int difop_num = SensorRegistry::Instance().GetDifopNum(type);
 
   /*rslidar_packets_difop*/
-  if (topic == param_->topic_lidar_difop_sub) {
+  if (topic == iparam_->topic_lidar_difop_sub) {
     if (b_first_pub_difop) {
       b_first_pub_difop = false;
       std::cout << "pub difop first.\n";
@@ -716,9 +718,9 @@ void Ros2Convert::RecvLidarHandler(
 
   // warning
   pcl::transformPointCloud(*Cloud, *Cloud,
-                           GetTransMatrix(param_->b_lt_none_rt));
+                           GetTransMatrix(rparam_->b_lt_none_rt));
 
-  if (param_->b_save_data) {
+  if (rparam_->b_save_data) {
     /*  // 按雷达线束存储
     // for intensity can't use it
     for (int j = 0; j < 1800; j++)

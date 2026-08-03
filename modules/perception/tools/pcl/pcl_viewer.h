@@ -1,17 +1,17 @@
-#ifndef PCL_VIEWER_H_
-#define PCL_VIEWER_H_
+#ifndef PERCEPTION_TOOLS_PCL_VIEWER_H
+#define PERCEPTION_TOOLS_PCL_VIEWER_H
 
 #include <thread>
 
 #define PCL_NO_PRECOMPILE
-#include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/visualization/cloud_viewer.h>
+#include <pcl/visualization/pcl_visualizer.h>
 // pcl > 1.13
 // #include <pcl/common/properties.h>  // getFieldIndex
 #include <pcl/register_point_struct.h>
 
-#include "modules/perception/tools/pcl/show_pcd_head.h"
 #include "modules/perception/tools/opencv/cv_colors.h"
+#include "modules/perception/tools/pcl/show_pcd_head.h"
 // #include "modules/perception/common/lidar/convert/robosense.h"
 #include "modules/perception/tools/pcl/point_types.h"
 

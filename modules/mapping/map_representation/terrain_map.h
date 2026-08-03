@@ -1,23 +1,21 @@
-#ifndef TERRAIN_MAP_H_
-#define TERRAIN_MAP_H_
+#ifndef TERRAIN_MAP_H
+#define TERRAIN_MAP_H
 
+#include <pcl/filters/voxel_grid.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include <pcl/filters/voxel_grid.h>
 // #include <pcl/kdtree/kdtree_flann.h>
 // #include <pcl/search/kdtree.h>
 #include <pcl/register_point_struct.h>
 #include <pcl/registration/transforms.h>
-#include "pcl/visualization/pcl_visualizer.h"
 
-#include "opencv2/opencv.hpp"
-
-#include "modules/common_struct/basic_msgs/Pose6D.h"
 #include "modules/common/transform/geometry/rotation_conversions.h"
-
+#include "modules/common_struct/basic_msgs/Pose6D.h"
 #include "modules/mapping/map_representation/common.h"
 #include "modules/mapping/map_representation/load_map_2d.h"
 #include "modules/mapping/map_visualization/config/static_config.h"
+#include "opencv2/opencv.hpp"
+#include "pcl/visualization/pcl_visualizer.h"
 
 // current frame in grid map
 struct TerrainMapPatch {

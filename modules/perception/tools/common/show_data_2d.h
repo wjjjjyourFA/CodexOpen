@@ -5,11 +5,9 @@
 #include <string>
 
 #include <Eigen/Dense>
-
+#include <opencv2/opencv.hpp>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-
-#include <opencv2/opencv.hpp>
 
 #include "modules/perception/common/base/point.h"
 #include "modules/perception/tools/pcl/point_types.h"

@@ -22,16 +22,6 @@ void RuntimeConfig::LoadConfig(const std::string& config_path) {
     distance_epsilon = pt.get<float>("general.distance_epsilon", 1e-3);
     intensity_epsilon = pt.get<float>("general.intensity_epsilon", 0);
 
-    b_local_pose = pt.get<bool>("sensors.LocalPose", false);
-    b_global_pose = pt.get<bool>("sensors.GlobalPose", false);
-    b_imu_data = pt.get<bool>("sensors.ImuData", false);
-    b_radar = pt.get<int>("sensors.Radar", 0);
-    b_radar4d = pt.get<int>("sensors.Radar4D", 0);
-    b_lidar = pt.get<bool>("sensors.Lidar", false);
-    b_camera = pt.get<int>("sensors.Camera", 0);
-    b_infra = pt.get<int>("sensors.Infra", 0);
-    b_star = pt.get<int>("sensors.Star", 0);
-
     b_compensation_cloud = pt.get<bool>("general.b_compensation_cloud", false);
     b_lt_none_rt = pt.get<int>("general.b_lt_none_rt", 1);
     use_bin_or_pcd = pt.get<bool>("general.b_bin_or_pcd", false);
@@ -52,24 +42,6 @@ void RuntimeConfig::LoadConfig(const std::string& config_path) {
 
     radar_type = pt.get<std::string>("device_names.RadarType", "");
     radar4d_type = pt.get<std::string>("device_names.Radar4DType", "");
-
-    topic_local_pose_sub = pt.get<std::string>("topics.topic_local_pose_sub", "");
-    topic_global_pose_sub = pt.get<std::string>("topics.topic_global_pose_sub", "");
-    topic_imu_data_sub = pt.get<std::string>("topics.topic_imu_data_sub", "");
-    topic_pose_sub = pt.get<std::string>("topics.topic_pose_sub", "");
-
-    b_difop = pt.get<bool>("topics.b_difop", false);
-    topic_lidar_sub = pt.get<std::string>("topics.topic_lidar_sub", "");
-    topic_lidar_ori_sub = pt.get<std::string>("topics.topic_lidar_ori_sub", "");
-    topic_lidar_difop_sub = pt.get<std::string>("topics.topic_lidar_difop_sub", "");
-
-    b_compressed = pt.get<bool>("topics.b_compressed", false);
-    topic_camera_sub = ReadStringArray(pt, "topics.topic_camera_sub_", b_camera);
-    topic_infra_sub = ReadStringArray(pt, "topics.topic_infra_sub_", b_infra);
-    topic_star_sub = ReadStringArray(pt, "topics.topic_star_sub_", b_star);
-
-    topic_radar_sub = pt.get<std::string>("topics.topic_radar_sub", "");
-    topic_radar4d_sub = ReadStringArray(pt, "topics.topic_radar4d_sub_", b_radar4d);
 
     // 打印读取的配置
     std::cout << "rosbag_path: " << rosbag_path << std::endl;

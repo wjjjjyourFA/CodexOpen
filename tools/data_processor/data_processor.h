@@ -1,22 +1,23 @@
-#ifndef DATA_PROCESSOR_HH
-#define DATA_PROCESSOR_HH
+#ifndef DATA_PROCESSOR_H
+#define DATA_PROCESSOR_H
 
 // #include <boost/foreach.hpp> // C++11 之前
+#include <iostream>
+#include <unordered_set>
+#include <vector>
+
 #include <boost/asio/post.hpp>
 #include <boost/asio/thread_pool.hpp>
-#include <iostream>
-#include <vector>
-#include <unordered_set>
 
 #include "cyber/common/file.h"
-#include "modules/perception/tools/pcl/pcl_viewer.h"
-#include "modules/perception/common/config/utils.h"
 #include "modules/perception/common/camera/common/undistortion_handler.h"
 #include "modules/perception/common/camera/params/camera_params.h"
+#include "modules/perception/common/config/utils.h"
 #include "modules/perception/common/lidar/convert/rs_sort_map.h"
+#include "modules/perception/tools/pcl/pcl_viewer.h"
 #include "modules/perception/tools/pcl/point_types.h"
 #include "tools/common/utils/rosbag_utils.h"
-
+#include "tools/data_processor/config/interface_config.h"
 #include "tools/data_processor/config/runtime_config.h"
 #include "tools/data_processor/config/sensor_config.h"
 
@@ -29,7 +30,8 @@ class DataProcessor {
   DataProcessor();  // Constructor
   virtual ~DataProcessor();
 
-  void Init(std::shared_ptr<RuntimeConfig> param);
+  bool Init(std::shared_ptr<jojo::tools::RuntimeConfig> param,
+            std::shared_ptr<jojo::tools::InterfaceConfig> interface);
   void InitUndistortion();
 
   void Start();
@@ -38,7 +40,7 @@ class DataProcessor {
   void SaveLidarData(pcl::PointCloud<pcl::PointXYZI>::Ptr Cloud,
                      uint64_t filename);
   void SaveLidarData(pcl::PointCloud<pcl::PointXYZIRT>::Ptr Cloud,
-                                  uint64_t filename);
+                     uint64_t filename);
 
   void ProcessCameraImage(cv::Mat& image, uint64_t filename, const int& id,
                           const int& mode);
@@ -78,7 +80,8 @@ class DataProcessor {
   bool b_first_grab = true, b_grab = false;
 
  private:
-  std::shared_ptr<RuntimeConfig> param_ /*runtime_config*/;
+  std::shared_ptr<jojo::tools::RuntimeConfig> rparam_;
+  std::shared_ptr<jojo::tools::InterfaceConfig> iparam_;
 
   std::string prefix;
   std::string postfix;
@@ -94,4 +97,4 @@ class DataProcessor {
 }  // namespace tools
 }  // namespace jojo
 
-#endif  // DataProcessor
+#endif  // DATA_PROCESSOR_H

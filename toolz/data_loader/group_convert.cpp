@@ -11,27 +11,34 @@ GroupConvertDataSet::GroupConvertDataSet() {}
 
 GroupConvertDataSet::~GroupConvertDataSet() {}
 
-void GroupConvertDataSet::Init(std::shared_ptr<RuntimeConfigOffline> param) {
-  param_ = param;
+bool GroupConvertDataSet::Init(
+    std::shared_ptr<jojo::tools::RuntimeConfig> rparam,
+    std::shared_ptr<jojo::tools::InterfaceConfig> iparam) {
+  rparam_ = rparam;
+  iparam_ = iparam;
 
   data_loader = std::make_shared<DataLoaderDataSet>();
-  data_loader->Init(param_);
+  data_loader->Init(rparam_, iparam_);
   data_loader->Start();
 
-  dc_camera.resize(param_->b_camera);
-  dc_infra.resize(param_->b_infra);
-  dc_star.resize(param_->b_star);
-  dc_radar4d.resize(param_->b_radar4d);
+  dc_camera.resize(iparam_->b_camera);
+  dc_infra.resize(iparam_->b_infra);
+  dc_star.resize(iparam_->b_star);
+  dc_radar4d.resize(iparam_->b_radar4d);
 
   this->InitGroup();
   // std::cout << "GroupConvertDataSet Init End." << std::endl;
+
+  return true;
 }
 
 void GroupConvertDataSet::InitGroup() {
-  group          = std::make_shared<MeasureGroupDataSet>();
+  // 基类指针初始化
+  group = std::make_shared<MeasureGroupDataSet>();
+  // 拿到子类指针
   this->group_ds = std::static_pointer_cast<MeasureGroupDataSet>(group);
 
-  if (param_->b_lidar) {
+  if (iparam_->b_lidar) {
     std::string name = "lidar";
     dc_lidar.set_name(name);
     std::string ts_file = "timestamp/" + name + "_timestamp";
@@ -42,19 +49,20 @@ void GroupConvertDataSet::InitGroup() {
         std::cerr << name << " timestamp load failed" << std::endl;
       }
     }
-    dc_lidar.init_ts(param_->start_time);
+    dc_lidar.init_ts(rparam_->start_time);
     // update the start time
-    param_->start_time = dc_lidar.cur_time;
+    rparam_->start_time = dc_lidar.cur_time;
 
     // clang-format off
     group_ds->lidar.data = pcl::PointCloud<pcl::PointXYZI>::Ptr(new pcl::PointCloud<pcl::PointXYZI>);
+    group_ds->lidar.data->points.reserve(100000);
     // clang-format on
   }
 
-  if (param_->b_camera) {
-    for (int i = 0; i < param_->b_camera; i++) {
+  if (iparam_->b_camera) {
+    for (int i = 0; i < iparam_->b_camera; i++) {
       std::string name;
-      // if (param_->b_camera == 1) {
+      // if (iparam_->b_camera == 1) {
       //   name = "camera";
       // } else {
       // 对应 MkdirDataFolderVector 从1开始
@@ -73,17 +81,17 @@ void GroupConvertDataSet::InitGroup() {
       }
       // clang-format on
       // 对于 同频率的数据 可以直接递推
-      dc_camera.at(i).align_ts(param_->start_time);
+      dc_camera.at(i).align_ts(rparam_->start_time);
       // 不同频率的数据 需要在运行时找到匹配的时间戳
     }
-    group->camera.resize(param_->b_camera);
+    group->camera.resize(iparam_->b_camera);
     // std::cout << "camera size: " << group->camera.size() << std::endl;
   }
 
-  if (param_->b_infra) {
-    for (int i = 0; i < param_->b_infra; i++) {
+  if (iparam_->b_infra) {
+    for (int i = 0; i < iparam_->b_infra; i++) {
       std::string name;
-      // if (param_->b_infra == 1) {
+      // if (iparam_->b_infra == 1) {
       //   name = "infra";
       // } else {
       name = "infra_" + std::to_string(i + 1);
@@ -92,22 +100,22 @@ void GroupConvertDataSet::InitGroup() {
       std::string ts_file = "timestamp/" + name + "_timestamp";
       // clang-format off
       if (!data_loader->LoadTimeStamp(data_loader->postfix, ts_file, dc_infra.at(i))) {
-        if (data_loader->ExtractTimestamp(data_loader->path_camera.at(i), dc_infra.at(i))) {
+        if (data_loader->ExtractTimestamp(data_loader->path_infra.at(i), dc_infra.at(i))) {
           data_loader->SaveTimeStamp(data_loader->postfix, ts_file, dc_infra.at(i));
         } else {
           std::cerr << name << " timestamp load failed" << std::endl;
         }
       }
       // clang-format on
-      dc_infra.at(i).align_ts(param_->start_time);
+      dc_infra.at(i).align_ts(rparam_->start_time);
     }
-    group->infra.resize(param_->b_infra);
+    group->infra.resize(iparam_->b_infra);
   }
 
-  if (param_->b_star) {
-    for (int i = 0; i < param_->b_star; i++) {
+  if (iparam_->b_star) {
+    for (int i = 0; i < iparam_->b_star; i++) {
       std::string name;
-      // if (param_->b_star == 1) {
+      // if (iparam_->b_star == 1) {
       //   name = "star";
       // } else {
       name = "star_" + std::to_string(i + 1);
@@ -116,23 +124,23 @@ void GroupConvertDataSet::InitGroup() {
       std::string ts_file = "timestamp/" + name + "_timestamp";
       // clang-format off
       if (!data_loader->LoadTimeStamp(data_loader->postfix, ts_file, dc_star.at(i))) {
-        if (data_loader->ExtractTimestamp(data_loader->path_camera.at(i), dc_star.at(i))) {
+        if (data_loader->ExtractTimestamp(data_loader->path_star.at(i), dc_star.at(i))) {
           data_loader->SaveTimeStamp(data_loader->postfix, ts_file, dc_star.at(i));
         } else {
           std::cerr << name << " timestamp load failed" << std::endl;
         }
       }
       // clang-format on
-      dc_star.at(i).align_ts(param_->start_time);
+      dc_star.at(i).align_ts(rparam_->start_time);
     }
-    group->star.resize(param_->b_star);
+    group->star.resize(iparam_->b_star);
   }
 
-  if (param_->b_global_pose) {
+  if (iparam_->b_global_pose) {
     dc_se3_pose.set_name("global_pose");
     // LoadPose(data_loader->postfix, dc_se3_pose.name);
     LoadPose(data_loader->path_global_pose);
-  } else if (param_->b_local_pose) {
+  } else if (iparam_->b_local_pose) {
     dc_se3_pose.set_name("local_pose");
     // LoadPose(data_loader->postfix, dc_se3_pose.name);
     LoadPose(data_loader->path_local_pose);
@@ -143,18 +151,18 @@ std::shared_ptr<const MeasureGroupBase> GroupConvertDataSet::ReadNext() {
   // std::cout << "GroupConvert ReadNext." << std::endl;
   static bool first_run = false;
   if (!first_run) {
-    index_ts    = param_->start_time;
+    index_ts    = rparam_->start_time;
     is_running_ = true;
     first_run   = true;
   }
 
-  if (param_->end_time !=0 && index_ts >= param_->end_time) {
+  if (rparam_->end_time != 0 && index_ts >= rparam_->end_time) {
     is_running_ = false;
     return nullptr;
   }
 
   uint64_t last_ts = index_ts;
-  if (param_->b_lidar) {  // 加载点云
+  if (iparam_->b_lidar) {  // 加载点云
     dc_lidar.align_ts(index_ts);
     if (!this->GetLidarBase<pcl::PointXYZI>(dc_lidar, group_ds->lidar.data,
                                             group_ds->lidar.time,
@@ -167,9 +175,9 @@ std::shared_ptr<const MeasureGroupBase> GroupConvertDataSet::ReadNext() {
     index_ts = dc_lidar.cur_time;
   }
 
-  if (param_->b_camera) {  // 加载图像
+  if (iparam_->b_camera) {  // 加载图像
     // std::cout << "GroupConvert ReadNext. Camera." << std::endl;
-    for (int i = 0; i < param_->b_camera; i++) {
+    for (int i = 0; i < iparam_->b_camera; i++) {
       dc_camera.at(i).align_ts(last_ts);
       this->GetImage(group->camera.at(i).data, group->camera.at(i).time, i, 1);
       if (group->camera.at(i).data.empty()) {
@@ -180,8 +188,8 @@ std::shared_ptr<const MeasureGroupBase> GroupConvertDataSet::ReadNext() {
     }
   }
 
-  if (param_->b_infra) {  // 加载图像
-    for (int i = 0; i < param_->b_infra; i++) {
+  if (iparam_->b_infra) {  // 加载图像
+    for (int i = 0; i < iparam_->b_infra; i++) {
       dc_infra.at(i).align_ts(last_ts);
       this->GetImage(group->infra.at(i).data, group->infra.at(i).time, i, 1);
       if (group->infra.at(i).data.empty()) {
@@ -192,8 +200,8 @@ std::shared_ptr<const MeasureGroupBase> GroupConvertDataSet::ReadNext() {
     }
   }
 
-  if (param_->b_star) {  // 加载图像
-    for (int i = 0; i < param_->b_star; i++) {
+  if (iparam_->b_star) {  // 加载图像
+    for (int i = 0; i < iparam_->b_star; i++) {
       dc_star.at(i).align_ts(last_ts);
       this->GetImage(group->star.at(i).data, group->star.at(i).time, i, 1);
       if (group->star.at(i).data.empty()) {
@@ -204,7 +212,7 @@ std::shared_ptr<const MeasureGroupBase> GroupConvertDataSet::ReadNext() {
     }
   }
 
-  if (param_->b_local_pose || param_->b_global_pose) {
+  if (iparam_->b_local_pose || iparam_->b_global_pose) {
     // std::cout << "GroupConvert ReadNext. Pose SE3." << std::endl;
     dc_se3_pose.align_ts(last_ts);
     if (!this->GetDataBase(&dc_se3_pose, group_ds->se3_pose.data,
@@ -214,7 +222,7 @@ std::shared_ptr<const MeasureGroupBase> GroupConvertDataSet::ReadNext() {
       is_running_ = false;
     }
 
-    if (param_->b_pose_vec) {
+    if (rparam_->b_pose_vec) {
       dc_se3_pose.GetDataSegment(group_ds->lidar.start_time,
                                  group_ds->lidar.time, group_ds->se3_pose_vec);
 
@@ -256,7 +264,7 @@ bool GroupConvertDataSet::LoadPose(const std::string& file) {
       int itemsRead = fscanf(_fp, "%" SCNd64 " %lf %lf %lf %lf %lf %lf",
                              &local_time, &x, &y, &z, &roll, &pitch, &yaw);
       // clang-format on
-      pose.time = static_cast<double>(local_time);
+      pose.time    = static_cast<double>(local_time);
       pose.pos.x() = x;
       pose.pos.y() = y;
       pose.pos.z() = z;
@@ -279,20 +287,20 @@ bool GroupConvertDataSet::LoadPose(const std::string& file) {
   auto pos = file.find_last_of("/\\");
   std::string parent = (pos == std::string::npos) ? "" : file.substr(0, pos);
   const std::string p_c_path = parent + "/pose_center" + ".txt";
-  // std::cout << "p_c_path: " << p_c_path << std::endl;
+  std::cout << "p_c_path: " << p_c_path << std::endl;
   // clang-format on
 
   // 计算 pose center 用于调整偏移
   double pose_center_x = 0, pose_center_y = 0, pose_center_z = 0;
 
   if (common::FileExists(p_c_path)) {
-    std::cout << "p_c_path exists." << std::endl;
+    // std::cout << "p_c_path exists." << std::endl;
 
     _fp = fopen(p_c_path.c_str(), "r");
     fscanf(_fp, "%lf %lf %lf", &pose_center_x, &pose_center_y, &pose_center_z);
     fclose(_fp);
   } else {
-    std::cout << "p_c_path don't exists." << std::endl;
+    std::cout << "p_c_path don't exists.. rebuild pose_center.txt" << std::endl;
 
     int num_of_key_frames = 0;
     double center_x = 0, center_y = 0, center_z = 0;

@@ -11,21 +11,27 @@ using namespace std;
 using namespace jojo::tools;
 
 int main(int argc, char** argv) {
-#if defined(ENABLE_ROS1)
-  std::string config_path = "./../../config/DataLoader/DataLoaderRos1.ini";
-#elif defined(ENABLE_ROS2)
-  std::string config_path = "./../../config/DataLoader/DataLoaderRos2.ini";
-#endif
+  // clang-format off
   std::string name = "DataLoader";
+  std::string config_path = "./../../config/DataLoader/DataLoader.ini";
+  // clang-format on
 
   // 如果命令行参数提供了自定义配置路径，则使用该路径
   if (argc > 1) {
     config_path = argv[1];
   }
 
-  auto runtime_config = std::make_shared<RuntimeConfigRealtime>();
+  auto runtime_config = std::make_shared<jojo::tools::RuntimeConfig>();
   runtime_config->set_name(name);
   runtime_config->LoadConfig(config_path);
+
+  std::string if_config_path = "./../../config/DataLoader/InterfaceRos1.ini";
+  // std::string if_config_path = "./../../config/DataLoader/InterfaceRos2.ini";
+  // std::string if_config_path = "./../../config/DataLoader/InterfaceDds.ini";
+
+  auto interface_config = std::make_shared<jojo::tools::InterfaceConfig>();
+  interface_config->set_name(name);
+  interface_config->LoadConfig(if_config_path);
 
 #if defined(ENABLE_ROS1)
   ROS_INFO("\033[1;32m----> DataLoader Started (auto version).\033[0m");
@@ -34,8 +40,8 @@ int main(int argc, char** argv) {
   ros::NodeHandle nh;
   ros::NodeHandle private_nh("~");
 
-  auto _pRos1Convert = std::make_shared<Ros1Convert>();
-  _pRos1Convert->Init(nh, private_nh, runtime_config);
+  auto _pRos1Convert = std::make_shared<Ros1Convert>(nh, private_nh);
+  _pRos1Convert->Init(runtime_config, interface_config);
 
   _pRos1Convert->Run();
 
@@ -48,8 +54,8 @@ int main(int argc, char** argv) {
   rclcpp::init(argc, argv);
   auto nh = std::make_shared<rclcpp::Node>(name);
 
-  auto _pRos2Convert = std::make_shared<Ros2Convert>();
-  _pRos2Convert->Init(nh, runtime_config);
+  auto _pRos2Convert = std::make_shared<Ros2Convert>(nh);
+  _pRos2Convert->Init(runtime_config, interface_config);
 
   _pRos2Convert->Run();
 

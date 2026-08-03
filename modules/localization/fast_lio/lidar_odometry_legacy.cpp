@@ -11,6 +11,8 @@ LidarOdometry::LidarOdometry() {
   p_imu = std::make_shared<ImuProcess>();
 
   feats_undistort_filtered.reset(new PointCloudXYZI());
+
+  traj_cloud.reset(new pcl::PointCloud<pcl::PointXYZRGB>());
 }
 
 LidarOdometry::~LidarOdometry() {}
@@ -28,8 +30,8 @@ void LidarOdometry::SetExtrinsicMatrix(
 }
 
 void LidarOdometry::Init(
-    std::shared_ptr<jojo::localization::RuntimeConfig> param) {
-  param_ = param;
+    std::shared_ptr<jojo::localization::RuntimeConfig> rparam) {
+  rparam_ = rparam;
   this->SetDataFolder();
 
   /*** variables definition ***/
@@ -151,10 +153,14 @@ void LidarOdometry::lasermap_fov_segment() {
   // kdtree_delete_time = omp_get_wtime() - delete_begin;
 }
 
+/* for ros msg publish
 bool LidarOdometry::sync_packages(MeasureGroup& meas) {
-  double lidar_mean_scantime = 0.0;
-  int scan_num               = 0;
+  // double lidar_mean_scantime = 0.0;
+  // int scan_num = 0;
+
+  return true;
 }
+*/
 
 void LidarOdometry::map_incremental() {
   // 增量更新地图
@@ -367,7 +373,7 @@ void LidarOdometry::run_odometry(MeasureGroup& Measures) {
 }
 
 void LidarOdometry::SetDataFolder() {
-  this->prefix = param_->root_path + "/" + param_->file_name;
+  this->prefix = rparam_->root_path + "/" + rparam_->file_name;
   // std::cout << "data_file : " << this->prefix << std::endl;
 
   this->postfix = this->prefix + "-O";
@@ -402,8 +408,7 @@ void LidarOdometry::save_result(bool b_save_pcd) {
   if (ofs_pose.is_open()) {
     // timestamp x y z r p y
     ofs_pose << std::fixed << uint64_t(lidar_end_time * 1000) << " "
-             << o_pose.pos.x() << " " << o_pose.pos.y() << " "
-             << o_pose.pos.z()
+             << o_pose.pos.x() << " " << o_pose.pos.y() << " " << o_pose.pos.z()
              << " " << euler[2] << " " << euler[1] << " " << euler[0]
              << std::endl;
   } else {
@@ -417,7 +422,7 @@ void LidarOdometry::save_result(bool b_save_pcd) {
 
     std::ostringstream oss_time;
     oss_time << std::setw(13) << std::setfill('0')
-         << static_cast<uint64_t>(lidar_end_time * 1000);
+             << static_cast<uint64_t>(lidar_end_time * 1000);
     std::string pcd_filename = path_lidar + "/" + oss_time.str() + ".pcd";
     pcl::io::savePCDFileBinary(pcd_filename, *feats_undistort);
     // std::cout << "Saving " << pcd_filename << std::endl;
@@ -427,21 +432,21 @@ void LidarOdometry::save_result(bool b_save_pcd) {
 void LidarOdometry::Show(bool b_pause) {
   if (!pose_inited) return;
 
-  static int cloud_id = 0;  // 点云编号
-  static pcl::PointCloud<pcl::PointXYZRGB>::Ptr traj_cloud(
-      new pcl::PointCloud<pcl::PointXYZRGB>);
-  static bool has_traj  = false;
+  // 点云编号
+  // static int cloud_id = 0;
   std::string traj_name = "traj";
 
   if (vis == NULL) {
-    // vis = new pcl::visualization::PCLVisualizer("vis pcd");
-	vis.reset(new pcl::visualization::PCLVisualizer("vis pcd"));
-    vis->setBackgroundColor(0, 0, 0);
+    // vis = new pcl::visualization::PCLVisualizer("FAST-LIO current scan");
+    vis.reset(new pcl::visualization::PCLVisualizer("FAST-LIO current scan"));
+    vis->setBackgroundColor(0.03, 0.03, 0.03);
     vis->initCameraParameters();
     vis->setCameraPosition(0, -20, 10, 0, 0, 1);
   }
 
-  std::string name = "current_cloud";
+  if (vis->wasStopped()) return;
+
+  std::string name = "current_scan";
   // 添加当前点云（按帧编号叠加）
   // std::string name = "cloud_" + std::to_string(cloud_id++);
   // pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI> intensity_color(feats_down_world, "z");
@@ -469,11 +474,11 @@ void LidarOdometry::Show(bool b_pause) {
   traj_cloud->points.push_back(traj);
 
   // 只需要添加一次，之后只更新
-  if (!has_traj) {
+  if (!trajectory_added_to_viewer_) {
     vis->addPointCloud(traj_cloud, traj_name);
     vis->setPointCloudRenderingProperties(
         pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 4, traj_name);
-    has_traj = true;
+    trajectory_added_to_viewer_ = true;
   } else {
     vis->updatePointCloud(traj_cloud, traj_name);
   }

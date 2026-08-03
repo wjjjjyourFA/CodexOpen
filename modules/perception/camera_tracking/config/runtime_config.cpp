@@ -20,6 +20,9 @@ void RuntimeConfig::LoadConfig(const std::string& config_path) {
     sort_wts_file = pt.get<std::string>("general.sort_wts_file", "");
     sort_engine_file = pt.get<std::string>("general.sort_engine_file", "");
     sort_onnx_file = pt.get<std::string>("general.sort_onnx_file", "");
+    
+    b_undistort = pt.get<bool>("general.b_undistort", false);
+    calib_file_path = pt.get<std::string>("calibration.calib_file_path", "");
     // 打印其他参数...
     // clang-format on
   } catch (const std::exception& e) {

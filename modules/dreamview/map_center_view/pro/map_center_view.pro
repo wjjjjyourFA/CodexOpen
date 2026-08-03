@@ -48,6 +48,7 @@ SOURCES += \
   $$CODEX_PATH/modules/common/transform/geometry/rotation_conversions.cpp \
   $$PREFIX/base/camera.cc \
   $$PREFIX/base/distortion_model.cc \
+  $$PREFIX/base/fisheye_model.cc \
   $$PREFIX/config/utils.cpp \
   $$PREFIX/config/sensor_extrinsics.cpp \
   $$PREFIX/config/vehicle_config.cpp \
@@ -58,13 +59,14 @@ SOURCES += \
   $$DATA_PROCESSOR_PATH/config/sensor_config.cc \
   $$OTHER_PATH/data_loader.cpp \
   $$OTHER_PATH/group_convert.cpp \
-  $$OTHER_PATH/config/runtime_config_offline.cpp \
+  $$OTHER_PATH/config/runtime_config.cpp \
+  $$OTHER_PATH/config/interface_config.cpp \
   $$BRANCH_PATH/data_loader.cpp \
   $$BRANCH_PATH/group_convert.cpp \
   $$SELF_PATH/config/runtime_config.cpp \
   $$SELF_PATH/config/static_config.cpp \
   $$SELF_PATH/map_center_view.cpp \
-  $$SELF_PATH/map_center_view_test.cpp
+  $$SELF_PATH/run_map_center_view.cpp
 
 HEADERS += \
   $$CODEX_PATH/cyber/binary.h \
@@ -76,6 +78,7 @@ HEADERS += \
   $$CODEX_PATH/modules/common/transform/geometry/rotation_conversions.h \
   $$PREFIX/base/camera.h \
   $$PREFIX/base/distortion_model.h \
+  $$PREFIX/base/fisheye_model.h \
   $$PREFIX/config/utils.h \
   $$PREFIX/config/sensor_extrinsics.h \
   $$PREFIX/config/vehicle_config.h \
@@ -88,7 +91,8 @@ HEADERS += \
   $$OTHER_PATH/data_loader.h \
   $$OTHER_PATH/data_container.h \
   $$OTHER_PATH/group_convert.h \
-  $$OTHER_PATH/config/runtime_config_offline.h \
+  $$OTHER_PATH/config/runtime_config.h \
+  $$OTHER_PATH/config/interface_config.h \
   $$BRANCH_PATH/data_loader.h \
   $$BRANCH_PATH/group_convert.h \
   $$SELF_PATH/config/runtime_config.h \

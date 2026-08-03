@@ -2,7 +2,6 @@
 
 #include <pcl/common/common.h>
 #include <pcl/filters/voxel_grid.h>
-
 #include <pcl/kdtree/kdtree_flann.h>
 
 #include "modules/mapping/map_processing/utils.h"
@@ -28,7 +27,7 @@ void VoxelizeLargeScale(
     if (!std::isfinite(pt.x) || !std::isfinite(pt.y) || !std::isfinite(pt.z))
       continue;
     */
-   
+
     /* way 1
     float loc_xyz[3];
     for (int j = 0; j < 3; j++) {

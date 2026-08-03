@@ -1,21 +1,32 @@
 #include "modules/localization/fast_lio/lidar_odometry.h"
 
+#include <algorithm>
+#include <stdexcept>
+
 namespace fastlio {
 namespace common = apollo::cyber::common;
 
 LidarOdometry::LidarOdometry() {
   feats_undistort.reset(new PointCloudXYZI());
-  feats_down_body.reset(new PointCloudXYZI());
-  feats_down_world.reset(new PointCloudXYZI());
-  normvec.reset(new PointCloudXYZI(100000, 1));
-  laserCloudOri.reset(new PointCloudXYZI(100000, 1));
-  corr_normvect.reset(new PointCloudXYZI(100000, 1));
+  this->feats_down_body.reset(new PointCloudXYZI());
+  this->feats_down_world.reset(new PointCloudXYZI());
+  this->normvec.reset(new PointCloudXYZI(100000, 1));
+  this->laserCloudOri.reset(new PointCloudXYZI(100000, 1));
+  this->corr_normvect.reset(new PointCloudXYZI(100000, 1));
   p_imu = std::make_shared<ImuProcess>();
 
-  // 如果没有显示需求，可以注释
+  // 如果没有回环检测需求，可以注释
   _featsArray.reset(new PointCloudXYZI(100000, 1));
 
   feats_undistort_filtered.reset(new PointCloudXYZI());
+
+  local_map_cloud_.reset(new PointCloudXYZI());
+  traj_cloud.reset(new pcl::PointCloud<pcl::PointXYZRGB>());
+
+#ifdef MP_EN
+  omp_set_num_threads(MP_PROC_NUM);
+  // std::cout << "MP_EN ON" << std::endl;
+#endif
 }
 
 LidarOdometry::~LidarOdometry() {}
@@ -36,6 +47,9 @@ void LidarOdometry::SetGravityImuExtrinsicMatrix(
   // clang-format on
   */
   gravity_imu_ext = extrinsic_matrix.cast<double>();
+
+  // std::cout << "gravity_imu_ext: " << std::endl << gravity_imu_ext << std::endl;
+  // abort();
 }
 
 void LidarOdometry::SetExtrinsicMatrix(
@@ -54,12 +68,16 @@ void LidarOdometry::SetExtrinsicMatrix(
 
 void LidarOdometry::Init(
     std::shared_ptr<jojo::localization::RuntimeConfig> param) {
-  param_ = param;
+  rparam_ = param;
   this->SetDataFolder();
 
   /*** variables definition ***/
   memset(point_selected_surf, true, sizeof(point_selected_surf));
-  memset(res_last, -1000.0f, sizeof(res_last));
+  // memset 无法按预期把 float 数组全部设置为 -1000.0f。
+  // 如果直接这么运行，你的 res_last 数组会被填充成一个极其奇怪的垃圾浮点数值。
+  // memset(res_last, -1000.0f, sizeof(res_last));
+  // ==> std::fill
+  std::fill_n(res_last, 100000, -1000.0f);
   downSizeFilterSurf.setLeafSize(filter_size_surf_min, filter_size_surf_min,
                                  filter_size_surf_min);
   downSizeFilterMap.setLeafSize(filter_size_map_min, filter_size_map_min,
@@ -83,6 +101,41 @@ void LidarOdometry::Init(
   // kf.init_dyn_share(get_f, df_dx, df_dw, h_share_model, NUM_MAX_ITERATIONS, epsi);
   kf.init_dyn_share(get_f, df_dx, df_dw, LidarOdometry::h_share_model_static, NUM_MAX_ITERATIONS, epsi);
   // clang-format on
+}
+
+void LidarOdometry::Init(
+    std::shared_ptr<jojo::localization::RuntimeConfig> rparam,
+    std::shared_ptr<jojo::localization::StaticConfig> sparam) {
+  sparam_ = sparam;
+  if (!this->InitStaticConfig()) {
+    throw std::invalid_argument("StaticConfig must not be null");
+  }
+  this->Init(rparam);
+}
+
+bool LidarOdometry::InitStaticConfig() {
+  if (!sparam_) {
+    return false;
+  }
+
+  lidar_type       = sparam_->lidar_type;
+  point_filter_num = sparam_->point_filter_num;
+
+  gyr_cov   = sparam_->gyr_cov;
+  acc_cov   = sparam_->acc_cov;
+  b_gyr_cov = sparam_->b_gyr_cov;
+  b_acc_cov = sparam_->b_acc_cov;
+
+  DET_RANGE = sparam_->DET_RANGE;
+  cube_len  = sparam_->cube_len;
+
+  filter_size_surf_min = sparam_->filter_size_surf_min;
+  filter_size_map_min  = sparam_->filter_size_map_min;
+
+  extrinsic_est_en   = sparam_->extrinsic_est_en;
+  NUM_MAX_ITERATIONS = sparam_->NUM_MAX_ITERATIONS;
+
+  return true;
 }
 
 void LidarOdometry::pointBodyToWorld(PointType const* const pi,
@@ -122,7 +175,7 @@ void LidarOdometry::lasermap_fov_segment() {
 
   // W系下位置
   V3D pos_LiD = pos_lid;
-  // 初始化局部地图范围，以pos_LiD为中心,长宽高均为cube_len
+  // 初始化局部地图范围，以 pos_LiD 为中心,长宽高均为 cube_len
   if (!Localmap_Initialized) {
     for (int i = 0; i < 3; i++) {
       LocalMap_Points.vertex_min[i] = pos_LiD(i) - cube_len / 2.0;
@@ -180,10 +233,14 @@ void LidarOdometry::lasermap_fov_segment() {
   // kdtree_delete_time = omp_get_wtime() - delete_begin;
 }
 
+/* for ros msg publish
 bool LidarOdometry::sync_packages(MeasureGroup& meas) {
-  double lidar_mean_scantime = 0.0;
-  int scan_num               = 0;
+  // double lidar_mean_scantime = 0.0;
+  // int scan_num = 0;
+
+  return true;
 }
+*/
 
 void LidarOdometry::map_incremental() {
   // 增量更新地图
@@ -272,69 +329,102 @@ void LidarOdometry::h_share_model(
 
   //
   double match_start = omp_get_wtime();
-  laserCloudOri->clear();  // 计算点-面残差时，实际用到的满足要求的点坐标，l系
-  corr_normvect->clear();  // 计算点-面残差时，实际用到的点对应平面的参数，w系
+
+  /* way 1 源代码，能通，但有潜在语法问题，因此升级为下面的版本
+  // laserCloudOri->clear();  // 计算点-面残差时，实际用到的满足要求的点坐标，l系
+  // corr_normvect->clear();  // 计算点-面残差时，实际用到的点对应平面的参数，w系
+  */
+
+  // debug ==> std::out_of_range
+  // laserCloudOri->points.at(0) = feats_down_body->points.at(0);
+
+  // !! 为什么源代码不跳出？
+  // clear() 只把逻辑元素数量设为0，通常不会释放已经申请的 100000 个点的内存。
+  // 运行时，std::vector::operator[] 基本等价于 return *(date_pointer + index);
+  // 只要 effect_feat_num < 100000，写入地址仍然落在 vector 已申请的那块堆内存中
+  // 后续读取时，同样使用不检查边界的 operator[]，因此不会出现越界访问，能读出刚刚写进去的数据。
+  // 而 laserCloudOri->points.at(0) 会严格检查 0 < points.size();
+
+  // /* way2 有效点会在并行区结束后按索引压缩到这两个缓存。
+  // 先定长，保证 operator[] 写入合法；已有 capacity 足够时 resize 不会重新分配。
+  laserCloudOri->resize(feats_down_size);
+  corr_normvect->resize(feats_down_size);
+  // */
+
   total_residual = 0.0;
 
-/** closest surface search and residual computation **/
+  /** closest surface search and residual computation **/
+
 #ifdef MP_EN
-  omp_set_num_threads(MP_PROC_NUM);
-#pragma omp parallel for
-#endif
-  // 遍历所有的特征点
-  for (int i = 0; i < feats_down_size; i++) {
-    PointType& point_body  = feats_down_body->points[i];
-    PointType& point_world = feats_down_world->points[i];
+#pragma omp parallel
+  {
+    // std::vector<float> pointSearchSqDis(NUM_MATCH_POINTS);
+    thread_local std::vector<float> pointSearchSqDis;
+    pointSearchSqDis.clear();
+    pointSearchSqDis.reserve(NUM_MATCH_POINTS);
 
-    /* transform to world frame */
-    V3D p_body(point_body.x, point_body.y, point_body.z);
-    V3D p_global(s.rot * (s.offset_R_L_I * p_body + s.offset_T_L_I) + s.pos);
-    point_world.x         = p_global(0);
-    point_world.y         = p_global(1);
-    point_world.z         = p_global(2);
-    point_world.intensity = point_body.intensity;
+#pragma omp for
+    // 遍历所有的特征点
+    for (int i = 0; i < feats_down_size; i++) {
+      PointType& point_body  = feats_down_body->points[i];
+      PointType& point_world = feats_down_world->points[i];
 
-    std::vector<float> pointSearchSqDis(NUM_MATCH_POINTS);
+      /* transform to world frame */
+      V3D p_body(point_body.x, point_body.y, point_body.z);
+      V3D p_global(s.rot * (s.offset_R_L_I * p_body + s.offset_T_L_I) + s.pos);
+      point_world.x         = p_global(0);
+      point_world.y         = p_global(1);
+      point_world.z         = p_global(2);
+      point_world.intensity = point_body.intensity;
 
-    // auto& points_near = Nearest_Points[i];
-    // zero copy
-    auto& points_near = (*Nearest_Points)[i];
-    points_near.clear();
 
-    if (ekfom_data.converge) {
-      /** Find the closest surfaces in the map **/
-      // 偏 优化约束
-      ikdtree.Nearest_Search(point_world, NUM_MATCH_POINTS, points_near,
-                             pointSearchSqDis);
-      point_selected_surf[i] = points_near.size() < NUM_MATCH_POINTS ? false
-                               : pointSearchSqDis[NUM_MATCH_POINTS - 1] > 5
-                                   ? false
-                                   : true;
-    }
+      // auto& points_near = Nearest_Points[i];
+      // zero copy
+      auto& points_near = (*Nearest_Points)[i];
+      // way 1 源代码
+      // points_near.clear();
 
-    if (!point_selected_surf[i]) continue;
+      if (ekfom_data.converge) {
+        /** Find the closest surfaces in the map **/
+        // 偏 优化约束
+        ikdtree.Nearest_Search(point_world, NUM_MATCH_POINTS, points_near,
+                               pointSearchSqDis);
+        point_selected_surf[i] = points_near.size() < NUM_MATCH_POINTS ? false
+                                 : pointSearchSqDis[NUM_MATCH_POINTS - 1] > 5
+                                     ? false
+                                     : true;
+      }
 
-    VF(4) pabcd;
-    point_selected_surf[i] = false;
-    // 拟合局部平面
-    if (esti_plane(pabcd, points_near, 0.1f)) {
-      // 计算点到平面的距离（残差）
-      // pd2 = a * x + b * y + c * z + d
-      float pd2 = pabcd(0) * point_world.x + pabcd(1) * point_world.y +
-                  pabcd(2) * point_world.z + pabcd(3);
-      float s   = 1 - 0.9 * fabs(pd2) / sqrt(p_body.norm());
+      if (!point_selected_surf[i]) continue;
 
-      // 过滤有效点
-      if (s > 0.9) {
-        point_selected_surf[i]       = true;
-        normvec->points[i].x         = pabcd(0);
-        normvec->points[i].y         = pabcd(1);
-        normvec->points[i].z         = pabcd(2);
-        normvec->points[i].intensity = pd2;
-        res_last[i]                  = abs(pd2);
+      VF(4) pabcd;
+      point_selected_surf[i] = false;
+      // 拟合局部平面
+      if (esti_plane(pabcd, points_near, 0.1f)) {
+        // 计算点到平面的距离（残差）
+        // pd2 = a * x + b * y + c * z + d
+        float pd2 = pabcd(0) * point_world.x + pabcd(1) * point_world.y +
+                    pabcd(2) * point_world.z + pabcd(3);
+        float s   = 1 - 0.9 * fabs(pd2) / sqrt(p_body.norm());
+
+        // 过滤有效点
+        if (s > 0.9) {
+          point_selected_surf[i]       = true;
+          normvec->points[i].x         = pabcd(0);
+          normvec->points[i].y         = pabcd(1);
+          normvec->points[i].z         = pabcd(2);
+          normvec->points[i].intensity = pd2;
+          res_last[i]                  = abs(pd2);
+        }
       }
     }
   }
+#else
+  std::cout << "MP_EN is OFF" << std::endl;
+  std::cerr << "Lidar Odometry must enable MP_EN for performance 100ms !!"
+            << std::endl;
+  abort();
+#endif
 
   effct_feat_num = 0;
 
@@ -342,10 +432,18 @@ void LidarOdometry::h_share_model(
     if (point_selected_surf[i]) {
       laserCloudOri->points[effct_feat_num] = feats_down_body->points[i];
       corr_normvect->points[effct_feat_num] = normvec->points[i];
+      // !! 不支持并行
+      // laserCloudOri->push_back(feats_down_body->points[i]);
+      // corr_normvect->push_back(normvec->points[i]);
       total_residual += res_last[i];
       effct_feat_num++;
     }
   }
+
+  // /* way 2
+  laserCloudOri->resize(effct_feat_num);
+  corr_normvect->resize(effct_feat_num);
+  // */
 
   if (effct_feat_num < 1) {
     ekfom_data.valid = false;
@@ -395,12 +493,13 @@ void LidarOdometry::h_share_model(
   solve_time += omp_get_wtime() - solve_start_;
 }
 
-void LidarOdometry::run_odometry(MeasureGroup& Measures) {
+bool LidarOdometry::run_odometry(MeasureGroup& Measures) {
   // /*
   if (flg_first_scan) {
     first_lidar_time        = Measures.lidar_beg_time;
     p_imu->first_lidar_time = first_lidar_time;
     flg_first_scan          = false;
+    p_imu->SetInitMode(0);
   }
   // */
 
@@ -446,7 +545,7 @@ void LidarOdometry::run_odometry(MeasureGroup& Measures) {
 
   if ((feats_undistort_filtered == NULL) || feats_undistort_filtered->empty()) {
     std::cerr << "No point, skip this scan!\n" << std::endl;
-    return;
+    return false;
   }
 
   flg_EKF_inited =
@@ -480,7 +579,7 @@ void LidarOdometry::run_odometry(MeasureGroup& Measures) {
       // 根据世界坐标系下的点构建ikdtree
       ikdtree.Build(feats_down_world->points);
 
-      return;
+      return false;
     }
   }
   // int featsFromMapNum = ikdtree.validnum();
@@ -490,7 +589,7 @@ void LidarOdometry::run_odometry(MeasureGroup& Measures) {
   /*** ICP and iterated Kalman filter update ***/
   if (feats_down_size < 5) {
     std::cout << "No point, skip this scan!" << std::endl;
-    return;
+    return false;
   }
 
   normvec->points.resize(feats_down_size);
@@ -505,7 +604,7 @@ void LidarOdometry::run_odometry(MeasureGroup& Measures) {
   }
   */
 
-  Nearest_Points.resize(feats_down_size);  // 存储近邻点的vector
+  this->Nearest_Points.resize(feats_down_size);  // 存储近邻点的vector
   // int rematch_num        = 0;
   // bool nearest_search_en = true;
 
@@ -517,18 +616,19 @@ void LidarOdometry::run_odometry(MeasureGroup& Measures) {
 
   share.user_ptr = this;
 
-  share.feats_down_body  = feats_down_body;
-  share.feats_down_world = feats_down_world;
-  share.normvec          = normvec;
-  share.laserCloudOri    = laserCloudOri;
-  share.corr_normvect    = corr_normvect;
+  // 将 LidarOdometry 的内部成员传递给 share
+  share.feats_down_body  = this->feats_down_body;
+  share.feats_down_world = this->feats_down_world;
+  share.normvec          = this->normvec;
+  share.laserCloudOri    = this->laserCloudOri;
+  share.corr_normvect    = this->corr_normvect;
 
-  share.Nearest_Points = &Nearest_Points;
+  share.Nearest_Points = &(this->Nearest_Points);
 
-  share.res_last            = res_last;
-  share.point_selected_surf = point_selected_surf;
+  share.res_last            = this->res_last;
+  share.point_selected_surf = this->point_selected_surf;
 
-  share.feats_down_size = feats_down_size;
+  share.feats_down_size = this->feats_down_size;
 
   // auto t_update_start = omp_get_wtime();
   double solve_H_time = 0;
@@ -557,6 +657,8 @@ void LidarOdometry::run_odometry(MeasureGroup& Measures) {
   o_pose.pos  = pos_lid;
   o_pose.rot  = state_point.rot * state_point.offset_R_L_I;
   pose_inited = true;
+
+  return true;
 }
 
 void LidarOdometry::TransformImuData(MeasureGroup& measures) {
@@ -569,7 +671,7 @@ void LidarOdometry::TransformImuData(MeasureGroup& measures) {
 }
 
 void LidarOdometry::SetDataFolder() {
-  this->prefix = param_->root_path + "/" + param_->file_name;
+  this->prefix = rparam_->root_path + "/" + rparam_->file_name;
   // std::cout << "data_file : " << this->prefix << std::endl;
 
   this->postfix = this->prefix + "-O";
@@ -584,7 +686,7 @@ void LidarOdometry::SetDataFolder() {
     std::cerr << "[save_result] Cannot clear " << path_pose << std::endl;
   }
 
-  if (param_->b_only_times) {
+  if (rparam_->b_only_times) {
     path_runtime = this->postfix + "/sensor_data/" + "runtime" + ".txt";
     // 以追加方式打开（不存在会自动创建）
     ofs_runtime.open(path_runtime, std::ios::app);
@@ -597,7 +699,7 @@ void LidarOdometry::SetDataFolder() {
 void LidarOdometry::Close() {
   ofs_pose.close();
 
-  if (param_->b_only_times) {
+  if (rparam_->b_only_times) {
     ofs_runtime.close();
   }
 }
@@ -649,39 +751,81 @@ void LidarOdometry::SaveFrameTime(double time_ms) {
 }
 
 void LidarOdometry::Show(bool b_pause) {
-  if (!pose_inited) return;
+  if (!pose_inited || ikdtree.Root_Node == nullptr) return;
 
-  static int cloud_id = 0;  // 点云编号
-  static pcl::PointCloud<pcl::PointXYZRGB>::Ptr traj_cloud(
-      new pcl::PointCloud<pcl::PointXYZRGB>);
-  static bool has_traj         = false;
-  static std::string traj_name = "traj";
+  const std::string traj_name = "traj";
+  const std::string lm_name   = "local_map";
+  const std::string lmb_name  = "local_map_bounds";
 
   if (vis == NULL) {
-    // vis = boost::make_shared<pcl::visualization::PCLVisualizer>("vis pcd");
-    vis.reset(new pcl::visualization::PCLVisualizer("vis pcd"));
-    vis->setBackgroundColor(0, 0, 0);
+    vis.reset(new pcl::visualization::PCLVisualizer(
+        "FAST-LIO local map (gray) / current scan (yellow)"));
+    vis->setBackgroundColor(0.03, 0.03, 0.03);
     vis->initCameraParameters();
-    vis->setCameraPosition(0, -20, 10, 0, 0, 1);
+    vis->setCameraPosition(pos_lid[0] - 30.0, pos_lid[1] - 30.0,
+                           pos_lid[2] + 25.0, pos_lid[0], pos_lid[1],
+                           pos_lid[2], 0.0, 0.0, 1.0);
+    vis->addCoordinateSystem(2.0, "world_axis");
   }
 
-  static std::string name = "current_cloud";
-  // 添加当前点云（按帧编号叠加）
-  // std::string name = "cloud_" + std::to_string(cloud_id++);
-  // pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI> intensity_color(feats_down_world, "z");
-  // vis->addPointCloud<pcl::PointXYZI>(feats_down_world, intensity_color, name);
-  // vis->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, name);
+  if (vis->wasStopped()) return;
 
-  // 每帧更新点云：删除上一帧的点云，只保留当前帧
-  if (vis->contains(name)) {
-    vis->removePointCloud(name);
+  const std::string name = "current_cloud";
+
+  // ikd-tree 是实际参与匹配的滑动局部地图。
+  // 首帧以及之后每 N 帧展开一次地图显示，避免每帧 O(map_size) 的复制拖慢里程计。
+  const bool refresh_local_map =
+      !local_map_added_to_viewer_ ||
+      visualization_frame_count_ % local_map_refresh_period_ == 0;
+
+  if (refresh_local_map) {
+    // clang-format off
+    local_map_cloud_->clear();
+    local_map_cloud_->points.reserve(static_cast<std::size_t>(std::max(0, ikdtree.validnum())));
+    ikdtree.flatten(ikdtree.Root_Node, local_map_cloud_->points, NOT_RECORD);
+
+    local_map_cloud_->width = static_cast<std::uint32_t>(local_map_cloud_->points.size());
+    local_map_cloud_->height = 1;
+    local_map_cloud_->is_dense = false;
+    // clang-format on
+
+    pcl::visualization::PointCloudColorHandlerCustom<PointType> map_color(
+        local_map_cloud_, 150, 150, 150);
+    if (!local_map_added_to_viewer_) {
+      local_map_added_to_viewer_ =
+          vis->addPointCloud<PointType>(local_map_cloud_, map_color, lm_name);
+      if (local_map_added_to_viewer_) {
+        vis->setPointCloudRenderingProperties(
+            pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, lm_name);
+      }
+    } else {
+      vis->updatePointCloud<PointType>(local_map_cloud_, map_color, lm_name);
+    }
+
+    // 同步显示 FAST-LIO 当前滑动地图的边界。
+    if (vis->contains(lmb_name)) {
+      vis->removeShape(lmb_name);
+    }
+    vis->addCube(LocalMap_Points.vertex_min[0], LocalMap_Points.vertex_max[0],
+                 LocalMap_Points.vertex_min[1], LocalMap_Points.vertex_max[1],
+                 LocalMap_Points.vertex_min[2], LocalMap_Points.vertex_max[2],
+                 0.2, 0.7, 1.0, lmb_name);
+    vis->setShapeRenderingProperties(
+        pcl::visualization::PCL_VISUALIZER_REPRESENTATION,
+        pcl::visualization::PCL_VISUALIZER_REPRESENTATION_WIREFRAME, lmb_name);
   }
 
-  pcl::visualization::PointCloudColorHandlerGenericField<PointType>
-      color_handler(feats_down_world, "z");
-  vis->addPointCloud<PointType>(feats_down_world, color_handler, name);
-  vis->setPointCloudRenderingProperties(
-      pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, name);
+  // 当前帧每次刷新，并用亮黄色与灰色局部地图区分。
+  pcl::visualization::PointCloudColorHandlerCustom<PointType> scan_color(
+      feats_down_world, 255, 220, 40);
+  if (!current_scan_added_to_viewer_) {
+    vis->addPointCloud<PointType>(feats_down_world, scan_color, name);
+    vis->setPointCloudRenderingProperties(
+        pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, name);
+    current_scan_added_to_viewer_ = true;
+  } else {
+    vis->updatePointCloud<PointType>(feats_down_world, scan_color, name);
+  }
 
   pcl::PointXYZRGB traj;
   traj.x = pos_lid[0];
@@ -691,16 +835,19 @@ void LidarOdometry::Show(bool b_pause) {
   traj.g = 255;
   traj.b = 255;
   traj_cloud->points.push_back(traj);
+  traj_cloud->width  = static_cast<std::uint32_t>(traj_cloud->points.size());
+  traj_cloud->height = 1;
 
-  // 只需要添加一次，之后只更新
-  if (!has_traj) {
+  if (!trajectory_added_to_viewer_) {
     vis->addPointCloud(traj_cloud, traj_name);
     vis->setPointCloudRenderingProperties(
         pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 4, traj_name);
-    has_traj = true;
+    trajectory_added_to_viewer_ = true;
   } else {
     vis->updatePointCloud(traj_cloud, traj_name);
   }
+
+  ++visualization_frame_count_;
 
   if (b_pause) {
     vis->spin();

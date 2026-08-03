@@ -42,6 +42,7 @@ SOURCES += \
   $$CODEX_PATH/cyber/binary.cc \
   $$CODEX_PATH/cyber/common/file.cc \
   $$CODEX_PATH/modules/common/config/config_file_base.cpp \
+  $$CODEX_PATH/modules/common/config/config_file_yaml.cpp \
   $$CODEX_PATH/modules/common/math/unit_converter.cpp \
   $$CODEX_PATH/modules/common/transform/geometry/rotation_conversions.cpp \
   $$PREFIX/base/camera.cc \
@@ -55,8 +56,10 @@ SOURCES += \
   $$DATA_PROCESSOR_PATH/config/sensor_config.cc \
   $$OTHER_PATH/data_loader.cpp \
   $$OTHER_PATH/group_convert.cpp \
-  $$OTHER_PATH/config/runtime_config_offline.cpp \
+  $$OTHER_PATH/config/runtime_config.cpp \
+  $$OTHER_PATH/config/interface_config.cpp \
   $$SELF_PATH/config/runtime_config.cpp \
+  $$SELF_PATH/config/static_config.cpp \
   $$SELF_PATH/src/imu_processing.cpp \
   $$SELF_PATH/lidar_odometry.cpp \
   $$SELF_PATH/run_lidar_odometry.cpp \
@@ -67,6 +70,7 @@ HEADERS += \
   $$CODEX_PATH/cyber/binary.h \
   $$CODEX_PATH/cyber/common/file.h \
   $$CODEX_PATH/modules/common/config/config_file_base.h \
+  $$CODEX_PATH/modules/common/config/config_file_yaml.h \
   $$CODEX_PATH/modules/common/math/unit_converter.h \
   $$CODEX_PATH/modules/common/transform/geometry/rotation_conversions.h \
   $$PREFIX/base/camera.h \
@@ -81,11 +85,13 @@ HEADERS += \
   $$OTHER_PATH/data_loader.h \
   $$OTHER_PATH/data_container.h \
   $$OTHER_PATH/group_convert.h \
-  $$OTHER_PATH/config/runtime_config_offline.h \
+  $$OTHER_PATH/config/runtime_config.h \
+  $$OTHER_PATH/config/interface_config.h \
   $$DATA_PROCESSOR_PATH/config/sensor_config.h \
   $$BRANCH_PATH/data_loader.h \
   $$BRANCH_PATH/group_convert.h \
   $$SELF_PATH/config/runtime_config.h \
+  $$SELF_PATH/config/static_config.h \
   $$SELF_PATH/include/common_lib.h \
   $$SELF_PATH/include/so3_math.h \
   $$SELF_PATH/include/imu_processing.hpp \

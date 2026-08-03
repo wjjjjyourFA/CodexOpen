@@ -1,12 +1,12 @@
-#ifndef MAP_VISUALIZATION_MAP_PARAMS_H
-#define MAP_VISUALIZATION_MAP_PARAMS_H
+#ifndef MAP_VISUALIZATION_STATIC_CONFIG_H
+#define MAP_VISUALIZATION_STATIC_CONFIG_H
 
 #pragma once
 
 #include <fstream>
 
-#include "modules/common/config/config_file_yaml.h"
 #include "modules/common/config/config_file_json.h"
+#include "modules/common/config/config_file_yaml.h"
 
 namespace jojo {
 namespace mapping {

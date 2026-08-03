@@ -1,12 +1,12 @@
-#include "toolz/data_loader/group_convert.h"
 #include "modules/perception/similarity_map/bird_view_map_leagecy.h"
+#include "toolz/data_loader/group_convert.h"
 
 using namespace jojo::tools;
 using namespace jojo::perception;
 
 int main(int argc, char** argv) {
   // clang-format off
-  std::string name = "ColorMap";
+  std::string name = "BridViewMap";
   std::string config_path = "./../../../config/SimilarityMap/ColorMap.ini";
   // clang-format on
 
@@ -17,14 +17,19 @@ int main(int argc, char** argv) {
   std::shared_ptr<BirdViewMap> color_map = std::make_shared<BirdViewMap>();
   color_map->Init(runtime_config);
 
-  std::string dl_config_path = "./../../../config/SimilarityMap/DataLoader.ini";
+  std::string dl_rc_path = "./../../../config/SimilarityMap/DataLoader.ini";
+  std::string dl_ic_path = "./../../../config/SimilarityMap/Interface.ini";
 
-  auto dl_runtime_config = std::make_shared<RuntimeConfigOffline>();
+  auto dl_runtime_config = std::make_shared<jojo::tools::RuntimeConfig>();
   dl_runtime_config->set_name(name);
-  dl_runtime_config->LoadConfig(dl_config_path);
+  dl_runtime_config->LoadConfig(dl_rc_path);
+
+  auto dl_interface_config = std::make_shared<jojo::tools::InterfaceConfig>();
+  dl_interface_config->set_name(name);
+  dl_interface_config->LoadConfig(dl_ic_path);
 
   auto group_convert = std::make_shared<GroupConvertDataSet>();
-  group_convert->Init(dl_runtime_config);
+  group_convert->Init(dl_runtime_config, dl_interface_config);
 
   std::cout << std::fixed << std::setprecision(9);
 
@@ -33,7 +38,8 @@ int main(int argc, char** argv) {
   std::shared_ptr<const jojo::tools::MeasureGroupDataSet> group;
   while (!group_convert->IsEnd()) {
     auto base = group_convert->ReadNext();
-    group     = std::static_pointer_cast<const jojo::tools::MeasureGroupDataSet>(base);
+    group =
+        std::static_pointer_cast<const jojo::tools::MeasureGroupDataSet>(base);
     // 在这个代码中，lidar 读取完毕后，需要立即退出，因此手动判断一下，否则末尾会处理一帧旧雷达；
     if (group_convert->IsEnd()) {
       break;

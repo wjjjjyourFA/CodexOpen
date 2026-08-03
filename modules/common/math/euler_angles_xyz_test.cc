@@ -18,8 +18,9 @@
 
 #include <cmath>
 
-#include "Eigen/Geometry"
 #include "gtest/gtest.h"
+
+#include "Eigen/Geometry"
 
 namespace apollo {
 namespace common {
@@ -54,7 +55,7 @@ TEST(EulerAnglesXYZTest, SingleConstruct) {
 TEST(EulerAnglesXYZTest, FullConstructDouble) {
   EulerAnglesXYZd a(0.35, 0.24, -1.0);
   auto q_golden = GoldenEulerXYZToQuaternion(0.35, 0.24, -1.0);
-  auto q = a.ToQuaternion();
+  auto q        = a.ToQuaternion();
   EXPECT_DOUBLE_EQ(q_golden.w(), q.w());
   EXPECT_DOUBLE_EQ(q_golden.x(), q.x());
   EXPECT_DOUBLE_EQ(q_golden.y(), q.y());

@@ -1,0 +1,113 @@
+---
+BasedOnStyle: Google
+---
+# 语言: None, Cpp, Java, JavaScript, ObjC, Proto, TableGen, TextProto
+Language: Cpp
+Standard: Cpp11
+Cpp11BracedListStyle: true
+
+# 忽略包含特定特定前缀的注释（如 Lint 检查器忽略标记）
+CommentPragmas: '^ NOLINT'
+
+# 缩进宽度
+IndentWidth: 2
+# tab宽度
+TabWidth: 2
+# 使用tab字符: Never, ForIndentation, ForContinuationAndIndentation, Always
+UseTab: Never
+# 每行字符的限制，0表示没有限制 default google 80
+ColumnLimit: 80
+
+# 确保每级命名空间分开写，不合并到一行
+CompactNamespaces: false
+
+# 在括号后的内容对齐，增加代码的整齐度
+AlignAfterOpenBracket: Align
+
+# 连续赋值时，对齐所有等号
+AlignConsecutiveAssignments: true
+
+# 连续声明时，不强制对齐变量名
+AlignConsecutiveDeclarations: false
+
+# 右对齐逃脱换行(使用反斜杠换行)的反斜杠
+AlignEscapedNewlines: Right
+
+# 水平对齐二元和三元表达式的操作数
+AlignOperands: true
+
+# 允许在函数调用时将所有参数统一放在下一行
+AllowAllArgumentsOnNextLine: true
+
+# 不允许函数声明的所有参数直接放在下一行
+AllowAllParametersOfDeclarationOnNextLine: false
+
+# 多行字符串总是在之前换行，使长字符串更清晰
+AlwaysBreakBeforeMultilineStrings: true
+
+# 指针符号 * 放在变量名的左侧，如 int* ptr
+PointerAlignment: Left
+
+# 禁用注释的自动重排（防止格式化破坏精心排版的注释）
+ReflowComments: false
+
+# 不自动对齐连续的多行行尾注释
+AlignTrailingComments: false
+
+# 限制单行注释 // 后必须有且仅有 1 个空格
+SpacesInLineComment:
+  Minimum: 1
+  Maximum: 1
+
+# 开启 Include 排序（第二份配置的核心依赖）
+SortIncludes: true
+# 允许排序 using 声明
+SortUsingDeclarations: false
+
+IncludeCategories:
+  # 优先级 0 默认留给该 CPP 文件对应的同名 .h 头文件
+
+  # 优先级 1：C 标准库 (如 <stdio.h>, <sys/types.h>)
+  - Regex:       '<(arpa/|netinet/|net/if|sys/)?[^\./]*\.h>'
+    Priority:    1
+
+  # 优先级 2：C++ 标准库 (如 <vector>, <iostream>)
+  - Regex:       '<[^/\./]*>'
+    Priority:    2
+
+  # 优先级 3：第三方库 (如 <tinyxml2.h>)
+  - Regex:       '<(tinyxml2.h)>'
+    Priority:    3
+
+  # 优先级 4：特定底层与 CUDA 系统库
+  - Regex:       '<(cxxabi.h|immintrin.h|malloc.h|wait.h|x86intrin.h|cuda.*)>'
+    Priority:    4
+
+  # 优先级 5：强制让 ros 核心头文件排在最前
+  - Regex:       '<ros/'
+    Priority:    5
+
+  # 优先级 6：ROS 核心及常用消息库 (nav_msgs, sensor_msgs, std_msgs 等)
+  - Regex:       '<(.*_msgs|geometry_msgs|tf2.*)/'
+    Priority:    6
+
+  # 优先级 7：其他未分类的尖括号系统扩展库
+  - Regex:       '<'
+    Priority:    7
+
+  # 优先级 8：测试框架库
+  - Regex:       '"(gtest|gmock)/'
+    Priority:    8
+
+  # 优先级 9：Protobuf 自动生成的头文件
+  - Regex:       '\.pb\.h'
+    Priority:    9
+
+  # 优先级 11：其余本地相对路径或普通头文件
+  # 必须写在物理位置的倒数第二位，确保不被 Apollo 的规则错误拦截
+  - Regex:       '.*'
+    Priority:    11
+
+  # 优先级 10：Apollo 核心框架库 (Cyber RT 与 各大 modules)
+  - Regex:       '^"(cyber|modules)'
+    Priority:    10

@@ -11,7 +11,7 @@ void Ro2Ang(const Eigen::Matrix3d& R, Eigen::Vector3d& ypr) {
 
   // ypr(1)  = -std::asin(R(1, 2));
   double v = std::clamp(-R(1, 2), -1.0, 1.0);
-  ypr(1) = std::asin(v);
+  ypr(1)   = std::asin(v);
 
   double cp = std::cos(ypr(1));
 

@@ -1,17 +1,18 @@
-#ifndef ROS1_CONVERT_H
-#define ROS1_CONVERT_H
-
-#include <rosbag/bag.h>
-#include <rosbag/view.h>
+#ifndef DATA_PROCESSOR_ROS1_CONVERT_H
+#define DATA_PROCESSOR_ROS1_CONVERT_H
 
 #include <ros/ros.h>
-#include <cv_bridge/cv_bridge.h>
-#include <image_transport/image_transport.h>
-#include <sensor_msgs/image_encodings.h>
+
 #include <sensor_msgs/PointCloud.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/image_encodings.h>
 #include <sensor_msgs/point_cloud_conversion.h>
+
+#include <cv_bridge/cv_bridge.h>
+#include <image_transport/image_transport.h>
 #include <pcl_conversions/pcl_conversions.h>
+#include <rosbag/bag.h>
+#include <rosbag/view.h>
 
 #include "sensor_msgs/CompressedImage.h"
 #include "sensor_msgs/Image.h"
@@ -36,12 +37,13 @@
 #include "rslidar_sdk-1.3.2/lidar_scan_ros.h"
 
 // #include <boost/foreach.hpp> // C++11 之前
+#include <math.h>  // for llround
+#include <stdint.h>
+
 #include <iostream>
 #include <thread>
 #include <unordered_set>
 #include <vector>
-#include <stdint.h>
-#include <math.h>  // for llround
 
 #include <boost/asio/post.hpp>
 #include <boost/asio/thread_pool.hpp>
@@ -53,7 +55,6 @@
 #include "modules/perception/common/radar/convert/ars408.h"
 #include "modules/perception/common/radar/convert/ars548.h"
 #include "modules/perception/common/radar/convert/hugin.h"
-
 #include "tools/data_processor/data_processor.h"
 
 namespace jojo {
@@ -96,11 +97,11 @@ struct ImageTask {
 
 class Ros1Convert {
  public:
-  Ros1Convert();  // Constructor
+  Ros1Convert(ros::NodeHandle& nh, ros::NodeHandle& private_nh);  // Constructor
   virtual ~Ros1Convert();
 
-  void Init(ros::NodeHandle& nh, ros::NodeHandle& private_nh,
-            std::shared_ptr<RuntimeConfig> param);
+  bool Init(std::shared_ptr<jojo::tools::RuntimeConfig> param,
+            std::shared_ptr<jojo::tools::InterfaceConfig> interface);
 
   void Run();
 
@@ -131,9 +132,10 @@ class Ros1Convert {
   // clang-format on
 
  private:
-  std::shared_ptr<RuntimeConfig> param_ /*runtime_config*/;
+  std::shared_ptr<jojo::tools::RuntimeConfig> rparam_;
+  std::shared_ptr<jojo::tools::InterfaceConfig> iparam_;
 
-  ros::NodeHandle nh_, private_nh_;
+  ros::NodeHandle nh_, pnh_;
 
   int num_global_pose = 0;
   int num_local_pose  = 0;
@@ -194,4 +196,4 @@ void Ros1Convert::PrintParserCount(
 }  // namespace tools
 }  // namespace jojo
 
-#endif  // Ros1Convert
+#endif  // DATA_PROCESSOR_ROS1_CONVERT_H

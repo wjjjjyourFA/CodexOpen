@@ -5,29 +5,33 @@
 namespace jojo {
 namespace tools {
 namespace common = apollo::cyber::common;
-namespace camera = ::jojo::perception::camera;
-namespace cfg    = ::jojo::perception::config;
+namespace camera = jojo::perception::camera;
+namespace cfg    = jojo::perception::config;
 
 DataProcessor::DataProcessor() {}
 
 DataProcessor::~DataProcessor() {}
 
-void DataProcessor::Init(std::shared_ptr<RuntimeConfig> param) {
-  param_ = param;
+bool DataProcessor::Init(std::shared_ptr<jojo::tools::RuntimeConfig> rparam,
+                         std::shared_ptr<jojo::tools::InterfaceConfig> iparam) {
+  rparam_ = rparam;
+  iparam_ = iparam;
 
-  if (param_->b_do_undistort) {
-    if (param_->b_camera || param_->b_infra || param_->b_star) {
+  if (rparam_->b_do_undistort) {
+    if (iparam_->b_camera || iparam_->b_infra || iparam_->b_star) {
       InitUndistortion();
     }
   }
+
+  return true;
 }
 
 void DataProcessor::InitUndistortion() {
   camera_params = std::make_shared<camera::CameraParams>();
-  camera_params->SetLoadPath(param_->calib_file_dir);
+  camera_params->SetLoadPath(rparam_->calib_file_dir);
 
-  for (int i = 0; i < param_->b_camera; i++) {
-    camera_params->LoadFromName(param_->camera_name.at(i));
+  for (int i = 0; i < iparam_->b_camera; i++) {
+    camera_params->LoadFromName(rparam_->camera_name.at(i));
 
     // clang-format off
     auto camera_undistort = std::make_shared<camera::UndistortionHandler>();
@@ -39,16 +43,16 @@ void DataProcessor::InitUndistortion() {
     undistort_vector.push_back(camera_undistort);
   }
 
-  for (int i = 0; i < param_->b_infra; i++) {
-    camera_params->LoadFromName(param_->infra_name.at(i));
+  for (int i = 0; i < iparam_->b_infra; i++) {
+    camera_params->LoadFromName(rparam_->infra_name.at(i));
 
     auto camera_undistort = std::make_shared<camera::UndistortionHandler>();
     camera_undistort->InitModel(camera::CameraDistortionModel::Brown);
     undistort_vector.push_back(camera_undistort);
   }
 
-  for (int i = 0; i < param_->b_star; i++) {
-    camera_params->LoadFromName(param_->star_name.at(i));
+  for (int i = 0; i < iparam_->b_star; i++) {
+    camera_params->LoadFromName(rparam_->star_name.at(i));
 
     auto camera_undistort = std::make_shared<camera::UndistortionHandler>();
     camera_undistort->InitModel(camera::CameraDistortionModel::Brown);
@@ -56,13 +60,13 @@ void DataProcessor::InitUndistortion() {
   }
 
   // clang-format off
-  undistort_init.resize(param_->b_camera + param_->b_infra + param_->b_star, false);
+  undistort_init.resize(iparam_->b_camera + iparam_->b_infra + iparam_->b_star, false);
   // clang-format on
 }
 
 void DataProcessor::Start() {
   sleep(1);
-  if (!param_->b_save_data) {
+  if (!rparam_->b_save_data) {
     std::cout << "b_save_data is false! " << std::endl;
     abort();
   }
@@ -104,12 +108,12 @@ std::vector<std::string> DataProcessor::MkdirDataFolderVector(
 }
 
 void DataProcessor::MkdirDataFolder() {
-  if (common::EnsureDirectory(param_->save_path)) {
+  if (common::EnsureDirectory(rparam_->save_path)) {
     // clang-format off
-    std::string time_str = FormatRosbagTime(param_->rosbag_name);
+    std::string time_str = FormatRosbagTime(rparam_->rosbag_name);
     // day 部分 (前 10 个字符)
     std::string day_str = time_str.substr(0, 10);
-    this->prefix = param_->save_path + "/" + day_str;
+    this->prefix = rparam_->save_path + "/" + day_str;
     common::CreateDir(this->prefix);
 
     this->prefix = this->prefix + "/" + time_str;
@@ -120,8 +124,8 @@ void DataProcessor::MkdirDataFolder() {
     this->postfix = this->prefix + "-O";
     common::CreateDir(this->postfix);
 
-    if (param_->b_lidar){
-      if (param_->use_bin_or_pcd == 0){
+    if (iparam_->b_lidar){
+      if (rparam_->use_bin_or_pcd == 0){
         path_lidar = this->prefix + "/" + "lidar";
       } else {
         path_lidar = this->prefix + "/" + "lidar_pcd";
@@ -130,22 +134,22 @@ void DataProcessor::MkdirDataFolder() {
       common::CreateDir(path_lidar);
     }
 
-    path_camera = MkdirDataFolderVector(this->prefix, "camera", param_->b_camera);
-    path_camera_u = MkdirDataFolderVector(this->postfix, "sensor_data/camera_undistort", param_->b_camera);
+    path_camera = MkdirDataFolderVector(this->prefix, "camera", iparam_->b_camera);
+    path_camera_u = MkdirDataFolderVector(this->postfix, "sensor_data/camera_undistort", iparam_->b_camera);
     // std::cout << "path_camera_u.size() = " << path_camera_u.size() << std::endl;
 
-    path_infra = MkdirDataFolderVector(this->prefix, "infra", param_->b_infra);
-    path_infra_u = MkdirDataFolderVector(this->postfix, "sensor_data/infra_undistort", param_->b_infra);
+    path_infra = MkdirDataFolderVector(this->prefix, "infra", iparam_->b_infra);
+    path_infra_u = MkdirDataFolderVector(this->postfix, "sensor_data/infra_undistort", iparam_->b_infra);
 
-    path_star = MkdirDataFolderVector(this->prefix, "star", param_->b_star);
-    path_star_u = MkdirDataFolderVector(this->postfix, "sensor_data/star_undistort", param_->b_star);
+    path_star = MkdirDataFolderVector(this->prefix, "star", iparam_->b_star);
+    path_star_u = MkdirDataFolderVector(this->postfix, "sensor_data/star_undistort", iparam_->b_star);
 
-    if (param_->b_radar){
+    if (iparam_->b_radar){
       path_radar = this->prefix + "/" + "radar";
       common::CreateDir(path_radar);
     }
 
-    path_radar4d = MkdirDataFolderVector(this->prefix, "radar4d", param_->b_radar4d);
+    path_radar4d = MkdirDataFolderVector(this->prefix, "radar4d", iparam_->b_radar4d);
     // clang-format on
   } else {
     std::cout << "CreateDir failed! " << std::endl;
@@ -157,16 +161,16 @@ void DataProcessor::OpenWriteFile() {
   // 使用std::string和std::ofstream来处理文件路径和打开文件
   // 使用 fopen 打开文件，并赋值给 FILE* 类型的指针
   // clang-format off
-  if (param_->b_global_pose) {
+  if (iparam_->b_global_pose) {
     std::string file_global_pose = this->prefix + "/" + "global_pose.txt";
     fp_global_pose = fopen(file_global_pose.c_str(), "w");
   }
-  if (param_->b_local_pose) {
+  if (iparam_->b_local_pose) {
     std::string file_local_pose = this->prefix + "/" + "local_pose.txt";
     fp_local_pose = fopen(file_local_pose.c_str(), "w");
   }
   // 你可以继续打开其他文件
-  if (param_->b_imu_data) {
+  if (iparam_->b_imu_data) {
     std::string file_imu_data = this->prefix + "/" + "imu_data.txt";
     fp_imu_data = fopen(file_imu_data.c_str(), "w");
   }
@@ -175,14 +179,14 @@ void DataProcessor::OpenWriteFile() {
 
 void DataProcessor::CloseWriteFile() {
   // 确保文件指针被关闭
-  if (param_->b_global_pose && fp_global_pose != nullptr) {
+  if (iparam_->b_global_pose && fp_global_pose != nullptr) {
     fclose(fp_global_pose);
   }
-  if (param_->b_local_pose && fp_local_pose != nullptr) {
+  if (iparam_->b_local_pose && fp_local_pose != nullptr) {
     fclose(fp_local_pose);
   }
   // 继续关闭其他文件
-  if (param_->b_imu_data && fp_imu_data != nullptr) {
+  if (iparam_->b_imu_data && fp_imu_data != nullptr) {
     fclose(fp_imu_data);
   }
 }
@@ -190,7 +194,7 @@ void DataProcessor::CloseWriteFile() {
 void DataProcessor::SaveLidarData(pcl::PointCloud<pcl::PointXYZI>::Ptr Cloud,
                                   uint64_t filename) {
   char buff[500];
-  if (param_->use_bin_or_pcd == 0) {
+  if (rparam_->use_bin_or_pcd == 0) {
     sprintf(buff, "%s/%013ld.bin", path_lidar.c_str(), filename);
     FILE* fp_lidar;
     fp_lidar = fopen(buff, "wb");
@@ -211,10 +215,10 @@ void DataProcessor::SaveLidarData(pcl::PointCloud<pcl::PointXYZI>::Ptr Cloud,
       }
 
       // 过滤掉全 0 行
-      if (fabs(Cloud->points[i].x) < param_->distance_epsilon &&
-          fabs(Cloud->points[i].y) < param_->distance_epsilon &&
-          fabs(Cloud->points[i].z) < param_->distance_epsilon &&
-          fabs(Cloud->points[i].intensity) < param_->intensity_epsilon) {
+      if (fabs(Cloud->points[i].x) < rparam_->distance_epsilon &&
+          fabs(Cloud->points[i].y) < rparam_->distance_epsilon &&
+          fabs(Cloud->points[i].z) < rparam_->distance_epsilon &&
+          fabs(Cloud->points[i].intensity) < rparam_->intensity_epsilon) {
         continue;
       }
 
@@ -238,7 +242,7 @@ void DataProcessor::SaveLidarData(pcl::PointCloud<pcl::PointXYZI>::Ptr Cloud,
 void DataProcessor::SaveLidarData(pcl::PointCloud<pcl::PointXYZIRT>::Ptr Cloud,
                                   uint64_t filename) {
   char buff[500];
-  if (param_->use_bin_or_pcd == 0) {
+  if (rparam_->use_bin_or_pcd == 0) {
     perror("Lidar PointCloud XYZIRT can't save as .bin file error!");
   } else {
     sprintf(buff, "%s/%013ld.pcd", path_lidar.c_str(), filename);
@@ -253,11 +257,11 @@ void DataProcessor::ProcessCameraImage(cv::Mat& image, uint64_t filename,
   // 保存原始图像
   char file_image[300];
   switch (mode) {
-    // clang-format off
+      // clang-format off
     case 1:
       index = id;
       name  = "camera";
-      if (param_->use_jpg_or_png <= 0) {
+      if (rparam_->use_jpg_or_png <= 0) {
         sprintf(file_image, "%s/%013ld.jpg", path_camera.at(id).c_str(), filename);
       } else {
         sprintf(file_image, "%s/%013ld.png", path_camera.at(id).c_str(), filename);
@@ -265,9 +269,9 @@ void DataProcessor::ProcessCameraImage(cv::Mat& image, uint64_t filename,
       break;
 
     case 2:
-      index = param_->b_camera + id;
+      index = iparam_->b_camera + id;
       name  = "infra";
-      if (param_->use_jpg_or_png <= 0) {
+      if (rparam_->use_jpg_or_png <= 0) {
         sprintf(file_image, "%s/%013ld.jpg", path_infra.at(id).c_str(), filename);
       } else {
         sprintf(file_image, "%s/%013ld.png", path_infra.at(id).c_str(), filename);
@@ -275,22 +279,22 @@ void DataProcessor::ProcessCameraImage(cv::Mat& image, uint64_t filename,
       break;
 
     case 3:
-      index = param_->b_camera + param_->b_infra + id;
+      index = iparam_->b_camera + iparam_->b_infra + id;
       name  = "star";
-      if (param_->use_jpg_or_png <= 0) {
+      if (rparam_->use_jpg_or_png <= 0) {
         sprintf(file_image, "%s/%013ld.jpg", path_star.at(id).c_str(), filename);
       } else {
         sprintf(file_image, "%s/%013ld.png", path_star.at(id).c_str(), filename);
       }
       break;
-    // clang-format on
+      // clang-format on
 
     default:
       std::cout << "set mode error!" << std::endl;
       break;
   }
 
-  if (param_->b_do_undistort) {
+  if (rparam_->b_do_undistort) {
     if (index < 0 || index >= undistort_vector.size()) {
       std::cerr << "Invalid index " << index << " for undistort_vector size "
                 << undistort_vector.size() << std::endl;
@@ -299,10 +303,10 @@ void DataProcessor::ProcessCameraImage(cv::Mat& image, uint64_t filename,
   }
   // std::cout << file_image << std::endl;
   // cv::imwrite(file_image, image);
-  cv::imwrite(file_image, image, param_->compress_params);
+  cv::imwrite(file_image, image, rparam_->compress_params);
 
   // 去畸变
-  if (param_->b_do_undistort) {
+  if (rparam_->b_do_undistort) {
     // cv::Mat undistort_image(image.size(), CV_8UC3);  // 不用 zeros
     cv::Mat undistort_image = cv::Mat::zeros(image.rows, image.cols, CV_8UC3);
     if (!undistort_init.at(index)) {
@@ -347,9 +351,9 @@ void DataProcessor::ProcessCameraImage(cv::Mat& image, uint64_t filename,
 
     char file_image_u[300];
     switch (mode) {
-      // clang-format off
+        // clang-format off
       case 1:
-        if (param_->use_jpg_or_png <= 0) {
+        if (rparam_->use_jpg_or_png <= 0) {
           sprintf(file_image_u, "%s/%013ld.jpg", path_camera_u.at(id).c_str(), filename);
         } else {
           sprintf(file_image_u, "%s/%013ld.png", path_camera_u.at(id).c_str(), filename);
@@ -357,7 +361,7 @@ void DataProcessor::ProcessCameraImage(cv::Mat& image, uint64_t filename,
         break;
 
       case 2:
-        if (param_->use_jpg_or_png <= 0) {
+        if (rparam_->use_jpg_or_png <= 0) {
           sprintf(file_image_u, "%s/%013ld.jpg", path_infra_u.at(id).c_str(), filename);
         } else {
           sprintf(file_image_u, "%s/%013ld.png", path_infra_u.at(id).c_str(), filename);
@@ -365,13 +369,13 @@ void DataProcessor::ProcessCameraImage(cv::Mat& image, uint64_t filename,
         break;
 
       case 3:
-        if (param_->use_jpg_or_png <= 0) {
+        if (rparam_->use_jpg_or_png <= 0) {
           sprintf(file_image_u, "%s/%013ld.jpg", path_star_u.at(id).c_str(), filename);
         } else {
           sprintf(file_image_u, "%s/%013ld.png", path_star_u.at(id).c_str(), filename);
         }
         break;
-      // clang-format on
+        // clang-format on
 
       default:
         std::cout << "set mode error!" << std::endl;
@@ -379,13 +383,13 @@ void DataProcessor::ProcessCameraImage(cv::Mat& image, uint64_t filename,
     }
 
     // cv::imwrite(file_image_u, undistort_image);
-    cv::imwrite(file_image_u, undistort_image, param_->compress_params);
+    cv::imwrite(file_image_u, undistort_image, rparam_->compress_params);
   }
 }
 
 bool DataProcessor::CheckSampledTime(uint64_t msg_time, size_t& sampled_index,
                                      int64_t& diff) {
-  if (param_->prepare_data_num == -1) {
+  if (rparam_->prepare_data_num == -1) {
     return true;
   }
 
@@ -422,7 +426,7 @@ bool DataProcessor::CheckSampledTime(uint64_t msg_time, size_t& sampled_index,
 bool DataProcessor::PushSampledTime(uint64_t msg_time) {
   // for auto calib
   // 如果不需要采样，直接返回 true
-  if (param_->prepare_data_num == -1) {
+  if (rparam_->prepare_data_num == -1) {
     return true;
   }
 
@@ -432,20 +436,20 @@ bool DataProcessor::PushSampledTime(uint64_t msg_time) {
   }
 
   // s ==> ms
-  const int useless_time = param_->useless_time * 1000;
+  const int useless_time = rparam_->useless_time * 1000;
   if (msg_time - start_time < useless_time) {
     return false;
   }
 
   b_grab = false;
-  if (data_count % param_->sample_interval == 0) {
+  if (data_count % rparam_->sample_interval == 0) {
     sampled_time.push_back(msg_time);  // 采样
     b_grab = true;
     // std::cout<<"sampled_time: "<< msg_time <<std::endl;
   }
   data_count++;
 
-  if (sampled_time.size() > param_->prepare_data_num) {
+  if (sampled_time.size() > rparam_->prepare_data_num) {
     b_final = true;
   }
 

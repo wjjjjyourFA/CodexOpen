@@ -92,6 +92,7 @@ void YoloObstacleDetector::YOLO(cv::Mat& infer_img,
       // result => up_left(x1,y1) down_right(x2,y2)
       auto& result = detection[idx++];
       // don't use this id for class_id; 模型检测 id 映射到 定义的 id
+      // std::cout << "obj.class_id: " << obj.class_id << std::endl;
       // result.id = obj.class_id;
       result.type = jojo::perception::base::SwitchBoxTypeWrapper(obj.class_id);
 
@@ -119,6 +120,7 @@ void YoloObstacleDetector::YOLO(cv::Mat& infer_img,
   if (show) {
     cv::namedWindow("yolo det result", cv::WINDOW_NORMAL);
     cv::imshow("yolo det result", img);
+    cv::resizeWindow("yolo det result", 1024, 768);
     cv::waitKey(1);
   }
 }

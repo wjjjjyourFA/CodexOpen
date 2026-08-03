@@ -1,5 +1,5 @@
-#ifndef BOX3D_H_
-#define BOX3D_H_
+#ifndef BOX3D_H
+#define BOX3D_H
 /* 这里是我对BBox2D的模仿拓展，用于替换8point格式，来源于 openpcdet
 它是一个基础类型结构体，包含六个成员变量，分别是x、y、z、length、width、height
 分别表示:
@@ -32,16 +32,22 @@ template <typename T>
 struct BBox3D;
 
 // x y z 是指立方体的 min corner (xmin, ymin, zmin)
-// 各点值，最小的点为2号点，最大的点为4号点 
+// 各点值，最小的点为2号点，最大的点为4号点
 template <typename T>
 struct Cube {
   Cube() : x(0), y(0), z(0), length(0), width(0), height(0) {}
 
   // 使用 最小点 构造
-  Cube(const T &x_in, const T &y_in, const T &z_in, const T &length_in, const T &width_in, const T &height_in)
-      : x(x_in), y(y_in), z(z_in), length(length_in), width(width_in), height(height_in) {}
+  Cube(const T& x_in, const T& y_in, const T& z_in, const T& length_in,
+       const T& width_in, const T& height_in)
+      : x(x_in),
+        y(y_in),
+        z(z_in),
+        length(length_in),
+        width(width_in),
+        height(height_in) {}
 
-  explicit Cube(const BBox3D<T> &bbox) {
+  explicit Cube(const BBox3D<T>& bbox) {
     this->x = bbox.xmin;
     this->y = bbox.ymin;
     this->z = bbox.zmin;
@@ -51,7 +57,7 @@ struct Cube {
     this->height = bbox.zmax - bbox.zmin;
   }
 
-  Cube<T> &operator=(const BBox3D<T> &bbox) {
+  Cube<T>& operator=(const BBox3D<T>& bbox) {
     this->x = bbox.xmin;
     this->y = bbox.ymin;
     this->z = bbox.zmin;
@@ -80,12 +86,12 @@ struct Cube {
 
   std::string ToStr() const {
     std::stringstream ss;
-    ss << "[ " << length << " x " << width << " x " << height << " ] from ( " << x << " , " 
-       << y << " , " << z << " )";
+    ss << "[ " << length << " x " << width << " x " << height << " ] from ( "
+       << x << " , " << y << " , " << z << " )";
     return ss.str();
   }
 
-  friend Cube<T> operator&(const Cube<T> &cube1, const Cube<T> &cube2) {
+  friend Cube<T> operator&(const Cube<T>& cube1, const Cube<T>& cube2) {
     T r1_xmin = cube1.x;
     T r1_xmax = cube1.x + cube1.length;
     T r1_ymin = cube1.y;
@@ -113,12 +119,12 @@ struct Cube {
     }
   }
 
-  friend Cube<T> operator|(const Cube<T> &cube1, const Cube<T> &cube2) {
+  friend Cube<T> operator|(const Cube<T>& cube1, const Cube<T>& cube2) {
     Cube<T> ret;
     ret.x = std::min(cube1.x, cube2.x);
     ret.y = std::min(cube1.y, cube2.y);
     ret.z = std::min(cube1.z, cube2.z);
-    ret.length = 
+    ret.length =
         std::max(cube1.x + cube1.length, cube2.x + cube2.length) - ret.x;
     ret.width = std::max(cube1.y + cube1.width, cube2.y + cube2.width) - ret.y;
     ret.height =
@@ -127,23 +133,23 @@ struct Cube {
     return ret;
   }
 
-  friend inline bool operator==(const Cube &cube1, const Cube &cube2) {
-    return (Equal(cube1.x, cube2.x) && Equal(cube1.y, cube2.y) && Equal(cube1.z, cube2.z) &&
-            Equal(cube1.length, cube2.length) &&
+  friend inline bool operator==(const Cube& cube1, const Cube& cube2) {
+    return (Equal(cube1.x, cube2.x) && Equal(cube1.y, cube2.y) &&
+            Equal(cube1.z, cube2.z) && Equal(cube1.length, cube2.length) &&
             Equal(cube1.width, cube2.width) &&
             Equal(cube1.height, cube2.height));
   }
 
-  friend inline bool operator!=(const Cube &cube1, const Cube &cube2) {
+  friend inline bool operator!=(const Cube& cube1, const Cube& cube2) {
     return !(cube1 == cube2);
   }
 
   // 原BBox2D基于图像坐标，这里需要转换到世界坐标
-  T x = 0;  // ==> 2号点
-  T y = 0;
-  T z = 0;
+  T x      = 0;  // ==> 2号点
+  T y      = 0;
+  T z      = 0;
   T length = 0;
-  T width = 0;
+  T width  = 0;
   T height = 0;
 };
 
@@ -151,10 +157,16 @@ template <typename T>
 struct BBox3D {
   BBox3D() : xmin(0), ymin(0), zmin(0), xmax(0), ymax(0), zmax(0) {}
 
-  BBox3D(const T &xmin_in, const T &ymin_in, const T &zmin_in, const T &xmax_in, const T &ymax_in, const T &zmax_in)
-      : xmin(xmin_in), ymin(ymin_in), zmin(zmin_in), xmax(xmax_in), ymax(ymax_in), zmax(zmax_in) {}
+  BBox3D(const T& xmin_in, const T& ymin_in, const T& zmin_in, const T& xmax_in,
+         const T& ymax_in, const T& zmax_in)
+      : xmin(xmin_in),
+        ymin(ymin_in),
+        zmin(zmin_in),
+        xmax(xmax_in),
+        ymax(ymax_in),
+        zmax(zmax_in) {}
 
-  explicit BBox3D(const Cube<T> &cube) {
+  explicit BBox3D(const Cube<T>& cube) {
     this->xmin = cube.x;
     this->ymin = cube.y;
     this->zmin = cube.z;
@@ -163,7 +175,7 @@ struct BBox3D {
     this->zmax = cube.z + cube.height;
   }
 
-  BBox3D<T> &operator=(const Cube<T> &cube) {
+  BBox3D<T>& operator=(const Cube<T>& cube) {
     this->xmin = cube.x;
     this->ymin = cube.y;
     this->zmin = cube.z;
@@ -186,7 +198,7 @@ struct BBox3D {
     ymin = 0;
     zmin = 0;
     xmax = 0;
-    ymax = 0; 
+    ymax = 0;
     zmax = 0;
   }
 
@@ -212,4 +224,4 @@ typedef BBox3D<double> BBox3DD;
 }  // namespace perception
 }  // namespace jojo
 
-#endif  // BOX3D_H_
+#endif  // BOX3D_H

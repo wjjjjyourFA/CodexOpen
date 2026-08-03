@@ -1,10 +1,11 @@
-#ifndef COLORS_H
-#define COLORS_H
+#ifndef COLORS_HPP
+#define COLORS_HPP
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <cmath>
+
 #include <algorithm>
+#include <cmath>
 
 extern const u_int16_t jet_color_idx[640];
 extern const u_int8_t jet_color_map[640][3];

@@ -1,5 +1,5 @@
-#ifndef BASE_PARAMETER_UTILS_H
-#define BASE_PARAMETER_UTILS_H
+#ifndef PERCEPTION_COMMON_CONFIG_UTILS_H
+#define PERCEPTION_COMMON_CONFIG_UTILS_H
 
 #pragma once
 
@@ -12,20 +12,20 @@ namespace perception {
 namespace config {
 
 Eigen::Matrix4f ComputeExtrinsicMatrix(
-    const Eigen::Matrix3f &intrinsic_matrix,
-    const Eigen::Matrix4f &projection_matrix);
+    const Eigen::Matrix3f& intrinsic_matrix,
+    const Eigen::Matrix4f& projection_matrix);
 
 Eigen::VectorXf IntrinsicParamsToVector(
-    const Eigen::Matrix3f &intrinsic_matrix,
-    const Eigen::Matrix<float, 8, 1> &distortion_params);
+    const Eigen::Matrix3f& intrinsic_matrix,
+    const Eigen::Matrix<float, 8, 1>& distortion_params);
 
-Eigen::Matrix4f TransProjMatrixmm2m(const Eigen::Matrix3f &intrinsic_matrix,
-                                    const Eigen::Matrix4f &p_matrix_mm);
+Eigen::Matrix4f TransProjMatrixmm2m(const Eigen::Matrix3f& intrinsic_matrix,
+                                    const Eigen::Matrix4f& p_matrix_mm);
 
-Eigen::Matrix4f TransRtMatrixmm2m(const Eigen::Matrix4f &rt_matrix_mm);
+Eigen::Matrix4f TransRtMatrixmm2m(const Eigen::Matrix4f& rt_matrix_mm);
 
 }  // namespace config
 }  // namespace perception
 }  // namespace jojo
 
-#endif  // BASE_PARAMETER_UTILS_H
+#endif  // PERCEPTION_COMMON_CONFIG_UTILS_H

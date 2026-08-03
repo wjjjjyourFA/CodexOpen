@@ -10,20 +10,25 @@ GroupConvert::GroupConvert() {}
 
 GroupConvert::~GroupConvert() {}
 
-void GroupConvert::Init(std::shared_ptr<RuntimeConfigOffline> param) {
-  param_ = param;
+bool GroupConvert::Init(
+    std::shared_ptr<jojo::tools::RuntimeConfig> rparam,
+    std::shared_ptr<jojo::tools::InterfaceConfig> iparam) {
+  rparam_ = rparam;
+  iparam_ = iparam;
 
   data_loader = std::make_shared<DataLoader>();
-  data_loader->Init(param_);
+  data_loader->Init(rparam_, iparam_);
   data_loader->Start();
 
-  dc_camera.resize(param_->b_camera);
-  dc_infra.resize(param_->b_infra);
-  dc_star.resize(param_->b_star);
-  dc_radar4d.resize(param_->b_radar4d);
+  dc_camera.resize(iparam_->b_camera);
+  dc_infra.resize(iparam_->b_infra);
+  dc_star.resize(iparam_->b_star);
+  dc_radar4d.resize(iparam_->b_radar4d);
 
   this->InitGroup();
   // std::cout << "GroupConvert Init End." << std::endl;
+
+  return true;
 }
 
 void GroupConvert::InitGroup() {
@@ -32,7 +37,7 @@ void GroupConvert::InitGroup() {
   // 拿到子类指针
   this->group_ds = std::static_pointer_cast<MeasureGroup>(group);
 
-  if (param_->b_lidar) {
+  if (iparam_->b_lidar) {
     std::string name = "lidar";
     dc_lidar.set_name(name);
     std::string ts_file = "timestamp/" + name + "_timestamp";
@@ -43,9 +48,9 @@ void GroupConvert::InitGroup() {
         std::cerr << name << " timestamp load failed" << std::endl;
       }
     }
-    dc_lidar.init_ts(param_->start_time);
+    dc_lidar.init_ts(rparam_->start_time);
     // update the start time
-    param_->start_time = dc_lidar.cur_time;
+    rparam_->start_time = dc_lidar.cur_time;
 
     // clang-format off
     // group_ds->lidar.data = pcl::PointCloud<pcl::PointXYZI>::Ptr(new pcl::PointCloud<pcl::PointXYZI>);
@@ -55,14 +60,14 @@ void GroupConvert::InitGroup() {
     // clang-format on
   }
 
-  if (param_->b_camera) {
-    for (int i = 0; i < param_->b_camera; i++) {
+  if (iparam_->b_camera) {
+    for (int i = 0; i < iparam_->b_camera; i++) {
       std::string name;
-      // if (param_->b_camera == 1) {
+      // if (iparam_->b_camera == 1) {
       //   name = "camera";
       // } else {
-        // 对应 MkdirDataFolderVector 从1开始
-        name = "camera_" + std::to_string(i + 1);
+      // 对应 MkdirDataFolderVector 从1开始
+      name = "camera_" + std::to_string(i + 1);
       // }
       dc_camera.at(i).set_name(name);
       // timestamp 文件名
@@ -77,75 +82,75 @@ void GroupConvert::InitGroup() {
       }
       // clang-format on
       // 对于 同频率的数据 可以直接递推
-      dc_camera.at(i).align_ts(param_->start_time);
+      dc_camera.at(i).align_ts(rparam_->start_time);
       // 不同频率的数据 需要在运行时找到匹配的时间戳
     }
-    group->camera.resize(param_->b_camera);
+    group->camera.resize(iparam_->b_camera);
   }
 
-  if (param_->b_infra) {
-    for (int i = 0; i < param_->b_infra; i++) {
+  if (iparam_->b_infra) {
+    for (int i = 0; i < iparam_->b_infra; i++) {
       std::string name;
-      // if (param_->b_infra == 1) {
+      // if (iparam_->b_infra == 1) {
       //   name = "infra";
       // } else {
-        name = "infra_" + std::to_string(i + 1);
+      name = "infra_" + std::to_string(i + 1);
       // }
       dc_infra.at(i).set_name(name);
       std::string ts_file = "timestamp/" + name + "_timestamp";
       // clang-format off
       if (!data_loader->LoadTimeStamp(data_loader->prefix, ts_file, dc_infra.at(i))) {
-        if (data_loader->ExtractTimestamp(data_loader->path_camera.at(i), dc_infra.at(i))) {
+        if (data_loader->ExtractTimestamp(data_loader->path_infra.at(i), dc_infra.at(i))) {
           data_loader->SaveTimeStamp(data_loader->prefix, ts_file, dc_infra.at(i));
         } else {
           std::cerr << name << " timestamp load failed" << std::endl;
         }
       }
       // clang-format on
-      dc_infra.at(i).align_ts(param_->start_time);
+      dc_infra.at(i).align_ts(rparam_->start_time);
     }
-    group->infra.resize(param_->b_infra);
+    group->infra.resize(iparam_->b_infra);
   }
 
-  if (param_->b_star) {
-    for (int i = 0; i < param_->b_star; i++) {
+  if (iparam_->b_star) {
+    for (int i = 0; i < iparam_->b_star; i++) {
       std::string name;
-      // if (param_->b_star == 1) {
+      // if (iparam_->b_star == 1) {
       //   name = "star";
       // } else {
-        name = "star_" + std::to_string(i + 1);
+      name = "star_" + std::to_string(i + 1);
       // }
       dc_star.at(i).set_name(name);
       std::string ts_file = "timestamp/" + name + "_timestamp";
       // clang-format off
       if (!data_loader->LoadTimeStamp(data_loader->prefix, ts_file, dc_star.at(i))) {
-        if (data_loader->ExtractTimestamp(data_loader->path_camera.at(i), dc_star.at(i))) {
+        if (data_loader->ExtractTimestamp(data_loader->path_star.at(i), dc_star.at(i))) {
           data_loader->SaveTimeStamp(data_loader->prefix, ts_file, dc_star.at(i));
         } else {
           std::cerr << name << " timestamp load failed" << std::endl;
         }
       }
       // clang-format on
-      dc_star.at(i).align_ts(param_->start_time);
+      dc_star.at(i).align_ts(rparam_->start_time);
     }
-    group->star.resize(param_->b_star);
+    group->star.resize(iparam_->b_star);
   }
 
-  if (param_->b_global_pose) {
+  if (iparam_->b_global_pose) {
     dc_global_pose.set_name("global_pose");
     // LoadGlobalPose(data_loader->prefix, dc_global_pose.name);
     LoadGlobalPose(data_loader->path_global_pose);
     // std::cout << "global_pose.size(): " << dc_global_pose.size() << std::endl;
   }
 
-  if (param_->b_local_pose) {
+  if (iparam_->b_local_pose) {
     dc_local_pose.set_name("local_pose");
     // LoadLocalPose(data_loader->prefix, dc_local_pose.name);
     LoadLocalPose(data_loader->path_local_pose);
   }
 
   // /*
-  if (param_->b_radar) {
+  if (iparam_->b_radar) {
     std::string name = "radar";
     dc_radar.set_name(name);
     data_loader->LoadTimeStamp(data_loader->prefix,
@@ -154,15 +159,15 @@ void GroupConvert::InitGroup() {
   // */
 
   // /*
-  for (int i = 0; i < param_->b_radar4d; i++) {
-    // static int type = Radar4DTypeParam[param_->radar4d_type];
-    auto type = SensorRegistry::Instance().GetRadar4dType(param_->radar4d_type);
+  for (int i = 0; i < iparam_->b_radar4d; i++) {
+    // static int type = Radar4DTypeParam[rparam_->radar4d_type];
+    auto type = SensorRegistry::Instance().GetRadar4dType(rparam_->radar4d_type);
 
     std::string name;
-    // if (param_->b_radar4d == 1) {
+    // if (iparam_->b_radar4d == 1) {
     //   name = "radar4d";
     // } else {
-      name = "radar4d" + std::to_string(i + 1);
+    name = "radar4d" + std::to_string(i + 1);
     // }
     dc_radar4d.at(i).set_name(name);
     std::string ts_file = "timestamp/" + name + "_timestamp";
@@ -176,11 +181,11 @@ void GroupConvert::InitGroup() {
     }
     // clang-format on
 
-    group->radar4d.resize(param_->b_radar4d);
+    group->radar4d.resize(iparam_->b_radar4d);
   }
   // */
 
-  if (param_->b_imu_data) {
+  if (iparam_->b_imu_data) {
     // std::cout << "init IMU data" << std::endl;
     dc_imu_data.set_name("imu_data");
     // LoadImuData(data_loader->prefix, dc_imu_data.name);
@@ -192,18 +197,18 @@ std::shared_ptr<const MeasureGroupBase> GroupConvert::ReadNext() {
   // std::cout << "GroupConvert ReadNext." << std::endl;
   static bool first_run = false;
   if (!first_run) {
-    index_ts    = param_->start_time;
+    index_ts    = rparam_->start_time;
     is_running_ = true;
     first_run   = true;
   }
 
-  if (param_->end_time !=0 && index_ts >= param_->end_time) {
+  if (rparam_->end_time != 0 && index_ts >= rparam_->end_time) {
     is_running_ = false;
     return nullptr;
   }
 
   uint64_t last_ts = index_ts;
-  if (param_->b_lidar) {  // 加载点云
+  if (iparam_->b_lidar) {  // 加载点云
     dc_lidar.align_ts(index_ts);
     // time ==> scan end time ; start_time ==> scan start time
     // this->GetLidarBase<pcl::PointXYZI>()
@@ -218,9 +223,9 @@ std::shared_ptr<const MeasureGroupBase> GroupConvert::ReadNext() {
     index_ts = dc_lidar.cur_time;
   }
 
-  if (param_->b_camera) {  // 加载图像
+  if (iparam_->b_camera) {  // 加载图像
     // std::cout << "GroupConvert ReadNext. Camera." << std::endl;
-    for (int i = 0; i < param_->b_camera; i++) {
+    for (int i = 0; i < iparam_->b_camera; i++) {
       dc_camera.at(i).align_ts(last_ts);
       this->GetImage(group->camera.at(i).data, group->camera.at(i).time, i, 1);
       if (group->camera.at(i).data.empty()) {
@@ -231,8 +236,8 @@ std::shared_ptr<const MeasureGroupBase> GroupConvert::ReadNext() {
     }
   }
 
-  if (param_->b_infra) {  // 加载图像
-    for (int i = 0; i < param_->b_infra; i++) {
+  if (iparam_->b_infra) {  // 加载图像
+    for (int i = 0; i < iparam_->b_infra; i++) {
       dc_infra.at(i).align_ts(last_ts);
       this->GetImage(group->infra.at(i).data, group->infra.at(i).time, i, 1);
       if (group->infra.at(i).data.empty()) {
@@ -243,8 +248,8 @@ std::shared_ptr<const MeasureGroupBase> GroupConvert::ReadNext() {
     }
   }
 
-  if (param_->b_star) {  // 加载图像
-    for (int i = 0; i < param_->b_star; i++) {
+  if (iparam_->b_star) {  // 加载图像
+    for (int i = 0; i < iparam_->b_star; i++) {
       dc_star.at(i).align_ts(last_ts);
       this->GetImage(group->star.at(i).data, group->star.at(i).time, i, 1);
       if (group->star.at(i).data.empty()) {
@@ -255,25 +260,26 @@ std::shared_ptr<const MeasureGroupBase> GroupConvert::ReadNext() {
     }
   }
 
-  if (param_->b_imu_data) {  // 加载IMU
+  if (iparam_->b_imu_data) {  // 加载IMU
     // std::cout << "GroupConvert ReadNext. IMU." << std::endl;
     dc_imu_data.align_ts(last_ts);
-    if (!this->GetDataBase(&dc_imu_data, group_ds->imu.data, group_ds->imu.time)) {
+    if (!this->GetDataBase(&dc_imu_data, group_ds->imu.data,
+                           group_ds->imu.time)) {
       std::cerr << "[Warning] Failed to load imu_data: "
                 << ", skipping frame." << std::endl;
       is_running_ = false;
     }
 
-    if (param_->b_imu_vec) {
-      dc_imu_data.GetDataSegment(group_ds->lidar.start_time, group_ds->lidar.time,
-                                 group_ds->imu_vec);
+    if (rparam_->b_imu_vec) {
+      dc_imu_data.GetDataSegment(group_ds->lidar.start_time,
+                                 group_ds->lidar.time, group_ds->imu_vec);
 
       // std::cout << "imu_vec size: " << group->imu_vec.size() << std::endl;
       // this->print_imu_vec(group_ds->imu_vec);
     }
   }
 
-  if (param_->b_local_pose) {
+  if (iparam_->b_local_pose) {
     // std::cout << "GroupConvert ReadNext. Odometry." << std::endl;
     dc_local_pose.align_ts(last_ts);
     if (!this->GetDataBase(&dc_local_pose, group_ds->odom.data,
@@ -284,7 +290,7 @@ std::shared_ptr<const MeasureGroupBase> GroupConvert::ReadNext() {
     }
   }
 
-  if (param_->b_global_pose) {
+  if (iparam_->b_global_pose) {
     // std::cout << "GroupConvert ReadNext. GNSS." << std::endl;
     dc_global_pose.align_ts(last_ts);
     if (!this->GetDataBase(&dc_global_pose, group_ds->gnss.data,
@@ -519,7 +525,7 @@ bool GroupConvert::LoadImuData(const std::string& file) {
     // 兼容性代码 int ==> float
     float dummy;
     int seq;
-    // clang-format off
+
     if (iss >> local_time >> dummy >> seq
             >> imu.gyro.x >> imu.gyro.y >> imu.gyro.z
             >> imu.acc.x >> imu.acc.y >> imu.acc.z) {
@@ -563,12 +569,13 @@ bool GroupConvert::LoadImuData(const std::string& file) {
       dc_imu_data.insert(uint64_t(imu.time), &imu);
 
       /* debug
+      // clang-format off
       std::cout << "---- ----"
                 << "time: " << imu.time << " gyro: [" << imu.gyro.x << ", " << imu.gyro.y << ", " << imu.gyro.z << "]"
                 << " acc: [" << imu.acc.x << ", " << imu.acc.y << ", " << imu.acc.z << "]" << std::endl;
+      // clang-format on
       */
     }
-    // clang-format on
   }
 
   return true;
@@ -587,7 +594,7 @@ bool GroupConvert::GetLidarBase(
   }
 
   char file[300];
-  if (!param_->use_bin_or_pcd) {
+  if (!rparam_->use_bin_or_pcd) {
     // clang-format off
     sprintf(file, "%s/%.13ld.bin", data_loader->path_lidar.c_str(), tmp->cur_time);
     if (!common::FileExists(file)) {
@@ -673,7 +680,7 @@ bool GroupConvert::GetImageBase(DataContainer<uint64_t>& data_c,
   switch (mode) {
     case 1:
       index = id;
-      if (param_->use_jpg_or_png == 0) {
+      if (rparam_->use_jpg_or_png == 0) {
         sprintf(file_image, "%s/%.13ld.jpg",
                 data_loader->path_camera.at(id).c_str(), tmp->cur_time);
       } else {
@@ -683,8 +690,8 @@ bool GroupConvert::GetImageBase(DataContainer<uint64_t>& data_c,
       break;
 
     case 2:
-      index = param_->b_camera + id;
-      if (param_->use_jpg_or_png <= 0) {
+      index = iparam_->b_camera + id;
+      if (rparam_->use_jpg_or_png <= 0) {
         sprintf(file_image, "%s/%.13ld.jpg",
                 data_loader->path_infra.at(id).c_str(), tmp->cur_time);
       } else {
@@ -694,8 +701,8 @@ bool GroupConvert::GetImageBase(DataContainer<uint64_t>& data_c,
       break;
 
     case 3:
-      index = param_->b_camera + param_->b_infra + id;
-      if (param_->use_jpg_or_png <= 0) {
+      index = iparam_->b_camera + iparam_->b_infra + id;
+      if (rparam_->use_jpg_or_png <= 0) {
         sprintf(file_image, "%s/%.13ld.jpg",
                 data_loader->path_star.at(id).c_str(), tmp->cur_time);
       } else {

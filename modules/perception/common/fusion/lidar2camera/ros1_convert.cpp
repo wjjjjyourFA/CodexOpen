@@ -1,6 +1,9 @@
 #include "modules/perception/common/fusion/lidar2camera/ros1_convert.h"
 
-Ros1Convert::Ros1Convert() {
+Ros1Convert::Ros1Convert(ros::NodeHandle& nh, ros::NodeHandle& private_nh) {
+  nh_  = nh;
+  pnh_ = private_nh;
+
   camera_params = std::make_shared<camera::CameraParams>();
   fusion        = std::make_shared<fusion::LidarCameraFusion>();
 }
@@ -83,42 +86,43 @@ void Ros1Convert::PointCloudCallback(
   point_recv_ = true;
 }
 
-bool Ros1Convert::Init(ros::NodeHandle& nh, ros::NodeHandle& private_nh,
-                       std::shared_ptr<perception::RuntimeConfig> param) {
-  node   = nh;
-  param_ = param;
+bool Ros1Convert::Init(
+    std::shared_ptr<perception::RuntimeConfig> param,
+    std::shared_ptr<jojo::perception::InterfaceConfig> interface) {
+  rparam_ = param;
+  iparam_ = interface;
 
-  if (!param_->b_compressed) {
-    image_sub = node.subscribe<sensor_msgs::Image>(
-        param_->image_topic, 1,
+  if (!iparam_->b_compressed) {
+    image_sub = nh_.subscribe<sensor_msgs::Image>(
+        iparam_->image_topic, 1,
         std::bind(&Ros1Convert::ImageCallback, this, std::placeholders::_1));
   } else {
-    image_sub = node.subscribe<sensor_msgs::CompressedImage>(
-        param_->image_topic, 1,
+    image_sub = nh_.subscribe<sensor_msgs::CompressedImage>(
+        iparam_->image_topic, 1,
         std::bind(&Ros1Convert::ImageCompressedCallback, this,
                   std::placeholders::_1));
   }
 
-  if (param_->b_do_undistort) {
+  if (rparam_->b_do_undistort) {
     // clang-format off
     camera_undistort = std::make_shared<camera::UndistortionHandlerCv>();
     // camera_undistort = std::make_shared<camera::UndistortionHandler>();
     // clang-format on
   }
 
-  trans_matrix = math::GetTransMatrix(param_->b_lt_none_rt);
+  trans_matrix = math::GetTransMatrix(rparam_->b_lt_none_rt);
 
-  cloud_sub = node.subscribe<sensor_msgs::PointCloud2>(
-      param_->lidar_topic, 1,
+  cloud_sub = nh_.subscribe<sensor_msgs::PointCloud2>(
+      iparam_->lidar_topic, 1,
       std::bind(&Ros1Convert::PointCloud2Callback, this,
                 std::placeholders::_1));
 
   color_cloud_pub =
-      node.advertise<sensor_msgs::PointCloud2>("colored_pointcloud", 10);
+      nh_.advertise<sensor_msgs::PointCloud2>("colored_pointcloud", 10);
 
-  camera_params->LoadFromFile(param_->calib_file_path /*kk.ini*/);
+  camera_params->LoadFromFile(rparam_->calib_file_path /*kk.ini*/);
 
-  fusion->set_params("Lidar", param_->dist_threshold);
+  fusion->set_params("Lidar", rparam_->dist_threshold);
 
 #if defined(RSLIDAR_OLD)
   rs_cloud_ptr = pcl::make_shared<pcl::PointCloud<robosense_ros::PointII>>();
@@ -143,7 +147,7 @@ bool Ros1Convert::Init(ros::NodeHandle& nh, ros::NodeHandle& private_nh,
 }
 
 void Ros1Convert::Run() {
-  ros::Rate loop_rate(param_->rate);
+  ros::Rate loop_rate(iparam_->rate);
 
   while (ros::ok()) {
     // ros::spinOnce() 只会处理一次队列里的回调，然后就返回。
@@ -182,7 +186,7 @@ void Ros1Convert::Run() {
 
       fusion->SetProjectionMatrix(matrix.at(0)->projection_matrix);
 
-      if (param_->b_do_undistort) {
+      if (rparam_->b_do_undistort) {
         camera_undistort->InitModel(camera::CameraDistortionModel::Brown);
         // camera_undistort->InitModel(camera::CameraDistortionModel::Kannala);
         camera_undistort->InitParams(img.cols, img.rows, params);
@@ -198,7 +202,7 @@ void Ros1Convert::Run() {
       first_create = true;
     }
 
-    if (param_->b_do_undistort) {
+    if (rparam_->b_do_undistort) {
       // auto start_time = std::chrono::high_resolution_clock::now();
 
       camera_undistort->Handle(img, &dst_img);
@@ -228,7 +232,7 @@ void Ros1Convert::Run() {
     }
     */
 
-    if (param_->b_lt_none_rt == 1) {
+    if (rparam_->b_lt_none_rt == 1) {
       // nothing
       dst_cloud_ptr = raw_cloud_ptr;
     } else {
@@ -239,7 +243,7 @@ void Ros1Convert::Run() {
 
     fusion->SetLidarPointCloud(dst_cloud_ptr);
     fusion->SetCameraImage(dst_img);
-    fusion->fuse(1, false);
+    fusion->fuse(1, false, true);
 
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr fused_point_cloud_color;
     cv::Mat fused_image;
@@ -261,6 +265,11 @@ void Ros1Convert::Run() {
 
 void Ros1Convert::PublishCloudMsg(
     const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr& cloud) {
+  if (!cloud || cloud->points.empty()) {
+    ROS_WARN_THROTTLE(1.0, "PointCloud is null or empty, skipping publish!");
+    return;
+  }
+
   sensor_msgs::PointCloud2 msg;
 
   pcl::toROSMsg(*cloud, msg);

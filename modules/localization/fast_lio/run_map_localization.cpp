@@ -1,10 +1,10 @@
 #include <chrono>  // for std::chrono
 
-#include "tools/data_loader/group_convert.h"
-#include "modules/perception/common/config/sensor_extrinsics.h"
-#include "modules/perception/common/config/vehicle_config.h"
 #include "modules/localization/fast_lio/map_localization.h"
 #include "modules/localization/fast_lio/utils.h"
+#include "modules/perception/common/config/sensor_extrinsics.h"
+#include "modules/perception/common/config/vehicle_config.h"
+#include "tools/data_loader/group_convert.h"
 
 using namespace std::chrono;
 using namespace jojo::tools;
@@ -44,14 +44,19 @@ int main(int argc, char** argv) {
   localization->Init(runtime_config, static_config);
   // clang-format on
 
-  std::string dl_config_path = "./../../../config/FastLio/DataLoader.ini";
+  std::string dl_rc_path = "./../../../config/FastLio/DataLoader.ini";
+  std::string dl_ic_path = "./../../../config/FastLio/Interface.ini";
 
-  auto dl_runtime_config = std::make_shared<RuntimeConfigOffline>();
+  auto dl_runtime_config = std::make_shared<jojo::tools::RuntimeConfig>();
   dl_runtime_config->set_name(name);
-  dl_runtime_config->LoadConfig(dl_config_path);
+  dl_runtime_config->LoadConfig(dl_rc_path);
+
+  auto dl_interface_config = std::make_shared<jojo::tools::InterfaceConfig>();
+  dl_interface_config->set_name(name);
+  dl_interface_config->LoadConfig(dl_ic_path);
 
   auto group_convert = std::make_shared<GroupConvert>();
-  group_convert->Init(dl_runtime_config);
+  group_convert->Init(dl_runtime_config, dl_interface_config);
 
   std::cout << std::fixed << std::setprecision(0);
 
@@ -73,9 +78,7 @@ int main(int argc, char** argv) {
     if (group_convert->IsEnd()) {
       break;
     }
-    std::cout << "Frame " << frame_idx
-              << ": Image Time = " << group->camera.at(0).time
-              << ", Lidar Time = " << group->lidar.time
+    std::cout << "Frame " << frame_idx << ", Lidar Time = " << group->lidar.time
               << ", IMU Count = " << group->imu_vec.size() << std::endl;
     // auto frame_start = omp_get_wtime();
     frame_idx++;
@@ -128,9 +131,13 @@ int main(int argc, char** argv) {
     localization->run_localization(t);
     auto frame_end = omp_get_wtime();
 
+    // 灰色为局部先验地图，红色为 IMU 预测点云，绿色为最终优化点云。
+    // 每帧刷新，用于实时检查定位优化位姿是否把当前帧对齐到正确位置。
+    // localization->Show();
+
     auto frame_duration = frame_end - frame_start;
-    std::cout << "Loc frame runtime: " << frame_duration * 1000
-              << " ms" << std::endl
+    std::cout << "Loc frame runtime: " << frame_duration * 1000 << " ms"
+              << std::endl
               << std::endl;
 
     if (runtime_config->b_only_times) {

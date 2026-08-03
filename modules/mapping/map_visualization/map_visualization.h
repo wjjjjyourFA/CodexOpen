@@ -1,29 +1,28 @@
 #pragma once
 
-#include <filesystem>
-#include <fstream>
-#include <sstream>
-#include <iostream>
+#include <omp.h>
 
-#include <string>
 #include <algorithm>
 #include <deque>
-#include <vector>
-#include <tuple>
-#include <memory>
-#include <unordered_map>
+#include <filesystem>
+#include <fstream>
 #include <iomanip>
-
-#include <omp.h>
+#include <iostream>
+#include <memory>
+#include <sstream>
+#include <string>
+#include <tuple>
+#include <unordered_map>
+#include <vector>
 
 #include <pcl/io/pcd_io.h>
 
 #include "modules/mapping/map_representation/common.h"
 #include "modules/mapping/map_representation/load_map_2d.h"
 #include "modules/mapping/map_representation/terrain_map.h"
-#include "modules/mapping/map_visualization/post_process.h"
 #include "modules/mapping/map_visualization/config/runtime_config.h"
 #include "modules/mapping/map_visualization/config/static_config.h"
+#include "modules/mapping/map_visualization/post_process.h"
 
 using PointRGBA = pcl::PointXYZRGBA;
 
@@ -91,7 +90,7 @@ class MapVisualization {
   pcl::PointCloud<pcl::PointXYZI>::Ptr frame = nullptr;
 
   pcl::visualization::PCLVisualizer::Ptr vis_ = NULL;
-  bool vis_inited_ = false;
+  bool vis_inited_                            = false;
 
  private:
   MapVisualizationHyperparams hps_;

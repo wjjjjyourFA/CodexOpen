@@ -56,7 +56,7 @@ class CRollingGridMap : public CResidualGridMap<CellType> {
 
   // 图像坐标 grid_map: +X --> right, +Y --> down
   // 世界坐标:
-  //   +X: east -> right --> c++ , west -> left --> c--, 
+  //   +X: east -> right --> c++ , west -> left --> c--,
   //   +Y: north -> up --> r-- , south -> down --> r++
   void ShiftPhysicalColumnPositive();
   void ShiftPhysicalColumnNegative();

@@ -1,5 +1,6 @@
 #ifndef __ARS548_H__
 #define __ARS548_H__
+
 #include <vector>
 
 #include <Eigen/Core>

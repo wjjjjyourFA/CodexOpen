@@ -920,7 +920,7 @@ double LineSegmentDetector::nfa(const int& n, const int& k,
   double log1term = (double(n) + 1) - log_gamma(double(k) + 1) -
                     log_gamma(double(n - k) + 1) + double(k) * log(p) +
                     double(n - k) * log(1.0 - p);
-  double term = exp(log1term);
+  double term     = exp(log1term);
 
   if (math::double_equal(term, 0)) {
     if (k > n * p)

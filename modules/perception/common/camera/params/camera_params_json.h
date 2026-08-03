@@ -1,5 +1,5 @@
-#ifndef READ_CAMERA_PARAMS_JSON_H
-#define READ_CAMERA_PARAMS_JSON_H
+#ifndef CAMERA_PARAMS_JSON_H
+#define CAMERA_PARAMS_JSON_H
 
 #pragma once
 

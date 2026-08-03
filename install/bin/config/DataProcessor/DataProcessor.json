@@ -14,66 +14,8 @@
     "useless_time": 1
   },
 
-  "sensors": {
-    "LocalPose": true,
-    "GlobalPose": true,
-    "ImuData": true,
-    "Camera": 3,
-    "Infra": 3,
-    "Star": 0,
-    "Radar": 0,
-    "Radar4D": 3,
-    "Lidar": true
-  },
-
   "topics": {
-    "global_pose": "/self_state/GlobalPose",
-    "local_pose": "/self_state/LocalPose",
-    "imu_data": "/sensor/Imu",
-
-    "lidar": {
-      "b_difop": true,
-      "ori": "/sensor/RS128Packets_tztek",
-      "difop": "/sensor/RS128Packets_tztek_difop",
-      "points": "/rslidar_points"
-    },
-
-    "b_compressed": true,
-    "b_do_undistort": true,
-
-    "camera": {
-      "topics": [
-        "/sensor/image/ar0231_front/compressed",
-        "/sensor/image/ar0231_frontleft/compressed",
-        "/sensor/image/ar0231_frontright/compressed"
-      ]
-    },
-
-    "infra": {
-      "topics": [
-        "/sensor/infra/ir_front/compressed",
-        "/sensor/infra/ir_leftfront/compressed",
-        "/sensor/infra/ir_rightfront/compressed"
-      ]
-    },
-
-    "star": {
-      "topics": [
-        "/sensor/image/ar0231_right/compressed"
-      ]
-    },
-
-    "radar": {
-      "topic": "/sensor/ESR_Radar_objects"
-    },
-
-    "radar4d": {
-      "topics": [
-        "/GreenMengShi193/sensor/radar/ars548/front/detection_list",
-        "/GreenMengShi193/sensor/radar/ars548/front_left/detection_list",
-        "/GreenMengShi193/sensor/radar/ars548/front_right/detection_list"
-      ]
-    }
+    "b_do_undistort": true
   },
 
   "calibration": {

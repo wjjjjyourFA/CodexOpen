@@ -1,24 +1,25 @@
-#ifndef ROS2_CONVERT_H
-#define ROS2_CONVERT_H
+#ifndef LIDAR_CAMERA_ROS2_CONVERT_H
+#define LIDAR_CAMERA_ROS2_CONVERT_H
 
 #include <chrono>
 #include <thread>
 
-#include <opencv2/opencv.hpp>
-#include <opencv2/videoio/videoio.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/opencv.hpp>
+#include <opencv2/videoio/videoio.hpp>
 //#include <opencv2/imgcodecs/legacy/constants_c.h>
 
 #include "rclcpp/rclcpp.hpp"
 // 用image_transport软件包发布和订阅ROS中的图像
 #include <image_transport/image_transport.h>
 // 这两个头文件包含了CvBridge类以及与图像编码相关的函数
-#include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.hpp>
 #include <sensor_msgs/msg/point_cloud.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <sensor_msgs/point_cloud_conversion.hpp>
+
+#include <cv_bridge/cv_bridge.h>
 #include <pcl_conversions/pcl_conversions.h>
 
 #include "sensor_msgs/msg/compressed_image.hpp"
@@ -29,29 +30,31 @@
 // #include "modules/perception/common/camera/common/undistortion_handler.h"
 #include "modules/perception/common/camera/common/undistortion_handler_cv.h"
 #include "modules/perception/common/camera/params/camera_params.h"
+#include "modules/perception/common/fusion/lidar2camera/config/interface_config.h"
+#include "modules/perception/common/fusion/lidar2camera/config/runtime_config.h"
+#include "modules/perception/common/fusion/lidar2camera/lidar_camera_fusion.h"
 #include "modules/perception/common/lidar/convert/robosense.h"
 #include "modules/perception/common/lidar/convert/velodyne.h"
-#include "modules/perception/common/fusion/lidar2camera/lidar_camera_fusion.h"
 #include "modules/perception/tools/common/show_data_2d.h"
-#include "modules/perception/common/fusion/lidar2camera/config/runtime_config_realtime.h"
 
-namespace math = jojo::common::math;
+namespace math       = jojo::common::math;
 namespace perception = jojo::perception;
-namespace base = jojo::perception::base;
-namespace cfg = jojo::perception::config;
-namespace camera = jojo::perception::camera;
-namespace fusion = jojo::perception::fusion;
+namespace base       = jojo::perception::base;
+namespace cfg        = jojo::perception::config;
+namespace camera     = jojo::perception::camera;
+namespace fusion     = jojo::perception::fusion;
 
 typedef pcl::PointXYZI PointT;
 typedef pcl::PointCloud<PointT> CloudT;
 
 class Ros2Convert {
  public:
-  Ros2Convert();
+  Ros2Convert(std::shared_ptr<rclcpp::Node> nh);
   ~Ros2Convert();
 
-  bool Init(std::shared_ptr<rclcpp::Node> nh,
-            std::shared_ptr<perception::RuntimeConfig> param);
+  bool Init(std::shared_ptr<jojo::perception::RuntimeConfig> param,
+            std::shared_ptr<jojo::perception::InterfaceConfig> interface);
+
   void Run();
 
  protected:
@@ -69,9 +72,10 @@ class Ros2Convert {
   std::shared_ptr<fusion::LidarCameraFusion> fusion;
 
  private:
-  std::shared_ptr<perception::RuntimeConfig> param_ /*param_manager_*/;
+  std::shared_ptr<perception::RuntimeConfig> rparam_;
+  std::shared_ptr<perception::InterfaceConfig> iparam_;
 
-  std::shared_ptr<rclcpp::Node> node;
+  std::shared_ptr<rclcpp::Node> nh_;
   rclcpp::SubscriptionBase::SharedPtr image_sub;
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr cloud_sub;
   std::string ns;
@@ -89,4 +93,4 @@ class Ros2Convert {
   Eigen::Matrix4f trans_matrix;
 };
 
-#endif  // Ros2Convert
+#endif  // LIDAR_CAMERA_ROS2_CONVERT_H

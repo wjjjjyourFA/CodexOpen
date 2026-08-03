@@ -1,12 +1,13 @@
-#include <thread>
+#include "modules/perception/tools/pcl/pcl_viewer.h"
+
+#include <algorithm>
 #include <chrono>
 #include <iostream>
-#include <algorithm>
+#include <thread>
 
 #include <pcl/io/pcd_io.h>
 
 #include "modules/perception/tools/pcl/point_types.h"
-#include "modules/perception/tools/pcl/pcl_viewer.h"
 
 // 将 timestamp 映射到 RGB 蓝→红渐变
 void TimestampToRGB(double ts, double ts_min, double ts_max, float& r, float& g,

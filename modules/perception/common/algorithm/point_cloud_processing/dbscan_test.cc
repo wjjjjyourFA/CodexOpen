@@ -1,4 +1,5 @@
 #include "modules/perception/common/algorithm/point_cloud_processing/dbscan.h"
+
 #include <modules/perception/common/base/point.h>
 
 #include "gtest/gtest.h"

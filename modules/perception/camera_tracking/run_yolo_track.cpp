@@ -1,9 +1,9 @@
-#include "tools/data_loader/data_loader.h"
-#include "tools/data_loader/group_convert.h"
-#include "tools/data_loader/config/runtime_config_offline.h"
-
 #include "modules/perception/camera_tracking/camera_tracking.h"
 #include "modules/perception/camera_tracking/config/runtime_config.h"
+#include "tools/data_loader/config/interface_config.h"
+#include "tools/data_loader/config/runtime_config.h"
+#include "tools/data_loader/data_loader.h"
+#include "tools/data_loader/group_convert.h"
 
 using namespace jojo::tools;
 using namespace jojo::perception;
@@ -43,15 +43,19 @@ int main(int argc, char** argv) {
   image_tracking->Init(std::string(runtime_config->det_engine_file),
                        std::string(runtime_config->sort_engine_file));
 
-  std::string dl_config_path = "./../../../config/DataLoader/DataLoader.ini";
+  std::string dl_rc_path = "./../../../config/DataLoader/DataLoader.ini";
+  std::string dl_ic_path = "./../../../config/DataLoader/Interface.ini";
 
-  auto dl_runtime_config =
-      std::make_shared<jojo::tools::RuntimeConfigOffline>();
+  auto dl_runtime_config = std::make_shared<jojo::tools::RuntimeConfig>();
   dl_runtime_config->set_name(name);
-  dl_runtime_config->LoadConfig(dl_config_path);
+  dl_runtime_config->LoadConfig(dl_rc_path);
+
+  auto dl_interface_config = std::make_shared<jojo::tools::InterfaceConfig>();
+  dl_interface_config->set_name(name);
+  dl_interface_config->LoadConfig(dl_ic_path);
 
   auto data_loader = std::make_shared<GroupConvert>();
-  data_loader->Init(dl_runtime_config);
+  data_loader->Init(dl_runtime_config, dl_interface_config);
 
   std::cout << std::fixed << std::setprecision(0);
 

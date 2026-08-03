@@ -45,7 +45,7 @@ SOURCES += \
   $$DATA_PROCESSOR_PATH/config/sensor_config.cc \
   $$SELF_PATH/run_data_loader_realtime.cpp \
   $$SELF_PATH/data_loader.cpp \
-  $$SELF_PATH/data_loader_realtime.cpp \
+  # $$SELF_PATH/data_loader_realtime.cpp \
   $$SELF_PATH/config/*.cpp \
   $$SELF_PATH/ros1_convert.cpp
 
@@ -68,7 +68,7 @@ HEADERS += \
   $$files($$PREFIX/common/radar/convert/*.h) \
   $$DATA_PROCESSOR_PATH/config/sensor_config.h \
   $$SELF_PATH/data_loader.h \
-  $$SELF_PATH/data_loader_realtime.h \
+  # $$SELF_PATH/data_loader_realtime.h \
   $$SELF_PATH/data_container.h \
   $$SELF_PATH/data_container_ros1.h \
   $$SELF_PATH/config/*.h \

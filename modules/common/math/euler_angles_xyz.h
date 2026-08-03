@@ -26,7 +26,6 @@
 #include <cmath>
 
 #include "Eigen/Geometry"
-
 #include "modules/common/math/math_utils.h"
 
 /* FLU 车辆示意（俯视图）；车头是 X 轴方向；
@@ -125,7 +124,7 @@ class EulerAnglesXYZ {
    * @brief Constructs a rotation from quaternion.
    * @param q Quaternion
    */
-  explicit EulerAnglesXYZ(const Eigen::Quaternion<T> &q)
+  explicit EulerAnglesXYZ(const Eigen::Quaternion<T>& q)
       : EulerAnglesXYZ(q.w(), q.x(), q.y(), q.z()) {}
 
   /**
@@ -150,9 +149,9 @@ class EulerAnglesXYZ {
    * @brief Normalizes roll_, pitch_, and yaw_ to [-PI, PI).
    */
   void Normalize() {
-    roll_ = NormalizeAngle(roll_);
+    roll_  = NormalizeAngle(roll_);
     pitch_ = NormalizeAngle(pitch_);
-    yaw_ = NormalizeAngle(yaw_);
+    yaw_   = NormalizeAngle(yaw_);
   }
 
   /**
@@ -170,9 +169,9 @@ class EulerAnglesXYZ {
    */
   Eigen::Quaternion<T> ToQuaternion() const {
     T coeff = static_cast<T>(0.5);
-    T r = roll_ * coeff;
-    T p = pitch_ * coeff;
-    T y = yaw_ * coeff;
+    T r     = roll_ * coeff;
+    T p     = pitch_ * coeff;
+    T y     = yaw_ * coeff;
 
     T sr = std::sin(r);
     T sp = std::sin(p);

@@ -155,6 +155,19 @@ public:
             int size(){ return heap_size;}
 
             void clear(){ heap_size = 0;}
+
+            // /* way 2
+            void reset(int min_capacity){
+                if (min_capacity > cap){
+                    PointType_CMP* new_heap = new PointType_CMP[min_capacity];
+                    delete[] heap;
+                    heap = new_heap;
+                    cap = min_capacity;
+                }
+                heap_size = 0;
+            }
+            // */
+
         private:
             int heap_size = 0; // 当前已存储的元素个数
             int cap = 0;  // 当前的存储容量   
@@ -280,5 +293,4 @@ public:
     KD_TREE_NODE * Root_Node = nullptr;
     int max_queue_size = 0;
 };
-
 

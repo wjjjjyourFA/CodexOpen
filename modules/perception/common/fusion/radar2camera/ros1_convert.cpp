@@ -1,6 +1,9 @@
 #include "modules/perception/common/fusion/radar2camera/ros1_convert.h"
 
-Ros1Convert::Ros1Convert() {
+Ros1Convert::Ros1Convert(ros::NodeHandle& nh, ros::NodeHandle& private_nh) {
+  nh_  = nh;
+  pnh_ = private_nh;
+
   radar_params  = std::make_shared<cfg::SensorExtrinsics>();
   camera_params = std::make_shared<camera::CameraParams>();
   fusion        = std::make_shared<fusion::RadarCameraFusion>();
@@ -77,42 +80,43 @@ void Ros1Convert::PointCloudCallback(
   point_recv_ = true;
 }
 
-bool Ros1Convert::Init(ros::NodeHandle& nh, ros::NodeHandle& private_nh,
-                       std::shared_ptr<perception::RuntimeConfig> param) {
-  node   = nh;
-  param_ = param;
+bool Ros1Convert::Init(
+    std::shared_ptr<perception::RuntimeConfig> param,
+    std::shared_ptr<jojo::perception::InterfaceConfig> interface) {
+  rparam_ = param;
+  iparam_ = interface;
 
-  if (!param_->b_compressed) {
-    image_sub = node.subscribe<sensor_msgs::Image>(
-        param_->image_topic, 1,
+  if (!iparam_->b_compressed) {
+    image_sub = nh_.subscribe<sensor_msgs::Image>(
+        iparam_->image_topic, 1,
         std::bind(&Ros1Convert::ImageCallback, this, std::placeholders::_1));
   } else {
-    image_sub = node.subscribe<sensor_msgs::CompressedImage>(
-        param_->image_topic, 1,
+    image_sub = nh_.subscribe<sensor_msgs::CompressedImage>(
+        iparam_->image_topic, 1,
         std::bind(&Ros1Convert::ImageCompressedCallback, this,
                   std::placeholders::_1));
   }
 
-  if (param_->b_pointcloud2) {
-    cloud_sub = node.subscribe<sensor_msgs::PointCloud2>(
-        param_->radar_topic, 1,
+  if (iparam_->b_pointcloud2) {
+    cloud_sub = nh_.subscribe<sensor_msgs::PointCloud2>(
+        iparam_->radar_topic, 1,
         std::bind(&Ros1Convert::PointCloud2Callback, this,
                   std::placeholders::_1));
   } else {
     std::cout << "radar is using pointcloud " << std::endl;
-    cloud_sub = node.subscribe<sensor_msgs::PointCloud>(
-        param_->radar_topic, 1,
+    cloud_sub = nh_.subscribe<sensor_msgs::PointCloud>(
+        iparam_->radar_topic, 1,
         std::bind(&Ros1Convert::PointCloudCallback, this,
                   std::placeholders::_1));
   }
 
-  if (param_->b_do_undistort) {
+  if (rparam_->b_do_undistort) {
     camera_undistort = std::make_shared<camera::UndistortionHandler>();
   }
 
   InitTransfParams();
 
-  fusion->set_params("Radar", param_->dist_threshold);
+  fusion->set_params("Radar", rparam_->dist_threshold);
 
   if (!raw_cloud_ptr) {
     // raw_cloud_ptr = boost::make_shared<CloudT>();  // 推荐写法
@@ -127,7 +131,7 @@ bool Ros1Convert::Init(ros::NodeHandle& nh, ros::NodeHandle& private_nh,
 }
 
 void Ros1Convert::Run() {
-  ros::Rate loop_rate(param_->rate);
+  ros::Rate loop_rate(iparam_->rate);
 
   while (ros::ok()) {
     ros::spinOnce();
@@ -149,7 +153,7 @@ void Ros1Convert::Run() {
 
       fusion->SetProjectionMatrix(matrix.at(0)->projection_matrix);
 
-      if (param_->b_do_undistort) {
+      if (rparam_->b_do_undistort) {
         camera_undistort->InitModel(camera::CameraDistortionModel::Brown);
         camera_undistort->InitParams(img.cols, img.rows, params);
         camera_undistort->Init("camera");
@@ -164,7 +168,7 @@ void Ros1Convert::Run() {
       first_create = true;
     }
 
-    if (param_->b_do_undistort) {
+    if (rparam_->b_do_undistort) {
       camera_undistort->Handle(img, &dst_img);
     }
 
@@ -207,8 +211,8 @@ void Ros1Convert::Run() {
 }
 
 void Ros1Convert::InitTransfParams() {
-  camera_params->LoadFromFile(param_->camera_calib_file_path /*kk.ini*/);
-  radar_params->LoadFromFile(param_->radar_calib_file_path /*radar.ini*/);
+  camera_params->LoadFromFile(rparam_->camera_calib_file_path /*kk.ini*/);
+  radar_params->LoadFromFile(rparam_->radar_calib_file_path /*radar.ini*/);
 
   // radar => lidar => image
   auto camera_matrix = camera_params->GetMatrixVector();

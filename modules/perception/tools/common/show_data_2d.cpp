@@ -73,9 +73,8 @@ void show2d_lidar_data(const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud,
   show2d_lidar_data(cloud_xyzi, idx, mode, name, ext_img);
 }
 
-void show2d_lidar_bev(const base::Point3DF p[8],
-                      const Eigen::Vector3f& center, cv::Scalar color,
-                      cv::Mat* ext_img) {
+void show2d_lidar_bev(const base::Point3DF p[8], const Eigen::Vector3f& center,
+                      cv::Scalar color, cv::Mat* ext_img) {
   static int width  = 1024;
   static int height = 768;
   // static int width  = 1920;

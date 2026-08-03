@@ -8,12 +8,10 @@
 #include <pcl/visualization/pcl_visualizer.h>
 
 #include "modules/common/math/math_utils.h"
-
-#include "modules/perception/common/config/sensor_extrinsics.h"
-
+#include "modules/common_struct/localization_msgs/OdometryData.h"
 #include "modules/common_struct/sensor_msgs/GnssData.h"
 #include "modules/common_struct/sensor_msgs/ImuData.h"
-#include "modules/common_struct/localization_msgs/OdometryData.h"
+#include "modules/perception/common/config/sensor_extrinsics.h"
 
 // #include "modules/perception/tools/pcl/pcl_viewer.h"
 

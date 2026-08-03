@@ -162,30 +162,33 @@ void ImuProcess::IMU_init(const MeasureGroup &meas, esekfom::esekf<state_ikfom, 
   // 详见：==> save the poses at each IMU measurements
   // init_state.grav = S2(Eigen::Vector3d(0, 0, -G_m_s2));
   
-  /* way 1
-  init_state.rot = Eye3d;
-  init_state.rot = Exp(mean_acc.cross(V3D(0, 0, -1 / scale_gravity)));
-  */
-  /* way 2 利用 标定的 rot
-  Eigen::Matrix4d imu_ext = Eigen::Matrix4d::Identity();
-  imu_ext << 1.0, 0.0, 0.0, 0.0, 
-             0.0, 0.6428, -0.7660, 0.0, 
-             0.0, 0.7660, 0.6428, 0.0, 
-             0.0, 0.0, 0.0, 1.0;
-  Eigen::Matrix3d R_ext = imu_ext.block<3,3>(0,0);
-  // std::cout << std::fixed << std::setprecision(6);
-  // std::cout << "R_ext.matrix(): \n" << R_ext << std::endl;
-  init_state.rot = SO3(R_ext);
-  // std::cout << "init_state.rot.matrix(): \n" << init_state.rot.toRotationMatrix() << std::endl;
-  */
-  // /* way 3 利用 静止状态测量 rot
-  Eigen::Vector3d z_imu = -mean_acc.normalized();
-  Eigen::Vector3d z_world(0, 0, -1);
-  Eigen::Quaterniond q = Eigen::Quaterniond::FromTwoVectors(z_imu, z_world);
-  // std::cout << "q.toRotationMatrix(): \n" << q.toRotationMatrix() << std::endl;
-  init_state.rot = SO3(q.w(), q.x(), q.y(), q.z());
-  // std::cout << "init_state.rot.matrix(): \n" << init_state.rot.toRotationMatrix() << std::endl;
-  // */
+  // 非定位状态时，需要初始化 rot；定位状态，使用定位提供的 rot；
+  if (init_mode == 0) {
+    /* way 1
+    init_state.rot = Eye3d;
+    init_state.rot = Exp(mean_acc.cross(V3D(0, 0, -1 / scale_gravity)));
+    */
+    /* way 2 利用 标定的 rot
+    Eigen::Matrix4d imu_ext = Eigen::Matrix4d::Identity();
+    imu_ext << 1.0, 0.0, 0.0, 0.0, 
+              0.0, 0.6428, -0.7660, 0.0, 
+              0.0, 0.7660, 0.6428, 0.0, 
+              0.0, 0.0, 0.0, 1.0;
+    Eigen::Matrix3d R_ext = imu_ext.block<3,3>(0,0);
+    // std::cout << std::fixed << std::setprecision(6);
+    // std::cout << "R_ext.matrix(): \n" << R_ext << std::endl;
+    init_state.rot = SO3(R_ext);
+    // std::cout << "init_state.rot.matrix(): \n" << init_state.rot.toRotationMatrix() << std::endl;
+    */
+    // /* way 3 利用 静止状态测量 rot
+    Eigen::Vector3d z_imu = -mean_acc.normalized();
+    Eigen::Vector3d z_world(0, 0, -1);
+    Eigen::Quaterniond q = Eigen::Quaterniond::FromTwoVectors(z_imu, z_world);
+    // std::cout << "q.toRotationMatrix(): \n" << q.toRotationMatrix() << std::endl;
+    init_state.rot = SO3(q.w(), q.x(), q.y(), q.z());
+    // std::cout << "init_state.rot.matrix(): \n" << init_state.rot.toRotationMatrix() << std::endl;
+    // */
+  }
 
   init_state.bg  = mean_gyr;                  // 角速度测量均值作为陀螺仪偏差
   init_state.offset_T_L_I = Lidar_T_wrt_IMU;  // 将lidar和imu外参传入

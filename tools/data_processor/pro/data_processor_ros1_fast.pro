@@ -56,6 +56,7 @@ SOURCES += \
   $$SELF_PATH/data_processor.cpp \
   $$SELF_PATH/ros1_convert_fast.cpp \
   $$SELF_PATH/config/runtime_config.cpp \
+  $$SELF_PATH/config/interface_config.cpp \
 
 SOURCES -= \
   $$PREFIX/tools/pcl/pcl_viewer_test.cpp \
@@ -86,6 +87,7 @@ HEADERS += \
   $$SELF_PATH/data_processor.h \
   $$SELF_PATH/ros1_convert_fast.h \
   $$SELF_PATH/config/runtime_config.h \
+  $$SELF_PATH/config/interface_config.h \
 
 HEADERS -= \
   $$SELF_PATH/config/runtime_config_legacy.h

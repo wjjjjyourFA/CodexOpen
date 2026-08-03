@@ -1,25 +1,22 @@
 #pragma once
 
-#include <vector>
 #include <cmath>
+#include <vector>
 
 #define PCL_NO_PRECOMPILE
+#include <opencv2/opencv.hpp>
+#include <pcl/common/transforms.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/visualization/cloud_viewer.h>
-#include <pcl/common/transforms.h>
+#include <pcl/visualization/pcl_visualizer.h>
 
-#include <opencv2/opencv.hpp>
-
-#include "modules/perception/ground_remove/config/runtime_config.h"
-#include "modules/perception/tools/opencv/colors.hpp"
-
-#include "modules/perception/similarity_map/CGridMap/CLocalWindowMap.h"
 #include "modules/perception/ground_remove/ObstacleCell.h"
-
+#include "modules/perception/ground_remove/config/runtime_config.h"
 #include "modules/perception/ground_remove/ground_segmentation/ground_segmentation_legacy.h"
 // #include "modules/perception/ground_remove/ground_segmentation/ground_segmentation.h"
+#include "modules/perception/similarity_map/CGridMap/CLocalWindowMap.h"
+#include "modules/perception/tools/opencv/colors.hpp"
 
 namespace jojo {
 namespace perception {
@@ -63,6 +60,10 @@ class GroundRemove {
   void ShowColorGridMapRotation(const Eigen::Matrix4f& pose);
 
   void VisColorCloud(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud);
+
+  std::shared_ptr<CLocalWindowMap<ObstacleCell>> GetResult() const {
+    return obstacle_grid_map;
+  }
 
  protected:
   std::shared_ptr<jojo::perception::RuntimeConfig> rparam_;

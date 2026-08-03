@@ -1,13 +1,12 @@
-#ifndef __CLUSTER_FH_H_
-#define __CLUSTER_FH_H_
+#ifndef OBJECT_CLUSTER_FH_H
+#define OBJECT_CLUSTER_FH_H
 
 #pragma once
 
-#include "opencv2/opencv.hpp"
-
-#include "modules/perception/common/base/segment.h"
 #include "modules/perception/common/algorithm/point_cloud_processing/cluster_postprocess.h"
 #include "modules/perception/common/algorithm/point_cloud_processing/kdtree/kdtree.h"
+#include "modules/perception/common/base/segment.h"
+#include "opencv2/opencv.hpp"
 
 // PointXYZI;
 // PointXYZV;

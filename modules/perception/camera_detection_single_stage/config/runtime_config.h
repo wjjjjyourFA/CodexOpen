@@ -1,5 +1,5 @@
-#ifndef CAMERA_DETECTION_SINGLE_STAGE_CONFIG_H
-#define CAMERA_DETECTION_SINGLE_STAGE_CONFIG_H
+#ifndef CAMERA_DETECTION_SINGLE_STAGE_RUNTIME_CONFIG_H
+#define CAMERA_DETECTION_SINGLE_STAGE_RUNTIME_CONFIG_H
 
 #pragma once
 
@@ -21,10 +21,13 @@ class RuntimeConfig : public jojo::common::config::ConfigFileBase {
   std::string wts_file;
   std::string engine_file;
   std::string onnx_file;
+
+  bool b_undistort;
+  std::string calib_file_path = "";
 };
 
-}
-}  // namespace
+}  // namespace cdss
+}  // namespace perception
 }  // namespace jojo
 
 #endif

@@ -10,42 +10,47 @@
 namespace jojo {
 namespace tools {
 
-Ros1Convert::Ros1Convert() {}
+Ros1Convert::Ros1Convert(ros::NodeHandle& nh, ros::NodeHandle& private_nh) {
+  nh_  = nh;
+  pnh_ = private_nh;
+}
 
 Ros1Convert::~Ros1Convert() {}
 
-void Ros1Convert::Init(ros::NodeHandle& nh, ros::NodeHandle& private_nh,
-                       std::shared_ptr<RuntimeConfig> param) {
-  nh_    = nh;
-  param_ = param;
+bool Ros1Convert::Init(std::shared_ptr<jojo::tools::RuntimeConfig> rparam,
+                       std::shared_ptr<jojo::tools::InterfaceConfig> iparam) {
+  rparam_ = rparam;
+  iparam_ = iparam;
 
   data_processor = std::make_shared<DataProcessor>();
-  data_processor->Init(param_);
+  data_processor->Init(rparam_, iparam_);
 
   // 这个要提前很久初始化，可能和ROS启动有关
-  if (param_->b_lidar) {
-    if (param_->b_difop) {
+  if (iparam_->b_lidar) {
+    if (iparam_->b_difop) {
       this->InitRslidar();
     }
   }
 
   // mode = 1 2 3 ==> camera infra star
-  ds_camera.resize(param_->b_camera, DataStatistic<cv::Mat>("camera", 1));
-  ds_infra.resize(param_->b_infra, DataStatistic<cv::Mat>("infra", 2));
-  ds_star.resize(param_->b_star, DataStatistic<cv::Mat>("star", 3));
-  ds_radar4d.resize(param_->b_radar4d, DataStatistic<uint>("radar4d"));
+  ds_camera.resize(iparam_->b_camera, DataStatistic<cv::Mat>("camera", 1));
+  ds_infra.resize(iparam_->b_infra, DataStatistic<cv::Mat>("infra", 2));
+  ds_star.resize(iparam_->b_star, DataStatistic<cv::Mat>("star", 3));
+  ds_radar4d.resize(iparam_->b_radar4d, DataStatistic<uint>("radar4d"));
+
+  return true;
 }
 
 void Ros1Convert::Run() {
   sleep(1);
-  if (!param_->b_save_data) {
+  if (!rparam_->b_save_data) {
     std::cout << "b_save_data is false! " << std::endl;
     abort();
   }
 
   rosbag::Bag bag;
   std::string rosbag_read_path =
-      param_->rosbag_path + "/" + param_->rosbag_name + ".bag";
+      rparam_->rosbag_path + "/" + rparam_->rosbag_name + ".bag";
   std::cout << rosbag_read_path << std::endl;
 
   bag.open(rosbag_read_path, rosbag::bagmode::Read);
@@ -57,27 +62,27 @@ void Ros1Convert::Run() {
   data_processor->Start();
 
   /* ---------------- topic map ---------------- */
-  for (size_t i = 0; i < param_->topic_camera_sub.size(); i++)
-    camera_topic_map[param_->topic_camera_sub[i]] = i;
-  for (size_t i = 0; i < param_->topic_infra_sub.size(); i++)
-    infra_topic_map[param_->topic_infra_sub[i]] = i;
-  for (size_t i = 0; i < param_->topic_star_sub.size(); i++)
-    star_topic_map[param_->topic_star_sub[i]] = i;
-  for (size_t i = 0; i < param_->topic_radar4d_sub.size(); i++)
-    radar4d_topic_map[param_->topic_radar4d_sub[i]] = i;
+  for (size_t i = 0; i < iparam_->topic_camera_sub.size(); i++)
+    camera_topic_map[iparam_->topic_camera_sub[i]] = i;
+  for (size_t i = 0; i < iparam_->topic_infra_sub.size(); i++)
+    infra_topic_map[iparam_->topic_infra_sub[i]] = i;
+  for (size_t i = 0; i < iparam_->topic_star_sub.size(); i++)
+    star_topic_map[iparam_->topic_star_sub[i]] = i;
+  for (size_t i = 0; i < iparam_->topic_radar4d_sub.size(); i++)
+    radar4d_topic_map[iparam_->topic_radar4d_sub[i]] = i;
 
   // 仅限简单消息处理
   std::vector<std::string> topics;
-  if (param_->b_local_pose) {
-    topics.push_back(param_->topic_local_pose_sub);
+  if (iparam_->b_local_pose) {
+    topics.push_back(iparam_->topic_local_pose_sub);
     ROS_INFO("\033[1;32m----> start local_pose.\033[0m");
   }
-  if (param_->b_global_pose) {
-    topics.push_back(param_->topic_global_pose_sub);
+  if (iparam_->b_global_pose) {
+    topics.push_back(iparam_->topic_global_pose_sub);
     ROS_INFO("\033[1;32m----> start global_pose.\033[0m");
   }
-  if (param_->b_imu_data) {
-    topics.push_back(param_->topic_imu_data_sub);
+  if (iparam_->b_imu_data) {
+    topics.push_back(iparam_->topic_imu_data_sub);
     ROS_INFO("\033[1;32m----> start imu_data.\033[0m");
   }
 
@@ -95,17 +100,17 @@ void Ros1Convert::Run() {
 
   data_processor->Stop();
 
-  if (param_->b_lidar) {
+  if (iparam_->b_lidar) {
     ROS_INFO("\033[1;32m----> start lidar.\033[0m");
 
-    if (param_->b_difop == 0) {
-      std::vector<std::string> topics = {param_->topic_lidar_sub};
+    if (iparam_->b_difop == 0) {
+      std::vector<std::string> topics = {iparam_->topic_lidar_sub};
 
       rosbag::View view(bag, rosbag::TopicQuery(topics));
 
       for (rosbag::MessageInstance const& m : view) {
         const std::string& topic = m.getTopic();
-        if (topic == param_->topic_lidar_sub) {
+        if (topic == iparam_->topic_lidar_sub) {
           auto msg = m.instantiate<sensor_msgs::PointCloud2>();
           this->LidarHandler(msg);
         }
@@ -115,8 +120,8 @@ void Ros1Convert::Run() {
       }
     } else {
       // 没有设计多线程解锁，需要重新单线程
-      std::vector<std::string> topics = {param_->topic_lidar_ori_sub,
-                                         param_->topic_lidar_difop_sub};
+      std::vector<std::string> topics = {iparam_->topic_lidar_ori_sub,
+                                         iparam_->topic_lidar_difop_sub};
 
       rosbag::View view(bag, rosbag::TopicQuery(topics));
 
@@ -131,21 +136,21 @@ void Ros1Convert::Run() {
   }
 
   topics.clear();
-  if (param_->b_camera) {
-    for (size_t i = 0; i < param_->b_camera; ++i) {
-      topics.push_back(param_->topic_camera_sub[i]);
+  if (iparam_->b_camera) {
+    for (size_t i = 0; i < iparam_->b_camera; ++i) {
+      topics.push_back(iparam_->topic_camera_sub[i]);
       ROS_INFO("\033[1;32m----> start camera_%zu.\033[0m", i + 1);
     }
   }
-  if (param_->b_infra) {
-    for (size_t i = 0; i < param_->b_infra; ++i) {
-      topics.push_back(param_->topic_infra_sub[i]);
+  if (iparam_->b_infra) {
+    for (size_t i = 0; i < iparam_->b_infra; ++i) {
+      topics.push_back(iparam_->topic_infra_sub[i]);
       ROS_INFO("\033[1;32m----> start infra_%zu.\033[0m", i + 1);
     }
   }
-  if (param_->b_star) {
-    for (size_t i = 0; i < param_->b_star; ++i) {
-      topics.push_back(param_->topic_star_sub[i]);
+  if (iparam_->b_star) {
+    for (size_t i = 0; i < iparam_->b_star; ++i) {
+      topics.push_back(iparam_->topic_star_sub[i]);
       ROS_INFO("\033[1;32m----> start star_%zu.\033[0m", i + 1);
     }
   }
@@ -155,24 +160,24 @@ void Ros1Convert::Run() {
   for (const rosbag::MessageInstance& m : view2) {
     const std::string& topic = m.getTopic();
 
-    if (param_->b_camera) {
+    if (iparam_->b_camera) {
       Ros1bagParseImageWrapper(m, topic, camera_topic_map, ds_camera);
     }
 
-    if (param_->b_infra) {
+    if (iparam_->b_infra) {
       Ros1bagParseImageWrapper(m, topic, infra_topic_map, ds_infra);
     }
 
-    if (param_->b_star) {
+    if (iparam_->b_star) {
       Ros1bagParseImageWrapper(m, topic, star_topic_map, ds_star);
     }
 
     // 数据量较小，所以一块处理。
-    if (param_->b_radar) {
+    if (iparam_->b_radar) {
       RadarHandler(m);
     }
 
-    if (param_->b_radar4d) {
+    if (iparam_->b_radar4d) {
       auto it = radar4d_topic_map.find(topic);
       if (it != radar4d_topic_map.end()) {
         Radar4DHandler(m, it->second);
@@ -203,13 +208,14 @@ void Ros1Convert::Run() {
 
 void Ros1Convert::Ros1bagParseBase(const rosbag::MessageInstance& m) {
   const std::string& topic = m.getTopic();
-  if (param_->b_local_pose && topic == param_->topic_local_pose_sub) {
+  if (iparam_->b_local_pose && topic == iparam_->topic_local_pose_sub) {
     auto msg = m.instantiate<self_state::LocalPose>();
     LocalPoseHandler(msg);
-  } else if (param_->b_global_pose && topic == param_->topic_global_pose_sub) {
+  } else if (iparam_->b_global_pose &&
+             topic == iparam_->topic_global_pose_sub) {
     auto msg = m.instantiate<self_state::GlobalPose>();
     GlobalPoseHandler(msg);
-  } else if (param_->b_imu_data && topic == param_->topic_imu_data_sub) {
+  } else if (iparam_->b_imu_data && topic == iparam_->topic_imu_data_sub) {
     auto msg = m.instantiate<sensor_msgs::Imu>();
     ImuDataHandler(msg);
   }
@@ -360,7 +366,7 @@ void Ros1Convert::Ros1bagParseImageWrapper(
 
   size_t idx = it->second;
 
-  if (param_->prepare_data_num != -1 &&
+  if (rparam_->prepare_data_num != -1 &&
       data_processor->IsEnd(ds_vec[idx].sampled_index)) {
     return;
   }
@@ -370,7 +376,7 @@ void Ros1Convert::Ros1bagParseImageWrapper(
   task.ds          = &ds_vec[idx];
   task.sensor_mode = ds_vec[idx].mode;
 
-  if (param_->b_compressed) {
+  if (iparam_->b_compressed) {
     task.type = ImageTask::ImageType::COMPRESSED;
     // 反序列化成 CompressedImage
     task.compressed_msg = m.instantiate<sensor_msgs::CompressedImage>();
@@ -382,7 +388,7 @@ void Ros1Convert::Ros1bagParseImageWrapper(
     if (!task.raw_msg) return;
   }
 
-  ImageWorkerFunc(task, data_processor.get(), param_.get());
+  ImageWorkerFunc(task, data_processor.get(), rparam_.get());
 }
 
 void Ros1Convert::ImageWorkerFunc(const ImageTask& task, DataProcessor* proc,
@@ -440,7 +446,7 @@ void Ros1Convert::ImageWorkerFunc(const ImageTask& task, DataProcessor* proc,
 }
 
 void Ros1Convert::RadarHandler(const rosbag::MessageInstance& m) {
-  auto type = SensorRegistry::Instance().GetRadarType(param_->radar_type);
+  auto type = SensorRegistry::Instance().GetRadarType(rparam_->radar_type);
   auto& path_radar = data_processor->path_radar;
 
   // /* ESR_Radar
@@ -471,7 +477,7 @@ void Ros1Convert::RadarHandler(const rosbag::MessageInstance& m) {
       }
 
       char file_radar[300];
-      if (param_->use_txt_or_pcd == 0) {
+      if (rparam_->use_txt_or_pcd == 0) {
         sprintf(file_radar, "%s/%ld.txt", path_radar.c_str(), msg_time);
         FILE* fp_radar;
         fp_radar = fopen(file_radar, "w");
@@ -521,7 +527,7 @@ void Ros1Convert::RadarHandler(const rosbag::MessageInstance& m) {
       // clang-format on
 
       char file_radar[300];
-      if (param_->use_txt_or_pcd == 0) {
+      if (rparam_->use_txt_or_pcd == 0) {
         sprintf(file_radar, "%s/%ld.txt", path_radar.c_str(), msg_time);
         FILE* fp_radar;
         fp_radar = fopen(file_radar, "w");
@@ -551,7 +557,7 @@ void Ros1Convert::RadarHandler(const rosbag::MessageInstance& m) {
 
 void Ros1Convert::Radar4DHandler(const rosbag::MessageInstance& m, int idx) {
   // 4D毫米波雷达带速度和速度残差
-  auto type = SensorRegistry::Instance().GetRadar4dType(param_->radar4d_type);
+  auto type = SensorRegistry::Instance().GetRadar4dType(rparam_->radar4d_type);
   auto& path_radar4d = data_processor->path_radar4d[idx];
 
   auto& ds = ds_radar4d[idx];
@@ -581,7 +587,7 @@ void Ros1Convert::Radar4DHandler(const rosbag::MessageInstance& m, int idx) {
       }
       // clang-format on
       char file_radar4d[300];
-      if (param_->use_txt_or_pcd == 0) {
+      if (rparam_->use_txt_or_pcd == 0) {
         sprintf(file_radar4d, "%s/%ld.txt", path_radar4d.c_str(), msg_time);
         FILE* fp_radar4d;
         fp_radar4d = fopen(file_radar4d, "w");
@@ -622,7 +628,7 @@ void Ros1Convert::Radar4DHandler(const rosbag::MessageInstance& m, int idx) {
       pcl::fromROSMsg(cloud2_ptr, *Cloud);
 
       char buff[500];
-      if (param_->use_txt_or_pcd == 1) {
+      if (rparam_->use_txt_or_pcd == 1) {
         sprintf(buff, "%s/%ld.pcd", path_radar4d.c_str(), msg_time);
         pcl::io::savePCDFileBinary(buff, *Cloud);
       }
@@ -643,7 +649,7 @@ void Ros1Convert::Radar4DHandler(const rosbag::MessageInstance& m, int idx) {
       PointCloud.timestamp = msg_time;
 
       char file_radar4d[300];
-      if (param_->use_txt_or_pcd == 0) {
+      if (rparam_->use_txt_or_pcd == 0) {
         sprintf(file_radar4d, "%s/%ld.txt", path_radar4d.c_str(), msg_time);
         FILE* fp_radar4d;
         fp_radar4d = fopen(file_radar4d, "w");
@@ -725,9 +731,9 @@ void Ros1Convert::LidarHandler(
 
     // warning
     pcl::transformPointCloud(*Cloud, *Cloud,
-                             GetTransMatrix(param_->b_lt_none_rt));
+                             GetTransMatrix(rparam_->b_lt_none_rt));
 
-    if (param_->b_save_data) {
+    if (rparam_->b_save_data) {
       data_processor->SaveLidarData(Cloud, msg_time);
     }
 
@@ -739,14 +745,14 @@ void Ros1Convert::InitRslidar() {
   sem_init(&sem_a, 0, 1);
   // sem_init(&sem_b, 0, 1);
 
-  sub_cloud = nh_.subscribe(param_->topic_lidar_sub, 10,
+  sub_cloud = nh_.subscribe(iparam_->topic_lidar_sub, 10,
                             &Ros1Convert::RecvLidarHandler, this);
 
   pub_ori = nh_.advertise<rslidar_msgs::rslidarScan>(
-      param_->topic_lidar_ori_sub /*rslidar_packets*/, 10);
+      iparam_->topic_lidar_ori_sub /*rslidar_packets*/, 10);
 
   pub_difop = nh_.advertise<rslidar_msgs::rslidarPacket>(
-      param_->topic_lidar_difop_sub /*rslidar_packets_difop*/, 10);
+      iparam_->topic_lidar_difop_sub /*rslidar_packets_difop*/, 10);
 
   b_first_pub_difop = true;
 }
@@ -756,7 +762,7 @@ void Ros1Convert::SendLidarHandler(const rosbag::MessageInstance& m,
   // std::cout << "topic: " << topic << std::endl;
   if (b_first_pub_difop) {
     /*rslidar_packets_difop*/
-    if (topic == std::string(param_->topic_lidar_difop_sub)) {
+    if (topic == std::string(iparam_->topic_lidar_difop_sub)) {
       b_first_pub_difop = false;
       rslidar_msgs::rslidarPacket::ConstPtr difop_ptr =
           m.instantiate<rslidar_msgs::rslidarPacket>();
@@ -768,7 +774,7 @@ void Ros1Convert::SendLidarHandler(const rosbag::MessageInstance& m,
     }
   } else {
     /*rslidar_packets*/
-    if (topic == std::string(param_->topic_lidar_ori_sub)) {
+    if (topic == std::string(iparam_->topic_lidar_ori_sub)) {
       rslidar_msgs::rslidarScan::ConstPtr scan_ptr =
           m.instantiate<rslidar_msgs::rslidarScan>();
       if (scan_ptr != NULL) {
@@ -780,7 +786,7 @@ void Ros1Convert::SendLidarHandler(const rosbag::MessageInstance& m,
         // 等待回调处理完成
         sem_wait(&sem_a);
       }
-    } else if (topic == std::string(param_->topic_lidar_difop_sub)) {
+    } else if (topic == std::string(iparam_->topic_lidar_difop_sub)) {
       rslidar_msgs::rslidarPacket::ConstPtr difop_ptr =
           m.instantiate<rslidar_msgs::rslidarPacket>();
       if (difop_ptr != NULL) {
@@ -833,9 +839,9 @@ void Ros1Convert::RecvLidarHandler(const sensor_msgs::PointCloud2& msg) {
 
   // warning
   pcl::transformPointCloud(*Cloud, *Cloud,
-                           GetTransMatrix(param_->b_lt_none_rt));
+                           GetTransMatrix(rparam_->b_lt_none_rt));
 
-  if (param_->b_save_data) {
+  if (rparam_->b_save_data) {
     /*  // 按雷达线束存储
     // for intensity can't use it
     for (int j = 0; j < 1800; j++)

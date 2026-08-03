@@ -3,11 +3,10 @@
 
 #pragma once
 
-#include <iostream> 
+#include <iostream>
 #include <string>
 
 #include <Eigen/Core>
-
 #include <yaml-cpp/yaml.h>
 
 namespace jojo {

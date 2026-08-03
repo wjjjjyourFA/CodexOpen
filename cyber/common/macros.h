@@ -60,6 +60,8 @@ typename std::enable_if<!HasShutdown<T>::value>::type CallShutdown(
 // 通过单例模式，你可以确保类的实例在程序的整个生命周期中只有一个，并且可以全局访问这个实例
 // 单例模式 是面向 进程 的，意味着它保证每个进程内某个类只有一个实例，但它不跨进程工作
 // 多程序间的数据共享需要使用进程间通信（IPC）机制，如消息队列、共享内存、信号量等 ==> DDS
+// std::call_once: 保证在多线程并发调度时，这个实例只会被初始化一次
+// new (std::nothrow): 如果车载系统的内存耗尽（OOM），它不会抛出异常导致整个系统崩溃，而是返回 nullptr
 #define DECLARE_SINGLETON(classname)                                           \
  public:                                                                       \
   static classname *Instance(bool create_if_needed = true) {                   \

@@ -365,7 +365,7 @@ void MapVisualization::DebugShow() {
   2. 得到 pose 对应的像素坐标 (r, c) ，取对应范围的 local_label_patch
   3. 通过映射关系，从栅格地图中获取到对应的点云
 */
-// TODO：栅格地图 “terrain_height.bin” 中获取，改为 “地形图.tif” 或 “map.pcd” 
+// TODO：栅格地图 “terrain_height.bin” 中获取，改为 “地形图.tif” 或 “map.pcd”
 void MapVisualization::Run(const pcl::PointCloud<pcl::PointXYZI>::Ptr& in_frame,
                            const Eigen::Matrix4f& in_pose) {
   frame->clear();

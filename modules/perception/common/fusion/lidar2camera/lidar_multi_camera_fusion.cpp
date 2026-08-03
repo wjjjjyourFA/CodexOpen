@@ -10,13 +10,15 @@ LidarMultiCameraFusion::LidarMultiCameraFusion() : LidarCameraFusion() {
   //  : LidarCameraFusion() ==> 调用父类构造函数
 }
 
-void LidarMultiCameraFusion::Init(
+bool LidarMultiCameraFusion::Init(
     const std::shared_ptr<base::ThreadPool> &thread_pool) {
   if (!thread_pool) {
     thread_pool_ = base::ThreadPool::Instance(8);
   } else {
     thread_pool_ = thread_pool;
   }
+
+  return true;
 }
 
 void LidarMultiCameraFusion::Start() { isRunning_ = true; }

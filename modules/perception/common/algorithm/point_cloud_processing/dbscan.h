@@ -1,10 +1,10 @@
-#ifndef __DBSCAN_H
-#define __DBSCAN_H
+#ifndef __DBSCAN_H__
+#define __DBSCAN_H__
 
-#include <iostream>
-#include <vector>
 #include <cmath>
+#include <iostream>
 #include <queue>
+#include <vector>
 
 #pragma once
 
@@ -28,7 +28,7 @@ class DBSCAN {
     this->minPts_ = minPts;
   };
 
-  virtual void SetInputCloud(const std::vector<DataType> &cloud) {
+  virtual void SetInputCloud(const std::vector<DataType>& cloud) {
     this->points_ = cloud;
     this->size_   = cloud.size();
   };
@@ -68,7 +68,7 @@ class DBSCAN {
     }
   };
 
-  virtual bool OutputCluster(std::vector<std::vector<DataType>> &clusters) {
+  virtual bool OutputCluster(std::vector<std::vector<DataType>>& clusters) {
     clusters.clear();
     /* way 1
     std::vector<std::vector<DataType>> tmp_clusters(cluster_id_);
@@ -96,8 +96,8 @@ class DBSCAN {
   };
 
   // 此处为未排序或排序点集，全局遍历搜索
-  virtual void RegionQuery(int index, double eps, std::vector<int> &labels,
-                           std::vector<int> &neighbors) {
+  virtual void RegionQuery(int index, double eps, std::vector<int>& labels,
+                           std::vector<int>& neighbors) {
     for (size_t i = 0; i < this->size_; ++i) {
       // radius
       // 只跳过已分配到簇的点，允许未分类点和噪声点
@@ -110,8 +110,8 @@ class DBSCAN {
     }
   };
 
-  void ExpandClusterDfs(std::vector<int> &labels, int index, int cluster_id,
-                        std::vector<int> &neighbors) {
+  void ExpandClusterDfs(std::vector<int>& labels, int index, int cluster_id,
+                        std::vector<int>& neighbors) {
     labels[index] = cluster_id;
 
     // 遍历所有邻居点
@@ -136,8 +136,8 @@ class DBSCAN {
     }
   };
 
-  void ExpandClusterBfs(std::vector<int> &labels, int index, int cluster_id,
-                        std::vector<int> &neighbors) {
+  void ExpandClusterBfs(std::vector<int>& labels, int index, int cluster_id,
+                        std::vector<int>& neighbors) {
     // 标记当前点的类别
     labels[index] = cluster_id;
 
@@ -194,7 +194,7 @@ class DBSCAN {
 
   // Dbscan 的复杂度一般是 O(n log n)（使用 KD-Tree 进行最近邻搜索），
   // 但如果直接用暴力搜索（两两计算距离），复杂度会是 O(n²)
-  virtual double distance(const DataType &a, const DataType &b) {
+  virtual double distance(const DataType& a, const DataType& b) {
     return std::sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y) +
                      (a.z - b.z) * (a.z - b.z));
   };

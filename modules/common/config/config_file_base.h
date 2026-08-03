@@ -8,9 +8,9 @@
 #include <string>
 #include <vector>
 
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/ini_parser.hpp>
 #include <boost/optional.hpp>
+#include <boost/property_tree/ini_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
 
 namespace jojo {
 namespace common {
@@ -24,9 +24,7 @@ class ConfigFileBase {
 
   virtual void LoadConfig(const std::string& config_path) = 0;
 
-  void set_name(const std::string& name) {
-    this->name_ = name;
-  }
+  void set_name(const std::string& name) { this->name_ = name; }
 
   const std::string& get_name() { return this->name_; }
 

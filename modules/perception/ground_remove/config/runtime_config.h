@@ -1,5 +1,5 @@
-#ifndef PARAMS_H
-#define PARAMS_H
+#ifndef GROUND_REMOVE_RUNTIME_CONFIG_H
+#define GROUND_REMOVE_RUNTIME_CONFIG_H
 
 #pragma once
 
@@ -24,6 +24,9 @@ class RuntimeConfig : public jojo::common::config::ConfigFileBase {
   // 主要用于设置偏移值
   float mean_z_thresh  = -0.55;
   float delta_z_thresh = 0.1;
+
+  // m
+  int dist_threshold = 100;
 
   float map_resolution = 0.2;
 

@@ -1,11 +1,11 @@
-#ifndef GROUP_CONVERT_DATASET_H
-#define GROUP_CONVERT_DATASET_H
+#ifndef DATA_LOADER_GROUP_CONVERT_DATASET_H
+#define DATA_LOADER_GROUP_CONVERT_DATASET_H
 
 #pragma once
 
+#include "modules/common/transform/geometry/rotation_conversions.h"
 #include "tools/data_loader/group_convert.h"
 #include "toolz/data_loader/data_loader.h"
-#include "modules/common/transform/geometry/rotation_conversions.h"
 
 namespace jojo {
 namespace tools {
@@ -33,7 +33,8 @@ class GroupConvertDataSet : public GroupConvert {
   GroupConvertDataSet();
   virtual ~GroupConvertDataSet();
 
-  void Init(std::shared_ptr<RuntimeConfigOffline> param) override;
+  bool Init(std::shared_ptr<jojo::tools::RuntimeConfig> param,
+            std::shared_ptr<jojo::tools::InterfaceConfig> interface) override;
 
   void InitGroup() override;
 

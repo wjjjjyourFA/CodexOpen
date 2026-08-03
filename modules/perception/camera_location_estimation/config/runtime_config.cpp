@@ -8,7 +8,6 @@ void RuntimeConfig::LoadConfig(const std::string& config_path) {
   try {
     // 创建一个 property_tree 对象
     boost::property_tree::ptree pt;
-
     // 读取 ini 文件
     boost::property_tree::ini_parser::read_ini(config_path, pt);
 
@@ -20,7 +19,12 @@ void RuntimeConfig::LoadConfig(const std::string& config_path) {
 
     use_det_or_track = pt.get<int>("general.use_det_or_track", 0);
 
+    b_undistort = pt.get<bool>("general.b_undistort", false);
     calib_file_path = pt.get<std::string>("calibration.calib_file_path", "");
+
+    use_det_or_track = pt.get<int>("general.use_det_or_track", 0);
+
+    dist_threshold = pt.get<int>("general.dist_threshold", 100);
 
     // 打印其他参数...
     // clang-format on
@@ -29,7 +33,6 @@ void RuntimeConfig::LoadConfig(const std::string& config_path) {
   }
 }
 
-}
-}  // namespace
+}  // namespace cle
+}  // namespace perception
 }  // namespace jojo
-

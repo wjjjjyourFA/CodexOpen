@@ -1,12 +1,11 @@
-#ifndef __OBSTACLE_CELL_H__
-#define __OBSTACLE_CELL_H__
+#ifndef GROUND_REMOVE_OBSTACLE_CELL_H
+#define GROUND_REMOVE_OBSTACLE_CELL_H
 
 #include <cfloat>
 #include <cstdint>
 
-#include <pcl/point_types.h>
-
 #include <opencv2/opencv.hpp>
+#include <pcl/point_types.h>
 
 enum ObstacleType {
   UNKNOWN = 0,

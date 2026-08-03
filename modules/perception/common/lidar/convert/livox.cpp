@@ -2,6 +2,7 @@
 
 #ifdef _OPENMP
 #include <omp.h>
+
 #include <atomic>
 #endif
 

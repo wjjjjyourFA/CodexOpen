@@ -35,11 +35,13 @@ PointCloudEdgeExtractor::estimate_borders_impl(
   std::cerr << "normals: " << normals->size() << std::endl;
 
   // 定义一个进行 边界特征估计 的对象
-  pcl::BoundaryEstimation<PointT, pcl::Normal, pcl::Boundary>boundary_estimation;
+  pcl::BoundaryEstimation<PointT, pcl::Normal, pcl::Boundary>
+      boundary_estimation;
   // 保存边界估计结果
   pcl::PointCloud<pcl::Boundary> boundaries;
   // 保存边界点的点云
-  typename pcl::PointCloud<PointT>::Ptr cloud_boundary(new pcl::PointCloud<PointT>);
+  typename pcl::PointCloud<PointT>::Ptr cloud_boundary(
+      new pcl::PointCloud<PointT>);
 
   // 设置输入的点云
   boundary_estimation.setInputCloud(filtered_cloud);
@@ -51,8 +53,8 @@ PointCloudEdgeExtractor::estimate_borders_impl(
   // 边界估计的角度阈值 M_PI / 4  并计算 k 邻域点的法线夹角, 若大于阈值则为边界特征点
   boundary_estimation.setAngleThreshold(angle_threshold);
   // 设置搜索方式KdTree
-  boundary_estimation.setSearchMethod(
-      typename pcl::search::KdTree<PointT>::Ptr(new pcl::search::KdTree<PointT>));
+  boundary_estimation.setSearchMethod(typename pcl::search::KdTree<PointT>::Ptr(
+      new pcl::search::KdTree<PointT>));
   // 将边界估计结果保存在boundaries
   boundary_estimation.compute(boundaries);
   std::cerr << "AngleThreshold: " << angle_threshold << std::endl;
@@ -78,7 +80,8 @@ PointCloudEdgeExtractor::estimate_borders_impl(
   }
 
   // Searching NN in radius R
-  typename pcl::PointCloud<PointT>::Ptr cloud_boundary_filtered(new pcl::PointCloud<PointT>);
+  typename pcl::PointCloud<PointT>::Ptr cloud_boundary_filtered(
+      new pcl::PointCloud<PointT>);
   pcl::KdTreeFLANN<PointT> kdtree;
   kdtree.setInputCloud(cloud_boundary);
 

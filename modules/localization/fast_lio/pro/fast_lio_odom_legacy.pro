@@ -9,7 +9,7 @@ CONFIG += console c++14
 CONFIG -= app_bundle
 CONFIG -= qt
 CONFIG += object_parallel_to_source
-TARGET = odometry_fast_lio
+TARGET = odometry_fast_lio_legacy
 
 CODEX_PATH = $$PWD/../../../../../CodexOpen
 PREFIX = $$CODEX_PATH/modules/perception/common
@@ -55,12 +55,13 @@ SOURCES += \
   $$DATA_PROCESSOR_PATH/config/sensor_config.cc \
   $$OTHER_PATH/data_loader.cpp \
   $$OTHER_PATH/group_convert.cpp \
-  $$OTHER_PATH/config/runtime_config_offline.cpp \
+  $$OTHER_PATH/config/runtime_config.cpp \
+  $$OTHER_PATH/config/interface_config.cpp \
   $$SELF_PATH/config/runtime_config.cpp \
   $$SELF_PATH/src/imu_processing_legacy.cpp \
   $$SELF_PATH/ieskf/esekfom.cpp \
   $$SELF_PATH/lidar_odometry_legacy.cpp \
-  $$SELF_PATH/run_lidar_odometry.cpp \
+  $$SELF_PATH/run_lidar_odometry_legacy.cpp \
   $$KDTREE_PATH/ikd_Tree.cpp \
   $$SOPHUS_PATH/sophus/so3.cpp
 
@@ -82,7 +83,8 @@ HEADERS += \
   $$OTHER_PATH/data_loader.h \
   $$OTHER_PATH/data_container.h \
   $$OTHER_PATH/group_convert.h \
-  $$OTHER_PATH/config/runtime_config_offline.h \
+  $$OTHER_PATH/config/runtime_config.h \
+  $$OTHER_PATH/config/interface_config.h \
   $$DATA_PROCESSOR_PATH/config/sensor_config.h \
   $$BRANCH_PATH/data_loader.h \
   $$BRANCH_PATH/group_convert.h \

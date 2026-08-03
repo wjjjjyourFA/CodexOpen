@@ -1,13 +1,13 @@
-#ifndef LIDAR_CAMERA_FUSION_THREAD_H
-#define LIDAR_CAMERA_FUSION_THREAD_H
+#ifndef LIDAR_MULTI_CAMERA_FUSION_H
+#define LIDAR_MULTI_CAMERA_FUSION_H
 
-#include <thread>
 #include <functional>
+#include <thread>
 
 // #include "cyber/base/thread_pool.h"
 #include "cyber/base/thread_pool_legacy.h"
-#include "modules/perception/common/fusion/lidar2camera/lidar_camera_fusion.h"
 #include "modules/perception/common/camera/params/camera_params.h"
+#include "modules/perception/common/fusion/lidar2camera/lidar_camera_fusion.h"
 
 namespace jojo {
 namespace perception {
@@ -18,7 +18,8 @@ class LidarMultiCameraFusion : public LidarCameraFusion {
   LidarMultiCameraFusion();
   virtual ~LidarMultiCameraFusion() = default;
 
-  void Init(const std::shared_ptr<jojo::cyber::base::ThreadPool> &thread_pool = nullptr);
+  bool Init(const std::shared_ptr<jojo::cyber::base::ThreadPool>& thread_pool =
+                nullptr);
 
   void Start();
   void Stop();
@@ -30,16 +31,16 @@ class LidarMultiCameraFusion : public LidarCameraFusion {
 
   // undistort_images
   void SetCameraImageVector(
-      const std::vector<std::shared_ptr<cv::Mat>> &image_v);
+      const std::vector<std::shared_ptr<cv::Mat>>& image_v);
 
-  bool GetFusedImageVector(std::vector<std::shared_ptr<cv::Mat>> &image_v);
+  bool GetFusedImageVector(std::vector<std::shared_ptr<cv::Mat>>& image_v);
 
  protected:
   void project_lidar_to_camera_fast(
-      const pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud,
-      const std::shared_ptr<camera::CameraParams> &camera_params,
-      const std::vector<std::shared_ptr<cv::Mat>> &image_v,
-      std::vector<std::shared_ptr<cv::Mat>> &mask_v);
+      const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud,
+      const std::shared_ptr<camera::CameraParams>& camera_params,
+      const std::vector<std::shared_ptr<cv::Mat>>& image_v,
+      std::vector<std::shared_ptr<cv::Mat>>& mask_v);
 
  private:
   std::atomic_bool isRunning_{false};

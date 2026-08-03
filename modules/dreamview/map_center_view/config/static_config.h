@@ -1,5 +1,5 @@
-#ifndef MAP_CENTER_VIEW_MAP_PARAMS_H
-#define MAP_CENTER_VIEW_MAP_PARAMS_H
+#ifndef MAP_CENTER_VIEW_MAP_STATIC_CONFIG_H
+#define MAP_CENTER_VIEW_MAP_STATIC_CONFIG_H
 
 #pragma once
 
@@ -27,9 +27,9 @@ class StaticConfig : public jojo::common::config::ConfigFileYaml {
   // int init_method    = 0;
 
   bool b_use_pose_center = false;
-  
-  bool b_display_roi     = false;
-  bool b_display_body    = false;
+
+  bool b_display_roi  = false;
+  bool b_display_body = false;
 
  protected:
   void LoadJson(const std::string& config_path);

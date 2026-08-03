@@ -1,22 +1,23 @@
 #ifndef CMapper_H
 #define CMapper_H
 
-#include "unistd.h"
 #include <sys/stat.h>
+
+#include <unordered_set>
 
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
+#include "unistd.h"
+
 #define PCL_NO_PRECOMPILE
-#include "pcl/visualization/pcl_visualizer.h"
-
-#include "opencv2/opencv.hpp"
-
 #include "cyber/common/file.h"
 #include "modules/mapping/map_processing/downsampling.h"
 #include "modules/mapping/mapper/config/runtime_config.h"
 #include "modules/mapping/mapper/config/static_config.h"
+#include "opencv2/opencv.hpp"
+#include "pcl/visualization/pcl_visualizer.h"
 
 using namespace std;
 using namespace cv;
@@ -50,7 +51,7 @@ class Mapper {
 
   virtual void Reset();
 
-  void RealTimeShow(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_in);
+  void RealTimeShow(const pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_in);
   virtual void VisualizeMap(bool b_pause = true);
 
   virtual void UpdateIncrementalMap();
@@ -60,8 +61,11 @@ class Mapper {
  protected:
   virtual void FlushBufferToMap();
 
+  void CommitRealtimeHistory();
+  void RebuildRealtimeHistory(float voxel_size);
+
   pcl::visualization::PCLVisualizer::Ptr vis_ = NULL;
-  bool vis_inited_ = false;
+  bool vis_inited_                            = false;
 
  protected:
   std::shared_ptr<jojo::mapping::RuntimeConfig> rparam_;
@@ -81,8 +85,12 @@ class Mapper {
 
   // 实时可视化专用
   pcl::PointCloud<pcl::PointXYZI>::Ptr vis_frame;
-  std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> vis_chunks_;
-  int vis_chunk_id_ = 0;
+  pcl::PointCloud<pcl::PointXYZI>::Ptr vis_recent_cloud_;
+  pcl::PointCloud<pcl::PointXYZI>::Ptr vis_history_cloud_;
+  pcl::PointCloud<pcl::PointXYZI>::Ptr vis_downsampled_frame_;
+  std::unordered_set<::utils::VOXEL_LOC> vis_history_voxels_;
+  int vis_pending_frames_       = 0;
+  float vis_history_voxel_size_ = 0.8f;
 
  protected:
   Eigen::Matrix4f last_pose;

@@ -4,31 +4,36 @@ namespace jojo {
 namespace tools {
 namespace common = apollo::cyber::common;
 
-Ros1Convert::Ros1Convert() {}
+Ros1Convert::Ros1Convert(ros::NodeHandle& nh, ros::NodeHandle& private_nh) {
+  node = nh;
+}
 
 Ros1Convert::~Ros1Convert() {}
 
-void Ros1Convert::Init(ros::NodeHandle& nh, ros::NodeHandle& private_nh,
-                       std::shared_ptr<RuntimeConfigRealtime> param) {
-  node   = nh;
-  param_ = param;
+bool Ros1Convert::Init(std::shared_ptr<jojo::tools::RuntimeConfig> rparam,
+                       std::shared_ptr<jojo::tools::InterfaceConfig> iparam) {
+  rparam_ = rparam;
+  iparam_ = iparam;
 
-  data_loader = std::make_shared<DataLoaderRealtime>();
-  data_loader->Init(param_);
+  data_loader = std::make_shared<DataLoader>();
+  // data_loader = std::make_shared<DataLoaderRealtime>();
+  data_loader->Init(rparam_, iparam_);
   data_loader->Start();
 
-  dc_camera.resize(param_->b_camera);
-  dc_infra.resize(param_->b_infra);
-  dc_star.resize(param_->b_star);
-  dc_radar4d.resize(param_->b_radar4d);
+  dc_camera.resize(iparam_->b_camera);
+  dc_infra.resize(iparam_->b_infra);
+  dc_star.resize(iparam_->b_star);
+  dc_radar4d.resize(iparam_->b_radar4d);
 
   this->InitRos1();
+
+  return true;
 }
 
 void Ros1Convert::InitRos1() {
-  if (param_->b_lidar) {
+  if (iparam_->b_lidar) {
     dc_lidar.pub =
-        node.advertise<sensor_msgs::PointCloud2>(param_->topic_lidar_pub, 1);
+        node.advertise<sensor_msgs::PointCloud2>(iparam_->topic_lidar_pub, 1);
 
     std::string name = "lidar";
     dc_lidar.set_name(name);
@@ -40,22 +45,22 @@ void Ros1Convert::InitRos1() {
         std::cerr << name << " timestamp load failed" << std::endl;
       }
     }
-    dc_lidar.init_ts(param_->start_time);
+    dc_lidar.init_ts(rparam_->start_time);
     // update the start time
-    param_->start_time = dc_lidar.cur_time;
+    rparam_->start_time = dc_lidar.cur_time;
   }
 
-  if (param_->b_camera) {
+  if (iparam_->b_camera) {
     it = std::make_shared<image_transport::ImageTransport>(node);
-    for (int i = 0; i < param_->b_camera; i++) {
-      dc_camera.at(i).pub = it->advertise(param_->topic_camera_pub.at(i), 1);
+    for (int i = 0; i < iparam_->b_camera; i++) {
+      dc_camera.at(i).pub = it->advertise(iparam_->topic_camera_pub.at(i), 1);
 
       std::string name;
-      // if (param_->b_camera == 1) {
+      // if (iparam_->b_camera == 1) {
       //   name = "camera";
       // } else {
-        // 对应 MkdirDataFolderVector 从1开始
-        name = "camera_" + std::to_string(i + 1);
+      // 对应 MkdirDataFolderVector 从1开始
+      name = "camera_" + std::to_string(i + 1);
       // }
       dc_camera.at(i).set_name(name);
       // timestamp 文件名
@@ -70,84 +75,84 @@ void Ros1Convert::InitRos1() {
       }
       // clang-format on
       // 对于 同频率的数据 可以直接递推
-      dc_camera.at(i).align_ts(param_->start_time);
+      dc_camera.at(i).align_ts(rparam_->start_time);
       // 不同频率的数据 需要在运行时找到匹配的时间戳
     }
   }
 
-  if (param_->b_infra) {
-    for (int i = 0; i < param_->b_infra; i++) {
-      dc_infra.at(i).pub = it->advertise(param_->topic_infra_pub.at(i), 1);
+  if (iparam_->b_infra) {
+    for (int i = 0; i < iparam_->b_infra; i++) {
+      dc_infra.at(i).pub = it->advertise(iparam_->topic_infra_pub.at(i), 1);
 
       std::string name;
-      // if (param_->b_infra == 1) {
+      // if (iparam_->b_infra == 1) {
       //   name = "infra";
       // } else {
-        name = "infra_" + std::to_string(i + 1);
+      name = "infra_" + std::to_string(i + 1);
       // }
       dc_infra.at(i).set_name(name);
       std::string ts_file = "timestamp/" + name + "_timestamp";
       // clang-format off
       if (!data_loader->LoadTimeStamp(data_loader->prefix, ts_file, dc_infra.at(i))) {
-        if (data_loader->ExtractTimestamp(data_loader->path_camera.at(i), dc_infra.at(i))) {
+        if (data_loader->ExtractTimestamp(data_loader->path_infra.at(i), dc_infra.at(i))) {
           data_loader->SaveTimeStamp(data_loader->prefix, ts_file, dc_infra.at(i));
         } else {
           std::cerr << name << " timestamp load failed" << std::endl;
         }
       }
       // clang-format on
-      dc_infra.at(i).align_ts(param_->start_time);
+      dc_infra.at(i).align_ts(rparam_->start_time);
     }
   }
 
-  if (param_->b_infra) {
+  if (iparam_->b_star) {
     // clang-format off
-    for (int i = 0; i < param_->b_star; i++) {
-      dc_star.at(i).pub = it->advertise(param_->topic_star_pub.at(i), 1);
+    for (int i = 0; i < iparam_->b_star; i++) {
+      dc_star.at(i).pub = it->advertise(iparam_->topic_star_pub.at(i), 1);
 
       std::string name;
-      // if (param_->b_star == 1) {
+      // if (iparam_->b_star == 1) {
       //   name = "star";
       // } else {
-        name = "star_" + std::to_string(i + 1);
+      name = "star_" + std::to_string(i + 1);
       // }
       dc_star.at(i).set_name(name);
       std::string ts_file = "timestamp/" + name + "_timestamp";
       // clang-format off
       if (!data_loader->LoadTimeStamp(data_loader->prefix, ts_file, dc_star.at(i))) {
-        if (data_loader->ExtractTimestamp(data_loader->path_camera.at(i), dc_star.at(i))) {
+        if (data_loader->ExtractTimestamp(data_loader->path_star.at(i), dc_star.at(i))) {
           data_loader->SaveTimeStamp(data_loader->prefix, ts_file, dc_star.at(i));
         } else {
           std::cerr << name << " timestamp load failed" << std::endl;
         }
       }
       // clang-format on
-      dc_star.at(i).align_ts(param_->start_time);
+      dc_star.at(i).align_ts(rparam_->start_time);
     }
     // clang-format on
   }
 
-  if (param_->b_global_pose) {
+  if (iparam_->b_global_pose) {
     dc_global_pose.pub = node.advertise<self_state::GlobalPose>(
-        param_->topic_global_pose_pub, 1);
+        iparam_->topic_global_pose_pub, 1);
 
     dc_global_pose.set_name("global_pose");
     // LoadGlobalPose(data_loader->prefix, dc_global_pose.name);
     LoadGlobalPose(data_loader->path_global_pose);
   }
 
-  if (param_->b_local_pose) {
+  if (iparam_->b_local_pose) {
     dc_local_pose.pub =
-        node.advertise<self_state::LocalPose>(param_->topic_local_pose_pub, 1);
+        node.advertise<self_state::LocalPose>(iparam_->topic_local_pose_pub, 1);
 
     dc_local_pose.set_name("local_pose");
     // LoadLocalPose(data_loader->prefix, dc_local_pose.name);
     LoadLocalPose(data_loader->path_local_pose);
   }
 
-  if (param_->b_radar) {
+  if (iparam_->b_radar) {
     dc_radar.pub =
-        node.advertise<sensor_msgs::PointCloud>(param_->topic_radar_pub, 1);
+        node.advertise<sensor_msgs::PointCloud>(iparam_->topic_radar_pub, 1);
 
     std::string name = "radar";
     dc_radar.set_name(name);
@@ -155,9 +160,10 @@ void Ros1Convert::InitRos1() {
                                "timestamp/" + name + "_timestamp", dc_radar);
   }
 
-  for (int i = 0; i < param_->b_radar4d; i++) {
-    auto type = SensorRegistry::Instance().GetRadar4dType(param_->radar4d_type);
-    std::string& topic = param_->topic_radar4d_pub.at(i);
+  for (int i = 0; i < iparam_->b_radar4d; i++) {
+    auto type =
+        SensorRegistry::Instance().GetRadar4dType(rparam_->radar4d_type);
+    std::string& topic = iparam_->topic_radar4d_pub.at(i);
 
     if (type == Radar4dType::ARS548) {
       dc_radar4d.at(i).pub =
@@ -169,10 +175,10 @@ void Ros1Convert::InitRos1() {
     // std::cout << topic << std::endl;
 
     std::string name;
-    // if (param_->b_radar4d == 1) {
+    // if (iparam_->b_radar4d == 1) {
     //   name = "radar4d";
     // } else {
-      name = "radar4d" + std::to_string(i + 1);
+    name = "radar4d" + std::to_string(i + 1);
     // }
     dc_radar4d.at(i).set_name(name);
     std::string ts_file = "timestamp/" + name + "_timestamp";
@@ -194,15 +200,15 @@ void Ros1Convert::Run() {
   }
 }
 
-bool Ros1Convert::LoadGlobalPose(const std::string &path,
-                                 const std::string &data_file) {
+bool Ros1Convert::LoadGlobalPose(const std::string& path,
+                                 const std::string& data_file) {
   char file[300];
   sprintf(file, "%s/%s.txt", path.c_str(), data_file.c_str());
 
   return this->LoadGlobalPose(std::string(file));
 }
 
-bool Ros1Convert::LoadGlobalPose(const std::string &file) {
+bool Ros1Convert::LoadGlobalPose(const std::string& file) {
   // 这里将外部数据转换为这个接口
   self_state::GlobalPose globalPoseMsg;
 
@@ -337,15 +343,15 @@ bool Ros1Convert::LoadGlobalPose(const std::string &file) {
   return false;
 }
 
-bool Ros1Convert::LoadLocalPose(const std::string &path,
-                                const std::string &data_file) {
+bool Ros1Convert::LoadLocalPose(const std::string& path,
+                                const std::string& data_file) {
   char file[300];
   sprintf(file, "%s/%s.txt", path.c_str(), data_file.c_str());
 
   return this->LoadLocalPose(std::string(file));
 }
 
-bool Ros1Convert::LoadLocalPose(const std::string &file) {
+bool Ros1Convert::LoadLocalPose(const std::string& file) {
   self_state::LocalPose localPoseMsg;
 
   if (!common::FileExists(file)) {
@@ -412,7 +418,7 @@ bool Ros1Convert::LoadLocalPose(const std::string &file) {
 // ######## 多线程 ########
 bool Ros1Convert::RunRosTimer() {
   // 设置每个传感器的定时器，假设频率分别为 10Hz、20Hz 和 30Hz
-  if (param_->b_global_pose) {  // raw is 50
+  if (iparam_->b_global_pose) {  // raw is 50
     ros::Duration period(1.0 / 10.0);
 
     dc_global_pose.timer = node.createTimer(
@@ -420,7 +426,7 @@ bool Ros1Convert::RunRosTimer() {
                           std::placeholders::_1, &dc_global_pose));
   }
 
-  if (param_->b_local_pose) {  // raw is 50
+  if (iparam_->b_local_pose) {  // raw is 50
     ros::Duration period(1.0 / 10.0);
 
     dc_local_pose.timer = node.createTimer(
@@ -428,13 +434,13 @@ bool Ros1Convert::RunRosTimer() {
                           std::placeholders::_1, &dc_local_pose));
   }
 
-  if (param_->b_lidar) {  // raw is 10
+  if (iparam_->b_lidar) {  // raw is 10
     ros::Duration period(1.0 / 10.0);
 
     dc_lidar.timer = node.createTimer(period, &Ros1Convert::PublishLidar, this);
   }
 
-  for (int i = 0; i < param_->b_camera; i++) {  // raw is 10
+  for (int i = 0; i < iparam_->b_camera; i++) {  // raw is 10
     ros::Duration period(1.0 / 10.0);
 
     int index = i;
@@ -444,7 +450,7 @@ bool Ros1Convert::RunRosTimer() {
                                            std::placeholders::_1, index, 1));
   }
 
-  for (int i = 0; i < param_->b_infra; i++) {  // raw is 10
+  for (int i = 0; i < iparam_->b_infra; i++) {  // raw is 10
     ros::Duration period(1.0 / 10.0);
 
     int index = i;
@@ -454,7 +460,7 @@ bool Ros1Convert::RunRosTimer() {
         [this, index](const ros::TimerEvent& e) { PublishImage(e, index, 2); });
   }
 
-  for (int i = 0; i < param_->b_star; i++) {  // raw is 10
+  for (int i = 0; i < iparam_->b_star; i++) {  // raw is 10
     ros::Duration period(1.0 / 10.0);
 
     int index = i;
@@ -464,13 +470,13 @@ bool Ros1Convert::RunRosTimer() {
         [this, index](const ros::TimerEvent& e) { PublishImage(e, index, 3); });
   }
 
-  if (param_->b_radar) {  // raw is 20
+  if (iparam_->b_radar) {  // raw is 20
     ros::Duration period(1.0 / 10.0);
 
     dc_radar.timer = node.createTimer(period, &Ros1Convert::PublishRadar, this);
   }
 
-  for (int i = 0; i < param_->b_radar4d; i++) {  // raw is 20
+  for (int i = 0; i < iparam_->b_radar4d; i++) {  // raw is 20
     ros::Duration period(1.0 / 10.0);
 
     // 必须复制到局部变量，避免引用悬挂
@@ -496,7 +502,7 @@ bool Ros1Convert::PubLidarBase(
   }
 
   char file[300];
-  if (!param_->use_bin_or_pcd) {
+  if (!rparam_->use_bin_or_pcd) {
     // clang-format off
     sprintf(file, "%s/%.13ld.bin", data_loader->path_lidar.c_str(), tmp->cur_time);
     if (!common::FileExists(file)) {
@@ -575,7 +581,7 @@ void Ros1Convert::PublishLidar(const ros::TimerEvent&) {
 
 // /*  ESR 20241008
 void Ros1Convert::PublishRadar(const ros::TimerEvent&) {
-  auto type = SensorRegistry::Instance().GetRadarType(param_->radar_type);
+  auto type = SensorRegistry::Instance().GetRadarType(rparam_->radar_type);
   auto tmp  = &dc_radar;
 
   if (tmp->is_end()) {
@@ -586,7 +592,7 @@ void Ros1Convert::PublishRadar(const ros::TimerEvent&) {
     sensor::ESR_Radar_Info radar_msg;
 
     char file[300];
-    if (!param_->use_txt_or_pcd) {
+    if (!rparam_->use_txt_or_pcd) {
       sprintf(file, "%s/%.13ld.txt", data_loader->path_radar.c_str(),
               tmp->cur_time);
 
@@ -629,7 +635,7 @@ void Ros1Convert::PublishRadar(const ros::TimerEvent&) {
 // */
 
 bool Ros1Convert::PubRadar4DBase(DataContainerRos1<uint64_t>& data_c, int id) {
-  auto type = SensorRegistry::Instance().GetRadar4dType(param_->radar4d_type);
+  auto type = SensorRegistry::Instance().GetRadar4dType(rparam_->radar4d_type);
   auto tmp  = &data_c;
 
   if (tmp->is_end()) {
@@ -643,7 +649,7 @@ bool Ros1Convert::PubRadar4DBase(DataContainerRos1<uint64_t>& data_c, int id) {
         boost::make_shared<ars548_msg::DetectionList>();
 
     char file[300];
-    if (!param_->use_txt_or_pcd) {
+    if (!rparam_->use_txt_or_pcd) {
       sprintf(file, "%s/%.13ld.txt", data_loader->path_radar4d.at(id).c_str(),
               tmp->cur_time);
 
@@ -682,7 +688,7 @@ bool Ros1Convert::PubRadar4DBase(DataContainerRos1<uint64_t>& data_c, int id) {
     // PointCloud.objectData.resize(PointCloud.objectData.width * PointCloud.objectData.height);
 
     char file[300];
-    if (!param_->use_txt_or_pcd) {
+    if (!rparam_->use_txt_or_pcd) {
       sprintf(file, "%s/%.13ld.txt", data_loader->path_radar4d.at(id).c_str(),
               tmp->cur_time);
 
@@ -747,7 +753,7 @@ bool Ros1Convert::PubImageBase(DataContainerRos1<sensor_msgs::ImagePtr>& data_c,
   switch (mode) {
     case 1:
       index = id;
-      if (param_->use_jpg_or_png == 0) {
+      if (rparam_->use_jpg_or_png == 0) {
         sprintf(file_image, "%s/%.13ld.jpg",
                 data_loader->path_camera.at(id).c_str(), tmp->cur_time);
       } else {
@@ -757,8 +763,8 @@ bool Ros1Convert::PubImageBase(DataContainerRos1<sensor_msgs::ImagePtr>& data_c,
       break;
 
     case 2:
-      index = param_->b_camera + id;
-      if (param_->use_jpg_or_png <= 0) {
+      index = iparam_->b_camera + id;
+      if (rparam_->use_jpg_or_png <= 0) {
         sprintf(file_image, "%s/%.13ld.jpg",
                 data_loader->path_infra.at(id).c_str(), tmp->cur_time);
       } else {
@@ -768,8 +774,8 @@ bool Ros1Convert::PubImageBase(DataContainerRos1<sensor_msgs::ImagePtr>& data_c,
       break;
 
     case 3:
-      index = param_->b_camera + param_->b_infra + id;
-      if (param_->use_jpg_or_png <= 0) {
+      index = iparam_->b_camera + iparam_->b_infra + id;
+      if (rparam_->use_jpg_or_png <= 0) {
         sprintf(file_image, "%s/%.13ld.jpg",
                 data_loader->path_star.at(id).c_str(), tmp->cur_time);
       } else {

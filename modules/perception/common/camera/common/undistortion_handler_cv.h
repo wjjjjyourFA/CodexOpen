@@ -25,10 +25,9 @@ class UndistortionHandlerCv : public UndistortionHandler {
 
   ~UndistortionHandlerCv() { Release(); }
 
-  void InitUndistortRectifyMap(
-      const Eigen::Matrix3f& intrinsic_params,
-      const Eigen::Matrix<float, 8, 1>& distort_params, int width,
-      int height) override;
+  void InitUndistortRectifyMap(const Eigen::Matrix3f& intrinsic_params,
+                               const Eigen::Matrix<float, 8, 1>& distort_params,
+                               int width, int height) override;
 
   void InitFisheyeUndistortRectifyMap(
       const Eigen::Matrix3f& intrinsic_params,

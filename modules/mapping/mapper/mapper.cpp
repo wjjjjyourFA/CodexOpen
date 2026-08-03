@@ -1,5 +1,10 @@
 #include "modules/mapping/mapper/mapper.h"
 
+#include <algorithm>
+#include <cmath>
+
+#include <pcl/filters/voxel_grid.h>
+
 namespace jojo {
 namespace mapping {
 namespace common = apollo::cyber::common;
@@ -10,6 +15,10 @@ Mapper::Mapper() {
 
   ds_world_point_cloud.reset(new pcl::PointCloud<pcl::PointXYZI>);
   ds_history_point_cloud.reset(new pcl::PointCloud<pcl::PointXYZI>);
+
+  vis_recent_cloud_.reset(new pcl::PointCloud<pcl::PointXYZI>);
+  vis_history_cloud_.reset(new pcl::PointCloud<pcl::PointXYZI>);
+  vis_downsampled_frame_.reset(new pcl::PointCloud<pcl::PointXYZI>);
 }
 
 Mapper::~Mapper() {}
@@ -21,6 +30,8 @@ void Mapper::Init(std::shared_ptr<jojo::mapping::RuntimeConfig> rparam,
 
   hps_.map_resolution    = rparam_->map_resolution;
   hps_.sampling_distance = rparam_->sampling_distance;
+  vis_history_voxel_size_ =
+      std::max(rparam_->realtime_history_voxel_size, hps_.map_resolution);
   std::cout << "map resolution: " << hps_.map_resolution << std::endl;
   std::cout << "sampling distance: " << hps_.sampling_distance << std::endl;
 }
@@ -51,12 +62,28 @@ void Mapper::Reset() {
   world_point_cloud->clear();
   world_point_cloud->points.resize(point_memory_size);
   world_point_cloud_idx = 0;
+  last_pose             = Eigen::Matrix4f::Identity();
+
+  vis_recent_cloud_->clear();
+  vis_history_cloud_->clear();
+  vis_downsampled_frame_->clear();
+  vis_history_voxels_.clear();
+  vis_pending_frames_ = 0;
+  vis_history_voxel_size_ =
+      rparam_
+          ? std::max(rparam_->realtime_history_voxel_size, hps_.map_resolution)
+          : 0.8f;
+
+  if (vis_) {
+    vis_->removePointCloud("map_recent");
+    vis_->removePointCloud("map_history");
+  }
 }
 
 void Mapper::Run(const pcl::PointCloud<pcl::PointXYZI>::Ptr& frame,
                  const Eigen::Matrix4f& in_pose) {
   // !! 这里能直接位姿变换+累积建图，就是因为 pose 对应的是 frame 的优化位姿
-  std::cout << "frame size: " << frame->points.size() << std::endl;
+  // std::cout << "frame size: " << frame->points.size() << std::endl;
 
   // ==> pose_center
   Eigen::Matrix4f cur_pose = in_pose;
@@ -207,7 +234,8 @@ void Mapper::VisualizeMap(bool b_pause) {
   this->InitViewer();
 
   // clang-format off
-  pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZI> map_color(world_point_cloud, 128, 128, 128);
+  // pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZI> map_color(world_point_cloud, 128, 128, 128);
+  pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZI> map_color(ds_history_point_cloud, 128, 128, 128);
   // pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZI> map_color(map_, 0, 255, 0);
   // pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI> map_color(world_point_cloud, "z");
   // clang-format on
@@ -227,39 +255,104 @@ void Mapper::VisualizeMap(bool b_pause) {
   }
 }
 
-void Mapper::RealTimeShow(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_in) {
+void Mapper::RealTimeShow(
+    const pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_in) {
   this->InitViewer();
 
-  // 接管数据
-  pcl::PointCloud<pcl::PointXYZI>::Ptr cloud;
-  cloud.swap(cloud_in);
+  std::string traj_name = "traj";
 
-  std::string name = "map_" + std::to_string(vis_chunk_id_++);
+  // The viewer has its own, coarser point cloud. Mapping and map saving keep
+  // using ds_history_point_cloud and are not affected by this filter.
+  const float recent_leaf =
+      std::max(rparam_->realtime_voxel_size, hps_.map_resolution);
 
-  // clang-format off
-  pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI> color(cloud, "z");
-  // clang-format on
+  pcl::VoxelGrid<pcl::PointXYZI> voxel_filter;
+  voxel_filter.setInputCloud(cloud_in);
+  voxel_filter.setLeafSize(recent_leaf, recent_leaf, recent_leaf);
+  voxel_filter.filter(*vis_downsampled_frame_);
+  vis_recent_cloud_.swap(vis_downsampled_frame_);
 
-  vis_->addPointCloud<pcl::PointXYZI>(cloud, color, name);
-  vis_->setPointCloudRenderingProperties(
-      pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, name);
-
-  vis_chunks_.push_back(cloud);
-
-  // 控制chunk数量
-  const int MAX_CHUNKS = 5000;
-  if (vis_chunks_.size() > MAX_CHUNKS) {
-    // clang-format off
-    int remove_id = vis_chunk_id_ - MAX_CHUNKS - 1;
-    std::string remove_name = "map_" + std::to_string(remove_id);
-    if (vis_->contains(remove_name)) {
-      vis_->removePointCloud(remove_name);
+  // Add every frame to the CPU-side history incrementally, but upload that
+  // history to VTK only once per batch. The per-frame actor always stays at
+  // the size of one downsampled scan.
+  for (const auto& point : vis_recent_cloud_->points) {
+    const ::utils::VOXEL_LOC key(
+        static_cast<int64_t>(std::floor(point.x / vis_history_voxel_size_)),
+        static_cast<int64_t>(std::floor(point.y / vis_history_voxel_size_)),
+        static_cast<int64_t>(std::floor(point.z / vis_history_voxel_size_)));
+    if (vis_history_voxels_.insert(key).second) {
+      vis_history_cloud_->points.emplace_back(point);
     }
-    vis_chunks_.erase(vis_chunks_.begin());
-    // clang-format on
+  }
+  ++vis_pending_frames_;
+
+  const int batch_frames = std::max(1, rparam_->realtime_history_batch_frames);
+  if (vis_pending_frames_ >= batch_frames) {
+    CommitRealtimeHistory();
   }
 
+  pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI>
+      recent_color(vis_recent_cloud_, "z");
+  if (!vis_->contains("map_recent")) {
+    vis_->addPointCloud<pcl::PointXYZI>(vis_recent_cloud_, recent_color,
+                                        "map_recent");
+    vis_->setPointCloudRenderingProperties(
+        pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "map_recent");
+  } else {
+    vis_->updatePointCloud(vis_recent_cloud_, recent_color, "map_recent");
+  }
   vis_->spinOnce(1);
+}
+
+void Mapper::CommitRealtimeHistory() {
+  // One representative is retained for every occupied history voxel.
+  vis_history_cloud_->width  = vis_history_cloud_->points.size();
+  vis_history_cloud_->height = 1;
+
+  const size_t max_history_points =
+      static_cast<size_t>(std::max(0, rparam_->realtime_max_history_points));
+  while (max_history_points > 0 &&
+         vis_history_cloud_->size() > max_history_points) {
+    // Raise only the display resolution. This keeps the full driven area
+    // visible instead of deleting the oldest chunks.
+    vis_history_voxel_size_ *= 1.25f;
+    RebuildRealtimeHistory(vis_history_voxel_size_);
+  }
+
+  pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI>
+      history_color(vis_history_cloud_, "z");
+  if (!vis_->contains("map_history")) {
+    vis_->addPointCloud<pcl::PointXYZI>(vis_history_cloud_, history_color,
+                                        "map_history");
+    vis_->setPointCloudRenderingProperties(
+        pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "map_history");
+  } else {
+    vis_->updatePointCloud(vis_history_cloud_, history_color, "map_history");
+  }
+
+  vis_pending_frames_ = 0;
+}
+
+void Mapper::RebuildRealtimeHistory(float voxel_size) {
+  pcl::PointCloud<pcl::PointXYZI>::Ptr rebuilt(
+      new pcl::PointCloud<pcl::PointXYZI>);
+  std::unordered_set<::utils::VOXEL_LOC> rebuilt_voxels;
+  rebuilt->points.reserve(vis_history_cloud_->points.size());
+  rebuilt_voxels.reserve(vis_history_voxels_.size());
+
+  for (const auto& point : vis_history_cloud_->points) {
+    const ::utils::VOXEL_LOC key(
+        static_cast<int64_t>(std::floor(point.x / voxel_size)),
+        static_cast<int64_t>(std::floor(point.y / voxel_size)),
+        static_cast<int64_t>(std::floor(point.z / voxel_size)));
+    if (rebuilt_voxels.insert(key).second) {
+      rebuilt->points.emplace_back(point);
+    }
+  }
+  rebuilt->width  = rebuilt->points.size();
+  rebuilt->height = 1;
+  vis_history_cloud_.swap(rebuilt);
+  vis_history_voxels_.swap(rebuilt_voxels);
 }
 
 }  // namespace mapping

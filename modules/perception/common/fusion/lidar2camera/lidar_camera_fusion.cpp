@@ -6,9 +6,9 @@ namespace fusion {
 
 LidarCameraFusion::LidarCameraFusion(/* args */) {
   // clang-format off
-  cloud_ =
-      pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>());
+  cloud_ = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>());
   // cloud_color_ = boost::make_shared<pcl::PointCloud<pcl::PointXYZRGB>>();
+  cloud_color_ = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>());
   // clang-format on
 
   inv_dist_ = 1.0 / dist_;
@@ -32,8 +32,7 @@ void LidarCameraFusion::fuse(int mode, bool is_mask, bool color) {
   // way 2 每次都会新建对象，不会影响外部异步消费（显示、发布）
   // clang-format off
   if (color) {
-    cloud_color_ = 
-        pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>());
+    cloud_color_.reset(new pcl::PointCloud<pcl::PointXYZRGB>());
   }
   // clang-format on
 
@@ -150,6 +149,7 @@ void LidarCameraFusion::project_lidar_to_camera(
     }
   }
   // cv::imshow("projected_image", mask);
+  // std::cout << "cloud_color_->size(): " << cloud_color_->size() << std::endl;
 }
 
 void LidarCameraFusion::project_lidar_to_camera_fast(

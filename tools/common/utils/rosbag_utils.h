@@ -1,14 +1,15 @@
 #ifndef ROSBAG_UTILS_H
 #define ROSBAG_UTILS_H
 
-#include <cstring>
-#include "string"
 #include <algorithm>
+#include <cstring>
+
+#include "string"
 
 namespace jojo {
 namespace tools {
 
-std::string FormatRosbagTime(const std::string &rosbag_name);
+std::string FormatRosbagTime(const std::string& rosbag_name);
 
 }  // namespace tools
 }  // namespace jojo

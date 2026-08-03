@@ -5,8 +5,9 @@ void VoxelizePreserveLabel(pcl::PointCloud<pcl::PointXYZI>::Ptr& src,
                            float leaf_size) {
   // code from ERASOR
   /**< IMPORTANT
-         * Because PCL voxlizaiton just does average the intensity of point cloud,
-         * so this function is to conduct voxelization followed by nearest points search to re-assign the label of each point */
+  * Because PCL voxlizaiton just does average the intensity of point cloud,
+  * so this function is to conduct voxelization followed by nearest points 
+  * search to re-assign the label of each point */
 
   // std::cout << "VoxelizePreserveLabel start ... " << std::endl;
 
@@ -135,7 +136,8 @@ void VoxelizeLargeScalePreserveLabel(pcl::PointCloud<pcl::PointXYZI>::Ptr& src,
   // voxel_filter.filter(*ptr_voxelized);
 
   std::unordered_map<utils::VOXEL_LOC, utils::M_POINT> feature_map;
-  VoxelizeLargeScale<pcl::PointXYZI>(src, ptr_voxelized, feature_map, leaf_size);
+  VoxelizeLargeScale<pcl::PointXYZI>(src, ptr_voxelized, feature_map,
+                                     leaf_size);
 
   // std::cout << "VoxelizeLargeScalePreserveLabel create kdtree ... " << std::endl;
   // std::cout << ptr_voxelized->size() << " points!" << std::endl;
@@ -197,7 +199,8 @@ void VoxelizeLargeScalePreserveLabel(
 
   // 1. Voxelization
   std::unordered_map<utils::VOXEL_LOC, utils::M_POINT> feature_map;
-  VoxelizeLargeScale<pcl::PointXYZRGB>(src, ptr_voxelized, feature_map, leaf_size);
+  VoxelizeLargeScale<pcl::PointXYZRGB>(src, ptr_voxelized, feature_map,
+                                       leaf_size);
 
   // 2. Find nearest point to update intensity (index and id)
   pcl::KdTreeFLANN<pcl::PointXYZRGB> kdtree;

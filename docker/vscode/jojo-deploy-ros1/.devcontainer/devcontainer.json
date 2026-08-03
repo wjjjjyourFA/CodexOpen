@@ -38,7 +38,7 @@
 		// "--volume=/path/CodexOpen:${containerWorkspaceFolder}",
 		"--volume=/home/jojo/Workspace/CodexOpenExtra:/workspaces/CodexOpenExtra",
 		"--volume=/home/jojo/Workspace/CodexOpenData:/workspaces/CodexOpenData",
-		"--volume=/media/jojo/WorkStation/test:/workspaces/CodexOpenExtraData",
+		"--volume=/home/jojo/Workspace/CodexOpenExtraData:/workspaces/CodexOpenExtraData",
 		// other volume
 		"--ipc=host",
 		"--group-add=video",
@@ -93,5 +93,15 @@
 		// "QT_QPA_PLATFORM": "wayland"
 		"NVIDIA_VISIBLE_DEVICES": "all",
 		"NVIDIA_DRIVER_CAPABILITIES": "all"
+	},
+	// 容器启动后，Code 自动在容器内安装的插件
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-python.python",
+				"ms-vscode.cpptools",
+				"ms-vscode.cmake-tools"
+			]
+		}
 	}
 }

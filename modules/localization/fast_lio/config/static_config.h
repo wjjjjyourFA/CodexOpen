@@ -1,13 +1,12 @@
-#ifndef FAST_LIO_MAP_PARAMS_H
-#define FAST_LIO_MAP_PARAMS_H
+#ifndef FAST_LIO_STATIC_CONFIG_H
+#define FAST_LIO_STATIC_CONFIG_H
 
 #pragma once
 
 #include <fstream>
 
-#include "modules/common/config/config_file_yaml.h"
 #include "modules/common/config/config_file_json.h"
-
+#include "modules/common/config/config_file_yaml.h"
 #include "modules/localization/fast_lio/include/preprocess.h"
 
 namespace jojo {
@@ -47,7 +46,7 @@ class StaticConfig : public jojo::common::config::ConfigFileYaml {
   float DET_RANGE     = 100.0f;
   float MOV_THRESHOLD = 1.5f;
   double fov_deg      = 0;
-  double cube_len;
+  double cube_len     = 200;
 
   // map_incremental
   double filter_size_surf_min, filter_size_map_min;

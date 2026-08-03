@@ -1,10 +1,10 @@
-#ifndef READ_SENSOR_PARAMS_H
-#define READ_SENSOR_PARAMS_H
+#ifndef SENSOR_EXTRINSICS_H
+#define SENSOR_EXTRINSICS_H
 
 #pragma once
 
-#include <iostream>
 #include <fstream>  // 用于 std::ifstream
+#include <iostream>
 #include <memory>
 #include <vector>
 
@@ -40,7 +40,7 @@ class SensorExtrinsics {
 
   void LoadFromFile(const std::string& sensor_file);
 
-  virtual bool InitMatrixVector(int sensor_p_num) {};
+  virtual bool InitMatrixVector(int sensor_p_num) { return false; };
 
   // const（在返回类型前）表示返回的是一个常量引用，你不能通过这个引用去修改 vector 本身
   // 函数最后的 const 表示这个成员函数不会修改类对象的状态（即不会修改成员变量）。
@@ -64,4 +64,4 @@ class SensorExtrinsics {
 }  // namespace perception
 }  // namespace jojo
 
-#endif  // READ_BASE_PARAMS_H
+#endif  // SENSOR_EXTRINSICS_H
