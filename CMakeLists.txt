@@ -84,7 +84,20 @@ include(${CMAKE_SOURCE_DIR}/cmake_modules/codex_proto.cmake)
 
 # 添加子目录
 add_subdirectory(cyber)
+if(BUILD_ROS1)
+  add_subdirectory(ros1/src/common)
+endif()
 # add_subdirectory(docker)
 add_subdirectory(modules)
 # add_subdirectory(third_party)
 add_subdirectory(tools)
+
+install(PROGRAMS
+  ${CMAKE_SOURCE_DIR}/script/robot_dog_rebuild.sh
+  ${CMAKE_SOURCE_DIR}/script/robot_dog_localization.sh
+  ${CMAKE_SOURCE_DIR}/script/robot_plan_expv2.sh
+  ${CMAKE_SOURCE_DIR}/script/robot_plan_path.sh
+  ${CMAKE_SOURCE_DIR}/script/robot_plan_stack.sh
+  ${CMAKE_SOURCE_DIR}/script/runtime_common.sh
+  DESTINATION scripts
+)

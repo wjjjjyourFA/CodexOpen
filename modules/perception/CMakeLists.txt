@@ -5,3 +5,5 @@ project(perception)
 
 add_subdirectory(tools)
 add_subdirectory(common)
+add_subdirectory(terrain_analysis)
+add_subdirectory(rog_map)

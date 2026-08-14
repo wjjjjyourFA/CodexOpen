@@ -35,6 +35,7 @@ set(CODEX_SOURCES
 
 file(GLOB SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/data_processor.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/config/interface_config.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/config/sensor_config.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/config/runtime_config.cpp
 )

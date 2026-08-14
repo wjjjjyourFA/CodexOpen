@@ -1,0 +1,41 @@
+rog_map:
+  mode_this: 2
+  nag_or_pos: 1
+  resolution: 0.1
+  inflation_resolution: 0.1
+  inflation_step: 1
+  unk_inflation_en: false
+  unk_inflation_step: 1
+  map_size: [20, 20, 6]
+  fix_map_origin: [0, 0, 0]
+  frontier_extraction_en: true
+  virtual_ceil_height: 9999
+  virtual_ground_height: -9999
+  block_inf_pt: false
+  kd_tree_en: false
+  safe_margin: 0.0
+  load_pcd_en: false
+  pcd_name: /home/ws/Project/UGV_2024_KDXT/program/streamline_update/bin/Map/target_map.pcd
+  map_sliding:
+    enable: true
+    threshold: 0.2
+  esdf:
+    enable: true
+    resolution: 0.1
+    local_update_box: [5, 5, 4]
+  intensity_thresh: -10
+  point_filt_num: 5
+  raycasting:
+    enable: true
+    blind_filter_en: true
+    blind_filter_dis: 1.5
+    batch_update_size: 1
+    local_update_box: [20, 20, 4]
+    ray_range: [0.0, 10]
+    p_min: 0.12
+    p_miss: 0.46
+    p_free: 0.469
+    p_occ: 0.89
+    p_hit: 0.78
+    p_max: 0.98
+    unk_thresh: 0.0

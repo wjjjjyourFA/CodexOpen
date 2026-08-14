@@ -17,8 +17,11 @@ target_include_directories(cyber_binary
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
-# 注意编译顺序
-add_subdirectory(proto)  # 采用顶层编译
+# 注意编译顺序。精简发布包可能不包含完整 Cyber RT 子树；这些目录只在
+# 实际存在时加入，基础 binary/common 库仍可独立构建。
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/proto/CMakeLists.txt")
+  add_subdirectory(proto)
+endif()
 add_subdirectory(base)
 add_subdirectory(common)
 
@@ -32,12 +35,11 @@ target_include_directories(cyber_state
 )
 target_link_libraries(cyber_state PUBLIC cyber_common)
 
-add_subdirectory(context)
-add_subdirectory(time)
-add_subdirectory(logger)
-add_subdirectory(event)
-add_subdirectory(message)
-add_subdirectory(data)
+foreach(optional_component context time logger event message data)
+  if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${optional_component}/CMakeLists.txt")
+    add_subdirectory(${optional_component})
+  endif()
+endforeach()
 
 # 混合编译库
 # add_subdirectory(croutine)

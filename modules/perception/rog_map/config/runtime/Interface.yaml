@@ -1,0 +1,15 @@
+rog_map_interface:
+  rog_map:
+    ros_callback:
+      enable: true
+      cloud_topic: /registered_scan
+      odom_topic: /state_estimation
+      odom_timeout: 2.0
+    visualization:
+      enable: true
+      use_dynamic_reconfigure: false
+      time_rate: 10
+      frame_rate: 0
+      range: [20, 20, 6]
+      frame_id: body
+      pub_unknown_map_en: false

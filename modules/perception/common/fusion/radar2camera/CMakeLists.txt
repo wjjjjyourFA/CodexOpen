@@ -55,7 +55,10 @@ file(GLOB SOURCES
 
 option(BUILD_ROS1 "Enable ROS1" OFF)
 
-if(BUILD_ROS1)
+if(BUILD_ROS1 AND
+   EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/radar_camera_fusion_realtime.cpp" AND
+   EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/ros1_convert.cpp" AND
+   EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/config/runtime_config_realtime.cpp")
   # list(APPEND SOURCES
   #   "${CMAKE_CURRENT_SOURCE_DIR}/ros1_convert.cpp"
   #   "${CMAKE_CURRENT_SOURCE_DIR}/config/runtime_config_realtime.cpp"

@@ -1,0 +1,6 @@
+world_planner:
+  terrain_topic: /terrain_map
+  odometry_topic: /state_estimation
+  goal_topic: /way_point
+  path_topic: /global_reference_path
+  obstacle_grid_topic: /global_obstacle_grid

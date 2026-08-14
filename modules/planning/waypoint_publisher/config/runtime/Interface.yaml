@@ -1,0 +1,10 @@
+waypoint_publisher:
+  odometry_topic: /state_estimation
+  waypoint_topic: /way_point
+  waypoint_show_topic: /way_point_show
+  navigation_goal_topic: /move_base_simple/goal
+  speed_topic: /speed
+  boundary_topic: /navigation_boundary
+  goal_valid_topic: /isgoal_vaild
+  waypoint_frame: map
+  boundary_frame: vehicle

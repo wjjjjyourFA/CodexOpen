@@ -1,0 +1,5 @@
+manual_loop_session_exporter:
+  odom_topic: /state_estimation
+  cloud_topic: /registered_scan
+  sync_queue_size: 100
+  sync_slop: 0.05

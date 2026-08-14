@@ -143,5 +143,6 @@ If you want to compile the image yourself, please refer to the "Image Building" 
 
 本项目采用 **CalVer (vYYYY.MM.DD)** 版本命名规范。
 
-- **Current Version**: `v2026.08.02`
+- **Current Version**: `v2026.08.14`
+- **Recent Update**: 完成 ROS1 定位、规划与监控运行链路及部署流程迁移。
 - 详细的历史版本更新日志请参阅 [CHANGELOG](./CHANGELOG.md)。

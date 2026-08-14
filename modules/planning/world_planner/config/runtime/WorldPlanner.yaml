@@ -1,0 +1,12 @@
+grid_resolution: 0.4
+map_extra_margin: 10.0
+robot_width: 0.8
+robot_length: 1.4
+inflation_margin: 0.15
+obstacle_height_thre: 0.3
+path_point_spacing: 0.5
+goal_reached_xy: 0.01
+path_check_step: 0.15
+reuse_search_radius: 1.4
+goal_change_replan_dis: 0.6
+heuristic_weight: 1.0

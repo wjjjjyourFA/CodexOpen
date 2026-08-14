@@ -1,0 +1,9 @@
+keyframe_distance: 1.50
+keyframe_angle_deg: 0.0
+min_keyframe_time: 0.0
+output_directory: /tmp/codexopen_manual_loop_session
+input_cloud_is_global: true
+voxel_leaf_size: 0.0
+translation_information: 1000.0
+rotation_information: 1000.0
+overwrite_existing: false

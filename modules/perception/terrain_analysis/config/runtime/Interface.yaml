@@ -1,0 +1,5 @@
+terrain_analysis:
+  inputTopic: /rm_node/rog_map/occ
+  odometryTopic: /state_estimation
+  clearingTopic: /map_clearing
+  terrainMapTopic: /terrain_map

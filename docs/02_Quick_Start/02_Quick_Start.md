@@ -91,6 +91,78 @@ colcon build  --symlink-install  --parallel-workers 8
 `Apollo` 使用 `cyber` 框架，通过不断添加不同的 `component` 组件，实现不同模块的加载；
 `CodexOpen` 工程只是借用其部分模块的代码结构，不考虑其通信框架，各模块仍按旧有模式拓展；
 
+### 多进程算法流程
+
+仓库内由多个核心程序组成的完整流程，采用“独立可执行文件 + 标准参数目录 +
+总控脚本”的方式运行。不要把多个核心算法重新包进一个 bringup 可执行文件，
+也不要把 `roslaunch` 包当作顶层 CMake 安装产物的主入口。
+
+按本页前述方式执行 `ninja` 和 `ninja install` 后，可直接运行：
+
+```bash
+# FAST-LIO、会话导出器、状态监控器
+install/scripts/robot_dog_rebuild.sh
+
+# 先启动 RViz、再加载先验 PCD，通过 2D Pose Estimate 初始化有图定位
+install/scripts/robot_dog_localization.sh
+
+# 默认组合：感知中的 ROG-Map/地形分析 + 三个独立规划程序
+install/scripts/robot_plan_expv2.sh
+
+# 固定文件/RViz 航点流程（用 waypoint publisher 替代地形探索）
+install/scripts/robot_plan_path.sh
+```
+
+无桌面环境下可关闭可视化：
+
+```bash
+ROBOT_DOG_RVIZ=false ROBOT_DOG_STATUS_MODE=terminal \
+  install/scripts/robot_dog_rebuild.sh
+
+# 已有外部 RViz 时不再由脚本启动；外部 RViz 应在定位节点前订阅地图
+ROBOT_DOG_LOCALIZATION_RVIZ=false \
+  install/scripts/robot_dog_localization.sh
+
+ROBOT_PLAN_LOCAL_RVIZ=false ROBOT_PLAN_ROG_MAP_RVIZ=false \
+  install/scripts/robot_plan_expv2.sh
+```
+
+安装后的布局遵循框架约定：
+
+```text
+install/
+├── bin/modules/...       # 在线模块的独立可执行文件
+├── bin/tools/...         # 离线/辅助工具的独立可执行文件
+├── bin/config/...        # 算法参数、接口参数和只读资源
+└── scripts/...           # 只负责进程编排和生命周期
+```
+
+可以先用 `--check` 只检查安装完整性，不启动 ROS 进程：
+
+```bash
+install/scripts/robot_dog_rebuild.sh --check
+install/scripts/robot_dog_localization.sh --check
+install/scripts/robot_plan_expv2.sh --check
+install/scripts/robot_plan_path.sh --check
+```
+
+`robot_plan_expv2` 只是默认流程名，不是单一模块。ROG-Map 和地形分析安置到
+`modules/perception`，世界规划、本地规划和地形航点探索安置到
+`modules/planning`。例如只检查感知组合：
+
+```bash
+ROBOT_PLAN_ENABLE_WORLD_PLANNER=false \
+ROBOT_PLAN_ENABLE_LOCAL_PLANNER=false \
+ROBOT_PLAN_ENABLE_TERRAIN_EXPLORER=false \
+ROBOT_PLAN_ENABLE_STATIC_TF=false \
+ROBOT_PLAN_LOCAL_RVIZ=false \
+ROBOT_PLAN_ROG_MAP_RVIZ=false \
+install/scripts/robot_plan_expv2.sh --check
+```
+
+完整的组合开关和框架分层见 [WS_LPNC 使用手册](../WS_LPNC框架/使用手册.md) 与
+[框架结构说明](../WS_LPNC框架/框架结构说明.md)。
+
 ## exclude
 
 `vscode` 搜索时，排除的文件：

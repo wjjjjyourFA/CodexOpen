@@ -28,7 +28,10 @@ if(BUILD_TESTING)
   add_executable(file_test file_test.cc file.cc
     ${CMAKE_SOURCE_DIR}/cyber/binary.cc
   )
-  target_link_libraries(file_test PRIVATE GTest::GTest GTest::Main glog cyber_proto protobuf)
+  target_link_libraries(file_test PRIVATE GTest::GTest GTest::Main glog protobuf)
+  if(TARGET cyber_proto)
+    target_link_libraries(file_test PRIVATE cyber_proto)
+  endif()
 
   # 添加测试到 CTest
   add_test(NAME EnvironmentTest COMMAND environment_test)
@@ -59,8 +62,11 @@ target_include_directories(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
   PUBLIC
-    cyber_proto
     cyber_base
+    protobuf::libprotobuf
 )
+if(TARGET cyber_proto)
+  target_link_libraries(${PROJECT_NAME} PUBLIC cyber_proto)
+endif()
 
 install_module(${PROJECT_NAME} cyber/common)

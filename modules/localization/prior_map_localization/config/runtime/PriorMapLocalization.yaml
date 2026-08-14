@@ -1,0 +1,86 @@
+common:
+    lidar_type: 1	# RS
+    with_ui: true
+    publish_ros: true
+    point_filter_num: 5	#5
+    
+init:
+    init_method: 5		# 1:GNSS  2:Handle   3:config   4:fusion 5: rviz
+    init_pose: [0, 0, 0, 0, 0, 0]
+    delta_pose: [0, 0, 0]
+    map_center: [0.0,  0.0,  0.0]    # BaoTou
+#    map_center: [-287887.080476, 1382901.811896, 1113.834972]   # BaoTou_ugv
+#    map_center: [ -12384.795871, -12586.1518034, 172.667744095]  #hexi
+    b_display_init: false
+    b_twice_init: true
+
+io:
+    save_log: true
+    path_log: Log/
+#    path_load_map: /home/tracer/workspace/data/Map/BaoTou/ugv/cloud_accumed.pcd
+    path_load_map: data/global_map_manual_opt.pcd
+
+
+ros:
+    topic_lidar_livox: "/livox/lidar"
+    topic_imu_radians: "/imu/data"
+    topic_lidar_standard: "/sensor/RS128Points"
+    topic_imu_degrees: "/imu/data"
+    topic_global_pose: "/self_state/GlobalPose"
+
+
+ui:
+    point_size: 3
+    buffer_num: 15
+    window_width: 1920
+    window_height: 1080
+    
+    
+threshold:
+    threshold_position: 15
+    threshold_rotation: 10
+    
+    
+preprocess:
+    scan_line: 32
+    timestamp_unit: 0            # the unit of time/t field in the PointCloud2 rostopic: 0-second, 1-milisecond, 2-microsecond, 3-nanosecond.
+    blind: 0.5
+    scan_rate: 10
+    point_filter_num: 1
+    feature_extract_enable: false
+
+    # Remove points on the robot body and points outside the effective range.
+    x_min: -0.7
+    x_max: 0.7
+    y_min: -0.4
+    y_max: 0.4
+    z_min: -0.6
+    z_max: 0.5
+    maxrange: 15.0
+    
+imuprocess:
+    acc_cov: 0.1
+    gyr_cov: 0.1
+    b_acc_cov: 0.0001
+    b_gyr_cov: 0.0001
+    extrinsic_T: [ 0, 0, 0 ]
+    extrinsic_R: [ 1, 0, 0,
+                   0, 1, 0,
+                   0, 0, 1 ]
+
+mapprocess:
+    extrinsic_est_en:  false      # true: enable the online estimation of IMU-LiDAR extrinsic
+    det_range:     100.0
+    cube_side_length: 1000
+    filter_size_surf: 0.5	#0.1
+    filter_size_map: 0.5	#0.1
+    max_iteration: 5	#5
+
+
+
+sattle:
+    corner: [  109.88533973693846,  40.718574752616504  ,  109.91701126098633,  40.69570468071327]		#BaoTou
+    mat_path: /home/ws/dataset/dynamic_map/GT_BEV/0060.png
+
+offset:
+    z_offset: 0

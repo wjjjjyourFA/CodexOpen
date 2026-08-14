@@ -1,0 +1,8 @@
+waypointZBound: 5.0
+waitTime: 0
+frameRate: 5.0
+speed: 1.0
+sendSpeed: true
+sendBoundary: true
+waypointXYRadius: 0.03
+waypointYawThreshold: 0.03

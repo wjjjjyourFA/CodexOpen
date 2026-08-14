@@ -1,0 +1,8 @@
+terrain_waypoint_explorer:
+  world_frame: map
+  odometry_topic: /state_estimation
+  registered_scan_topic: /registered_scan
+  terrain_topic: /terrain_map
+  waypoint_topic: /way_point
+  goal_valid_topic: /isgoal_vaild
+  finished_topic: /exploration_finished

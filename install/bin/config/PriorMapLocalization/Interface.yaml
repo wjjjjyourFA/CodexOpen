@@ -1,0 +1,32 @@
+prior_map_localization:
+  topics:
+    lidar_livox: /livox/lidar
+    imu_livox: /imu/data
+    lidar_standard: /rslidar_points/main
+    imu_standard: SensorMsgsIMU
+    global_pose: /self_state/GlobalPose_ugv
+    local_pose: /self_state/LocalPose
+    lidar_global_pose: /self_state/LidarGlobalPose
+    initial_pose: /initialpose
+    map: /world_state/cloud_map
+    path: /world_state/path
+    lio_odom: /lio/odom
+    lio_path: /lio/path
+    state_estimation: /state_estimation
+    registered_scan: /registered_scan
+  frames:
+    map: map
+    world: world
+    sensor: sensor
+    body: body
+  queues:
+    lidar: 5
+    imu: 200000
+    initial_pose: 1
+    map: 10
+    path: 5
+    odometry: 100
+    lio_path: 1
+    registered_scan: 10
+  transport:
+    map_latched: false

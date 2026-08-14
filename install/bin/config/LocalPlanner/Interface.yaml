@@ -1,0 +1,24 @@
+local_planner:
+  odometry_topic: /state_estimation
+  registered_scan_topic: /registered_scan
+  terrain_topic: /terrain_map
+  goal_topic: /way_point
+  global_path_topic: /global_reference_path
+  speed_topic: /speed
+  boundary_topic: /navigation_boundary
+  added_obstacles_topic: /added_obstacles
+  stop_topic: /stop
+  goal_valid_topic: /isgoal_vaild
+  path_topic: /path
+  command_topic: /cmd_vel_corrected
+  free_paths_topic: /free_paths
+
+static_tf:
+  parent_frame: sensor
+  child_frame: vehicle
+  x: 0.0
+  y: 0.0
+  z: 0.0
+  roll: 0.0
+  pitch: 0.0
+  yaw: 0.0
