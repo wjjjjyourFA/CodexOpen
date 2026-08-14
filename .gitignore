@@ -42,7 +42,16 @@ tools/mmpose_inference_gui/moc/
 tools/mmpose_inference_gui/pro/ui/
 
 tools/data_processor/ros1_message/
+tools/data_processor/rs_driver/ros1/*
+!tools/data_processor/rs_driver/ros1/src/
+tools/data_processor/rs_driver/ros1/src/*
+!tools/data_processor/rs_driver/ros1/src/rslidar_sdk-1.5.19
+
 tools/data_processor/ros2_message/
+tools/data_processor/rs_driver/ros2/*
+!tools/data_processor/rs_driver/ros2/src/
+tools/data_processor/rs_driver/ros2/src/*
+!tools/data_processor/rs_driver/ros2/src/rslidar_sdk-1.5.19
 
 *.pro.user
 *.qtc_clangd

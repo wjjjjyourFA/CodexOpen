@@ -68,7 +68,11 @@ int SensorRegistry::GetDifopNum(LidarType type) const {
     case LidarType::M1P:
       return 16 * 35;
     case LidarType::RS128:
-      return 2;
+      return 2;  // wait check
+    case LidarType::RSEMX:
+      return 2;  // wait check
+    case LidarType::RSE1:
+      return 2;  // wait check
     default:
       return 0;
   }
