@@ -28,6 +28,9 @@ add_library(${PROJECT_NAME} STATIC
   ${SRCS}
 )
 
+# 要求 ${PROJECT_NAME} 这个 CMake target 使用 C++17 标准进行编译
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
+
 target_include_directories(${PROJECT_NAME} 
   PUBLIC 
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}>

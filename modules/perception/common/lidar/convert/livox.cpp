@@ -15,6 +15,7 @@
 
 bool LvToPcl(pcl::PointCloud<livox_ros::PointXYZIRT>::Ptr point_lv_,
              pcl::PointCloud<pcl::PointXYZIRT>::Ptr point_pcl_) {
+  if (!point_lv_ || !point_pcl_) return false;
   size_t point_num = point_lv_->size();
   if (point_num == 0) return false;
 
