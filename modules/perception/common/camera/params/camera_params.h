@@ -95,10 +95,10 @@ class CameraParams {
 
   void SetLoadPath(const std::string& load_path);
 
-  void LoadFromName(const std::string& camera_name,
+  bool LoadFromName(const std::string& camera_name,
                     const std::string& ext = ".ini");
 
-  void LoadFromFile(const std::string& camera_file);
+  bool LoadFromFile(const std::string& camera_file);
 
   bool InitMatrixVector(int camera_p_num);
 

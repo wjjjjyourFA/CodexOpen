@@ -23,7 +23,7 @@ class UndistortionHandlerCv : public UndistortionHandler {
     std::cout << " use opencv undistortion " << std::endl;
   }
 
-  ~UndistortionHandlerCv() { Release(); }
+  ~UndistortionHandlerCv() override = default;
 
   void InitUndistortRectifyMap(const Eigen::Matrix3f& intrinsic_params,
                                const Eigen::Matrix<float, 8, 1>& distort_params,

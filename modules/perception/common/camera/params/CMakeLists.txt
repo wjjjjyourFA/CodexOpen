@@ -21,6 +21,7 @@ file(GLOB SOURCES
 add_library(${PROJECT_NAME} STATIC
   ${SOURCES}
 )
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 
 target_include_directories(${PROJECT_NAME} 
   PUBLIC 

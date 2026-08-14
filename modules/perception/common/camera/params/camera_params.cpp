@@ -1,5 +1,7 @@
 #include "modules/perception/common/camera/params/camera_params.h"
 
+#include <cmath>
+
 namespace jojo {
 namespace perception {
 namespace camera {
@@ -8,21 +10,22 @@ void CameraParams::SetLoadPath(const std::string& load_path) {
   LoadPath = load_path;
 }
 
-void CameraParams::LoadFromName(const std::string& camera_name, const std::string& ext) {
+bool CameraParams::LoadFromName(const std::string& camera_name,
+                                const std::string& ext) {
   std::string camera_file = LoadPath + "/" + camera_name + ext;
 
   std::cout << ">>>>>>>> " << camera_name << " : " << std::endl;
 
-  ReadFileWrapper(camera_file);
+  return ReadFileWrapper(camera_file);
 
   // std::cerr << " size : " << lidar2camera_vector.size() << std::endl;
 }
 
-void CameraParams::LoadFromFile(const std::string& camera_file) {
+bool CameraParams::LoadFromFile(const std::string& camera_file) {
   int camera_p_num = lidar2camera_vector.size() + 1;
   std::cout << ">>>>>>>> " << "camera_" << camera_p_num << " : " << std::endl;
 
-  ReadFileWrapper(camera_file);
+  return ReadFileWrapper(camera_file);
 }
 
 bool CameraParams::LoadFromFileBase(
@@ -32,7 +35,6 @@ bool CameraParams::LoadFromFileBase(
   std::ifstream fin2(filename);
   if (fin2.is_open() != 1) {
     std::cerr << "Fail to open params file: " << filename << std::endl;
-    abort();
     return false;
   }
 
@@ -74,8 +76,19 @@ bool CameraParams::LoadFromFileBase(
       fin2 >> b_mm_or_m;
     }
   }
-  fin2.close();
+  if (fin2.fail() && !fin2.eof()) {
+    std::cerr << "Malformed params file: " << filename << std::endl;
+    return false;
+  }
   // clang-format on
+
+  if (!intrinsic_matrix.allFinite() ||
+      std::abs(intrinsic_matrix.determinant()) < 1e-8f ||
+      !extrinsic_matrix.allFinite() || !projection_matrix.allFinite()) {
+    std::cerr << "Invalid or singular calibration matrix in: " << filename
+              << std::endl;
+    return false;
+  }
 
   // Set the last row for RT and P matrices
   extrinsic_matrix(3, 0)  = 0;
@@ -123,7 +136,6 @@ bool CameraParams::ReadFileWrapper(const std::string& camera_file) {
   if (!LoadFromFileBase(filename, intrinsic_matrix, distortion_params,
                         extrinsic_matrix, projection_matrix)) {
     std::cerr << "Fail to open params file: " << filename << std::endl;
-    exit(EXIT_FAILURE);
     return false;
   }
 
@@ -153,17 +165,18 @@ bool CameraParams::ReadFileWrapper(const std::string& camera_file) {
 }
 
 bool CameraParams::InitMatrixVector(int camera_p_num) {
-  camera_vector.resize(camera_p_num);
+  if (camera_p_num < 0) {
+    return false;
+  }
 
   // 确保 vector 至少有 i 个元素
   lidar2camera_vector.resize(camera_p_num);
   camera_vector.resize(camera_p_num);
-  /*
   for (int i = 0; i < camera_p_num; ++i) {
-      lidar2camera_vector[i] = std::make_shared<Lidar2CameraMatrix>();
-      camera_vector[i]       = std::make_shared<CameraMatrix>();
+    camera_vector[i] = std::make_shared<CameraMatrix>();
+    lidar2camera_vector[i] = std::make_shared<Lidar2CameraMatrix>();
+    lidar2camera_vector[i]->camera_matrix = camera_vector[i];
   }
-  */
   // std::cout << "lidar2camera_vector.size(): " << lidar2camera_vector.size()
   //           << std::endl;
 
