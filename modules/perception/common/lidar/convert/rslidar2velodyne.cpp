@@ -3,6 +3,10 @@
 bool RsToVd(pcl::PointCloud<robosense_ros::PointIF>::Ptr point_rs_,
             pcl::PointCloud<velodyne_ros::PointXYZIR>::Ptr point_vd_,
             bool structured) {
+  if (!point_rs_ || !point_vd_ || point_rs_->width == 0 ||
+      (structured && point_rs_->height != 16 && point_rs_->height != 128)) {
+    return false;
+  }
   size_t point_num = point_rs_->size();
   if (point_num == 0) return false;
 
@@ -47,6 +51,10 @@ bool RsToVd(pcl::PointCloud<robosense_ros::PointIF>::Ptr point_rs_,
 bool RsToVd(pcl::PointCloud<robosense_ros::PointIF>::Ptr point_rs_,
             pcl::PointCloud<velodyne_ros::PointXYZIRT>::Ptr point_vd_,
             bool structured) {
+  if (!point_rs_ || !point_vd_ || point_rs_->width == 0 ||
+      (structured && point_rs_->height != 16 && point_rs_->height != 128)) {
+    return false;
+  }
   size_t point_num = point_rs_->size();
   if (point_num == 0) return false;
 

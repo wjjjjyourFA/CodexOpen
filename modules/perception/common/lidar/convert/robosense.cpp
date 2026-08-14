@@ -10,6 +10,16 @@
 
 #include <vector>
 
+namespace {
+
+template <typename PointT>
+bool HasValidOrganizedLayout(const pcl::PointCloud<PointT>& cloud) {
+  return cloud.width > 0 && cloud.height > 0 &&
+         static_cast<size_t>(cloud.width) * cloud.height == cloud.points.size();
+}
+
+}  // namespace
+
 /* row-major 的“行排列”（标准 SLAM 形式）
  * 行 = ring（激光线）
  * 列 = azimuth（水平扫描）
@@ -23,6 +33,8 @@
 
 bool RsToPcl(pcl::PointCloud<robosense_ros::PointII>::Ptr point_rs_,
              pcl::PointCloud<pcl::PointXYZI>::Ptr point_pcl_, bool structured) {
+  if (!point_rs_ || !point_pcl_) return false;
+  if (structured && !HasValidOrganizedLayout(*point_rs_)) return false;
   // std::cout << "omp enabled" << std::endl;
 
   size_t point_num = point_rs_->size();
@@ -115,6 +127,8 @@ bool RsToPcl(pcl::PointCloud<robosense_ros::PointII>::Ptr point_rs_,
 
 bool RsToPcl(pcl::PointCloud<robosense_ros::PointIF>::Ptr point_rs_,
              pcl::PointCloud<pcl::PointXYZI>::Ptr point_pcl_, bool structured) {
+  if (!point_rs_ || !point_pcl_) return false;
+  if (structured && !HasValidOrganizedLayout(*point_rs_)) return false;
   size_t point_num = point_rs_->size();
   if (point_num == 0) return false;
 
@@ -200,6 +214,8 @@ bool RsToPcl(pcl::PointCloud<robosense_ros::PointIF>::Ptr point_rs_,
 
 bool RsToPcl(pcl::PointCloud<robosense_ros::PointII>::Ptr point_rs_,
              pcl::PointCloud<pcl::PointXYZI>::Ptr point_pcl_, bool structured) {
+  if (!point_rs_ || !point_pcl_) return false;
+  if (structured && !HasValidOrganizedLayout(*point_rs_)) return false;
   // std::cout << "omp not enabled" << std::endl;
 
   size_t point_num = point_rs_->size();
@@ -438,6 +454,8 @@ bool RsToPcl(pcl::PointCloud<robosense_ros::PointII>::Ptr point_rs_,
 
 bool RsToPcl(pcl::PointCloud<robosense_ros::PointIF>::Ptr point_rs_,
              pcl::PointCloud<pcl::PointXYZI>::Ptr point_pcl_, bool structured) {
+  if (!point_rs_ || !point_pcl_) return false;
+  if (structured && !HasValidOrganizedLayout(*point_rs_)) return false;
   size_t point_num = point_rs_->size();
   if (point_num == 0) return false;
 
@@ -495,6 +513,7 @@ bool RsToPcl(pcl::PointCloud<robosense_ros::PointIF>::Ptr point_rs_,
 
 bool RsToPcl(pcl::PointCloud<robosense_ros::Point>::Ptr point_rs_,
              pcl::PointCloud<pcl::PointXYZI>::Ptr point_pcl_) {
+  if (!point_rs_ || !point_pcl_) return false;
   size_t point_num = point_rs_->size();
   if (point_num == 0) return false;
 
@@ -531,9 +550,16 @@ bool RsToPcl(pcl::PointCloud<robosense_ros::Point>::Ptr point_rs_,
   return true;
 }
 
-bool RsToPcl(pcl::PointCloud<robosense_ros::PointII>::Ptr point_in_,
-             pcl::PointCloud<pcl::PointXYZIRT>::Ptr point_out_,
-             bool structured) {
+bool Rs128ToPcl(pcl::PointCloud<robosense_ros::PointII>::Ptr point_in_,
+                pcl::PointCloud<pcl::PointXYZIRT>::Ptr point_out_,
+                bool structured) {
+  if (!point_in_ || !point_out_ ||
+      (structured &&
+       (point_in_->height != 128 || point_in_->width == 0 ||
+        static_cast<size_t>(point_in_->width) * point_in_->height !=
+            point_in_->points.size()))) {
+    return false;
+  }
   // std::cout << "omp not enabled" << std::endl;
 
   size_t point_num = point_in_->size();

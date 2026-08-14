@@ -25,7 +25,11 @@ void MotionCompensator::UndistortPointCloudByImu(
     double deskew_time_ratio, bool visualize) {
   // 简化版 rotational deskew，没有 姿态积分 + 坐标变换 (fast-lio)
 
-  if (imu_data.empty() || cloud->empty()) return;
+  if (!cloud || cloud->empty() || imu_data.size() < 2 || total_rows == 0 ||
+      total_cols < 2 || cloud_end_time < cloud_start_time ||
+      deskew_time_ratio < 0.0 || deskew_time_ratio > 1.0) {
+    return;
+  }
 
   if (visualize) {
     ori_cloud_.reset(new pcl::PointCloud<pcl::PointXYZI>(*cloud));
@@ -212,7 +216,11 @@ void MotionCompensator::UndistortPointCloudByOdom(
     double deskew_time_ratio, bool visualize) {
   // std::cout << "using undistort" << std::endl;
 
-  if (cloud->empty() || pose_data.size() < 2) return;
+  if (!cloud || cloud->empty() || pose_data.size() < 2 || total_rows == 0 ||
+      total_cols < 2 || cloud_end_time < cloud_start_time ||
+      deskew_time_ratio < 0.0 || deskew_time_ratio > 1.0) {
+    return;
+  }
 
   double scan_duration = cloud_end_time - cloud_start_time;
   // 整帧点云最终对齐到的时间点

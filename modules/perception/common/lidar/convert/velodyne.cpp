@@ -13,6 +13,7 @@
 
 bool VdToPcl(pcl::PointCloud<velodyne_ros::PointXYZIR>::Ptr point_vd_,
              pcl::PointCloud<pcl::PointXYZI>::Ptr point_pcl_, bool structured) {
+  if (!point_vd_ || !point_pcl_) return false;
   size_t point_num = point_vd_->size();
   if (point_num == 0) return false;
 
@@ -93,6 +94,7 @@ bool VdToPcl(pcl::PointCloud<velodyne_ros::PointXYZIR>::Ptr point_vd_,
 
 bool VdToPcl(pcl::PointCloud<velodyne_ros::PointXYZIRT>::Ptr point_vd_,
              pcl::PointCloud<pcl::PointXYZI>::Ptr point_pcl_, bool structured) {
+  if (!point_vd_ || !point_pcl_) return false;
   size_t point_num = point_vd_->size();
   if (point_num == 0) return false;
 
@@ -167,5 +169,26 @@ bool VdToPcl(pcl::PointCloud<velodyne_ros::PointXYZIRT>::Ptr point_vd_,
 
 bool VdToPcl(pcl::PointCloud<velodyne_ros::PointXYZIRT>::Ptr point_vd_,
              pcl::PointCloud<pcl::PointXYZIRT>::Ptr point_pcl_) {
-  // TODO
+  if (!point_vd_ || !point_pcl_ || point_vd_->empty()) return false;
+
+  point_pcl_->clear();
+  point_pcl_->points.reserve(point_vd_->size());
+
+  for (const auto& src : point_vd_->points) {
+    pcl::PointXYZIRT dst;
+    dst.x         = src.x;
+    dst.y         = src.y;
+    dst.z         = src.z;
+    dst.intensity = src.intensity;
+    dst.ring      = src.ring;
+    dst.timestamp = static_cast<double>(src.time);
+    point_pcl_->emplace_back(dst);
+  }
+
+  point_pcl_->header   = point_vd_->header;
+  point_pcl_->width    = point_vd_->width;
+  point_pcl_->height   = point_vd_->height;
+  point_pcl_->is_dense = point_vd_->is_dense;
+
+  return true;
 }

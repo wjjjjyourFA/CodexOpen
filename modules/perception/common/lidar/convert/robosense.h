@@ -83,13 +83,19 @@ bool RsToPcl(pcl::PointCloud<robosense_ros::PointIF>::Ptr point_rs_,
              bool structured = true);
 
 // 数据集构建
-bool RsToPcl(pcl::PointCloud<robosense_ros::PointII>::Ptr point_in_,
-             pcl::PointCloud<pcl::PointXYZIRT>::Ptr point_out_,
-             bool structured = true);
+bool Rs128ToPcl(pcl::PointCloud<robosense_ros::PointII>::Ptr point_in_,
+                pcl::PointCloud<pcl::PointXYZIRT>::Ptr point_out_,
+                bool structured = true);
 
 template <typename PointT>
 bool PclToRsSMap128(typename pcl::PointCloud<PointT>::Ptr point_in_,
                     typename pcl::PointCloud<PointT>::Ptr point_out_) {
+  if (!point_in_ || !point_out_ || point_in_->empty() ||
+      point_in_->height != 128 || point_in_->width == 0 ||
+      static_cast<size_t>(point_in_->width) * point_in_->height !=
+          point_in_->points.size()) {
+    return false;
+  }
   // 获取映射表 RsSMap128 smap;
   auto& smap = GetMap128();
   // 确保目标点云大小足够

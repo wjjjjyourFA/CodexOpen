@@ -80,10 +80,10 @@ class MotionCompensator {
  private:
   pcl::visualization::PCLVisualizer::Ptr viewer_ = nullptr;
 
-  Eigen::Matrix4f extrinsic_matrix_;
-  Eigen::Matrix4f extrinsic_matrix_inv_;
-  Eigen::Matrix4d extrinsic_matrix_d;
-  Eigen::Matrix4d extrinsic_matrix_inv_d;
+  Eigen::Matrix4f extrinsic_matrix_      = Eigen::Matrix4f::Identity();
+  Eigen::Matrix4f extrinsic_matrix_inv_  = Eigen::Matrix4f::Identity();
+  Eigen::Matrix4d extrinsic_matrix_d     = Eigen::Matrix4d::Identity();
+  Eigen::Matrix4d extrinsic_matrix_inv_d = Eigen::Matrix4d::Identity();
 };
 
 }  // namespace lidar
