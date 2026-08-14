@@ -6,7 +6,10 @@ add_library(${PROJECT_NAME} STATIC
   utils.cpp
   sensor_extrinsics.cpp
   sensor_extrinsics_json.cpp
+  vehicle_config.cpp
 )
+
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 
 target_include_directories(${PROJECT_NAME}
   PUBLIC
@@ -16,8 +19,9 @@ target_include_directories(${PROJECT_NAME}
 
 # 如果 utils.cpp 里用了 Eigen / OpenCV，再加
 target_link_libraries(${PROJECT_NAME}
-  PUBLIC Eigen3::Eigen
-  PRIVATE nlohmann_json::nlohmann_json
+  PUBLIC
+    Eigen3::Eigen
+    nlohmann_json::nlohmann_json
 )
 
 install_module(${PROJECT_NAME} modules/perception/common/config)

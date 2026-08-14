@@ -35,10 +35,10 @@ class SensorExtrinsics {
 
   void SetLoadPath(const std::string& load_path);
 
-  void LoadFromName(const std::string& sensor_name,
+  bool LoadFromName(const std::string& sensor_name,
                     const std::string& ext = ".ini");
 
-  void LoadFromFile(const std::string& sensor_file);
+  bool LoadFromFile(const std::string& sensor_file);
 
   virtual bool InitMatrixVector(int sensor_p_num) { return false; };
 

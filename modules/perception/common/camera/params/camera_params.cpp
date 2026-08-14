@@ -124,7 +124,7 @@ bool CameraParams::ReadFileWrapper(const std::string& camera_file) {
   // char filename[256];
   // std::snprintf(filename, sizeof(filename), "%s", camera_file.c_str());
   auto& filename = camera_file;
-  
+
   auto camera_matrix_i = std::make_shared<CameraMatrix>();
   auto lidar2camera_i  = std::make_shared<Lidar2CameraMatrix>();
 
@@ -173,7 +173,7 @@ bool CameraParams::InitMatrixVector(int camera_p_num) {
   lidar2camera_vector.resize(camera_p_num);
   camera_vector.resize(camera_p_num);
   for (int i = 0; i < camera_p_num; ++i) {
-    camera_vector[i] = std::make_shared<CameraMatrix>();
+    camera_vector[i]       = std::make_shared<CameraMatrix>();
     lidar2camera_vector[i] = std::make_shared<Lidar2CameraMatrix>();
     lidar2camera_vector[i]->camera_matrix = camera_vector[i];
   }

@@ -1,12 +1,15 @@
 #include "modules/perception/common/config/utils.h"
 
+#include <fstream>
+#include <iostream>
+
 namespace jojo {
 namespace perception {
 namespace config {
 
 Eigen::Matrix4f ComputeExtrinsicMatrix(
-    const Eigen::Matrix3f &intrinsic_matrix,
-    const Eigen::Matrix4f &projection_matrix) {
+    const Eigen::Matrix3f& intrinsic_matrix,
+    const Eigen::Matrix4f& projection_matrix) {
   // 假设你已经知道了相机内参矩阵 K、和投影矩阵 P 的值
   // 使用相机内参矩阵 K 进行分解
   // Eigen::Matrix3d Kd = K.cast<double>();
@@ -27,8 +30,8 @@ Eigen::Matrix4f ComputeExtrinsicMatrix(
 }
 
 Eigen::VectorXf IntrinsicParamsToVector(
-    const Eigen::Matrix3f &intrinsic_matrix,
-    const Eigen::Matrix<float, 8, 1> &distortion_params) {
+    const Eigen::Matrix3f& intrinsic_matrix,
+    const Eigen::Matrix<float, 8, 1>& distortion_params) {
   // 创建一个长度为 9 + 8 = 17 的向量
   Eigen::VectorXf params(17);
   // clang-format off
@@ -47,8 +50,8 @@ Eigen::VectorXf IntrinsicParamsToVector(
   return params;
 }
 
-Eigen::Matrix4f TransProjMatrixmm2m(const Eigen::Matrix3f &intrinsic_matrix,
-                                    const Eigen::Matrix4f &p_matrix_mm) {
+Eigen::Matrix4f TransProjMatrixmm2m(const Eigen::Matrix3f& intrinsic_matrix,
+                                    const Eigen::Matrix4f& p_matrix_mm) {
   // 假设你已经知道了相机内参矩阵 K、和投影矩阵 P 的值
   Eigen::Matrix4f extrinsic_matrix =
       ComputeExtrinsicMatrix(intrinsic_matrix, p_matrix_mm);
@@ -67,7 +70,7 @@ Eigen::Matrix4f TransProjMatrixmm2m(const Eigen::Matrix3f &intrinsic_matrix,
   return p_matrix_m;
 }
 
-Eigen::Matrix4f TransRtMatrixmm2m(const Eigen::Matrix4f &rt_matrix_mm) {
+Eigen::Matrix4f TransRtMatrixmm2m(const Eigen::Matrix4f& rt_matrix_mm) {
   // 假设你已经知道了相机内参矩阵 K、和旋转矩阵 RT 的值
   // 从旋转矩阵 RT 中提取旋转矩阵 R 和平移向量 t
   Eigen::Matrix4f rt_matrix_m = rt_matrix_mm;

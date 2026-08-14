@@ -5,7 +5,8 @@
 #include "modules/perception/common/camera/params/camera_params_json.h"
 
 int main() {
-  const auto suffix = std::chrono::steady_clock::now().time_since_epoch().count();
+  const auto suffix =
+      std::chrono::steady_clock::now().time_since_epoch().count();
   const auto root = std::filesystem::temp_directory_path() /
                     ("perception_common_camera_" + std::to_string(suffix));
   std::filesystem::create_directories(root / "intrinsic");

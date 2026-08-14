@@ -7,7 +7,7 @@
 
 #include "modules/common/config/config_file_json.h"
 #include "modules/perception/common/config/sensor_extrinsics.h"
-#include "modules/perception/common/config/utils.h"
+#include "modules/perception/common/config/utils_json.h"
 
 namespace jojo {
 namespace perception {
