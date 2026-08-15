@@ -22,7 +22,7 @@
 
 #include <boost/circular_buffer.hpp>
 
-#include "modules/common/util/eigen_defs.h"
+#include "modules/common/utils/eigen_defs.h"
 #include "modules/perception/common/base/box.h"
 #include "modules/perception/common/base/box3d_extra.h"
 #include "modules/perception/common/base/object_types.h"
@@ -39,14 +39,18 @@ namespace base {
 struct LidarObjectSupplement {
   void Reset() {
     is_orientation_ready = false;
-    on_use = false;
+    on_use               = false;
     cloud->clear();
     cloud_world->clear();
-    is_fp = false;
-    fp_prob = 0.f;
-    is_background = false;
-    is_in_roi = false;
-    num_points_in_roi = 0;
+    point_ids.clear();
+    is_fp               = false;
+    fp_prob             = 0.f;
+    is_background       = false;
+    is_clustered        = false;
+    semantic_type       = jojo::perception::base::ObjectSemanticType::UNKNOWN;
+    dynamic_state       = jojo::perception::base::MotionState::UNKNOWN;
+    is_in_roi           = false;
+    num_points_in_roi   = 0;
     height_above_ground = std::numeric_limits<float>::max();
     raw_probs.clear();
     raw_classification_methods.clear();
@@ -60,18 +64,22 @@ struct LidarObjectSupplement {
   std::vector<int> point_ids;
   // @brief cloud of the object in lidar coordinates
   // base::AttributePointCloud<PointF> cloud;
-  pcl::PointCloud<pcl::PointXYZI>::Ptr cloud;
+  pcl::PointCloud<pcl::PointXYZI>::Ptr cloud =
+      std::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
   // @brief cloud of the object in world coordinates
   // base::AttributePointCloud<PointD> cloud_world;
-  pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_world;
+  pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_world =
+      std::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
   // @brief background indicator
   bool is_background = false;
   // @brief either object is clustered or from detection model
   bool is_clustered = false;
   // @brief object semantic type
-  jojo::perception::base::ObjectSemanticType semantic_type = jojo::perception::base::ObjectSemanticType::UNKNOWN;
+  jojo::perception::base::ObjectSemanticType semantic_type =
+      jojo::perception::base::ObjectSemanticType::UNKNOWN;
   // @brief object dynamic state for scene-flow model
-  jojo::perception::base::MotionState dynamic_state = jojo::perception::base::MotionState::UNKNOWN;
+  jojo::perception::base::MotionState dynamic_state =
+      jojo::perception::base::MotionState::UNKNOWN;
   // @brief false positive indicator
   bool is_fp = false;
   // @brief false positive probability
@@ -199,7 +207,7 @@ struct CameraObjectSupplement {
     // visual_type = VisualObjectType::MAX_OBJECT_TYPE;
     // visual_type_probs.resize(static_cast<int>(VisualObjectType::MAX_OBJECT_TYPE), 0);
 
-    area_id = 0;
+    area_id           = 0;
     visible_ratios[0] = visible_ratios[1] = 0;
     visible_ratios[2] = visible_ratios[3] = 0;
     cut_off_ratios[0] = cut_off_ratios[1] = 0;
@@ -243,9 +251,9 @@ struct CameraObjectSupplement {
   std::vector<float> object_feature;
 
   // @brief alpha angle from KITTI: Observation angle of object, in [-pi..pi]
-  double alpha = 0.0;
+  double alpha                = 0.0;
   double truncated_horizontal = 0.0;
-  double truncated_vertical = 0.0;
+  double truncated_vertical   = 0.0;
   // TODO：X @brief center in camera coordinate system
   // change to center in BEV coordinate system: default is TOP lidar coordinate system
   Eigen::Vector3f local_center = Eigen::Vector3f(0.0f, 0.0f, 0.0f);

@@ -25,6 +25,7 @@ Object::Object() {
   velocity_uncertainty << 0.0f, 0, 0, 0, 0.0f, 0, 0, 0, 0.0f;
   acceleration_uncertainty << 0.0f, 0, 0, 0, 0.0f, 0, 0, 0, 0.0f;
   type_probs.resize(static_cast<int>(ObjectType::MAX_OBJECT_TYPE), 0);
+  drops.fill(Eigen::Vector3d::Zero());
   // sub_type_probs.resize(static_cast<int>(ObjectSubType::MAX_OBJECT_TYPE), 0.0f);
   b_cipv = false;
   // feature.reset();
@@ -64,14 +65,17 @@ void Object::Reset() {
 
   tracking_time = 0.0;
   latest_tracked_time = 0.0;
+  drops.fill(Eigen::Vector3d::Zero());
+  drop_num = 0;
+  b_cipv = false;
 
   // car_light.Reset();
   // motion_state = MotionState::UNKNOWN;
 
-  // lidar_supplement.Reset();
+  lidar_supplement.Reset();
   // radar_supplement.Reset();
   // radar4d_supplement.Reset();
-  // camera_supplement.Reset();
+  camera_supplement.Reset();
   // fusion_supplement.Reset();
   // feature.reset();
 }

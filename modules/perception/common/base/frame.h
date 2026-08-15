@@ -37,7 +37,7 @@ struct Frame {
     objects.clear();
     sensor2world_pose.setIdentity();
     sensor_info.Reset();
-    // lidar_frame_supplement.Reset();
+    lidar_frame_supplement.Reset();
     radar_frame_supplement.Reset();
     camera_frame_supplement.Reset();
   }
