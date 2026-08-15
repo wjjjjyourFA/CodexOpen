@@ -119,9 +119,20 @@ class JsonUtil {
   template <class T>
   static bool GetNumberByPath(const nlohmann::json &json,
                               const std::string &path, T *value) {
+    if (path.empty()) {
+      AERROR << "JSON path must not be empty";
+      return false;
+    }
+ 
     std::vector<std::string> paths = absl::StrSplit(path, '.');
     std::string key = paths.back();
     paths.pop_back();
+
+    if (key.empty()) {
+      AERROR << "Invalid path: " << path;
+      return false;
+    }
+
     nlohmann::json upper_layer_json = json;
     for (auto &field : paths) {
       if (field.empty()) {

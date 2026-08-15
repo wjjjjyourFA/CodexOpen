@@ -26,7 +26,7 @@ class ConfigFileBase {
 
   void set_name(const std::string& name) { this->name_ = name; }
 
-  const std::string& get_name() { return this->name_; }
+  const std::string& get_name() const { return this->name_; }
 
  protected:
   std::string name_ = "";

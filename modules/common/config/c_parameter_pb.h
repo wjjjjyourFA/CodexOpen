@@ -1,6 +1,8 @@
 #ifndef C_PARAMETER_PB_H_
 #define C_PARAMETER_PB_H_
 
+#include <cstdint>
+#include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <iostream>
@@ -25,7 +27,28 @@ class Param {
 
   void set_name(const std::string& name) { this->name_ = name; }
 
-  void set_type(ParamType type) { this->type_ = type; }
+  void set_type(ParamType type) {
+    type_ = type;
+    switch (type_) {
+      case BOOL:
+      case NOT_SET:
+        value_ = false;
+        break;
+      case INT:
+        value_ = int64_t{0};
+        break;
+      case DOUBLE:
+        value_ = 0.0;
+        break;
+      case STRING:
+        value_ = std::string{};
+        break;
+      default:
+        type_ = NOT_SET;
+        value_ = false;
+        throw std::invalid_argument("Unknown parameter type");
+    }
+  }
 
   void set_type_name(const std::string& type_name) { this->type_name_ = type_name; }
 

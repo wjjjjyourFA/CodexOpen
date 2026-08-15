@@ -14,7 +14,7 @@
  * limitations under the License.
  *****************************************************************************/
 
-#include "modules/common/util/json_util.h"
+#include "modules/common/utils/json_util.h"
 
 #include "google/protobuf/util/json_util.h"
 
@@ -35,7 +35,7 @@ google::protobuf::util::JsonOptions JsonOption() {
 }  // namespace
 
 nlohmann::json JsonUtil::ProtoToTypedJson(
-    const std::string &json_type, const google::protobuf::Message &proto) {
+    const std::string& json_type, const google::protobuf::Message& proto) {
   static const auto kJsonOption = JsonOption();
   std::string json_string;
   const auto status = MessageToJsonString(proto, &json_string, kJsonOption);
@@ -47,16 +47,17 @@ nlohmann::json JsonUtil::ProtoToTypedJson(
   return json_obj;
 }
 
-nlohmann::json JsonUtil::ProtoToJson(const google::protobuf::Message &proto) {
+nlohmann::json JsonUtil::ProtoToJson(const google::protobuf::Message& proto) {
   static const auto kJsonOption = JsonOption();
   std::string json_string;
   const auto status = MessageToJsonString(proto, &json_string, kJsonOption);
+  ACHECK(status.ok()) << "Cannot convert proto to json:" << proto.DebugString();
   Json json_obj = Json::parse(json_string);
   return json_obj;
 }
 
-bool JsonUtil::GetString(const Json &json, const std::string &key,
-                         std::string *value) {
+bool JsonUtil::GetString(const Json& json, const std::string& key,
+                         std::string* value) {
   const auto iter = json.find(key);
   if (iter == json.end()) {
     AERROR << "The json has no such key: " << key;
@@ -70,11 +71,11 @@ bool JsonUtil::GetString(const Json &json, const std::string &key,
   return true;
 }
 
-bool JsonUtil::GetJsonByPath(const nlohmann::json &json,
-                             const std::vector<std::string> &paths,
-                             nlohmann::json *value) {
+bool JsonUtil::GetJsonByPath(const nlohmann::json& json,
+                             const std::vector<std::string>& paths,
+                             nlohmann::json* value) {
   Json upper_layer_json = json;
-  for (auto &field : paths) {
+  for (auto& field : paths) {
     if (field.empty()) {
       AERROR << "Invalid path: " << field;
       return false;
@@ -94,11 +95,22 @@ bool JsonUtil::GetJsonByPath(const nlohmann::json &json,
   return true;
 }
 
-bool JsonUtil::GetStringByPath(const Json &json, const std::string &path,
-                               std::string *value) {
+bool JsonUtil::GetStringByPath(const Json& json, const std::string& path,
+                               std::string* value) {
+  if (path.empty()) {
+    AERROR << "JSON path must not be empty";
+    return false;
+  }
+
   std::vector<std::string> paths = absl::StrSplit(path, '.');
-  std::string key = paths.back();
+  std::string key                = paths.back();
   paths.pop_back();
+
+  if (key.empty()) {
+    AERROR << "Invalid path: " << path;
+    return false;
+  }
+
   Json upper_layer_json;
   if (!GetJsonByPath(json, paths, &upper_layer_json)) {
     return false;
@@ -106,8 +118,8 @@ bool JsonUtil::GetStringByPath(const Json &json, const std::string &path,
   return GetString(upper_layer_json, key, value);
 }
 
-bool JsonUtil::GetStringVector(const Json &json, const std::string &key,
-                               std::vector<std::string> *value) {
+bool JsonUtil::GetStringVector(const Json& json, const std::string& key,
+                               std::vector<std::string>* value) {
   const auto iter = json.find(key);
   if (iter == json.end()) {
     AERROR << "The json has no such key: " << key;
@@ -121,7 +133,7 @@ bool JsonUtil::GetStringVector(const Json &json, const std::string &key,
   bool ret = true;
   value->clear();
   value->reserve(iter->size());
-  for (const auto &elem : *iter) {
+  for (const auto& elem : *iter) {
     // Note that we still try to get all string values though there are invalid
     // elements.
     if (!elem.is_string()) {
@@ -134,8 +146,8 @@ bool JsonUtil::GetStringVector(const Json &json, const std::string &key,
   return ret;
 }
 
-bool JsonUtil::GetBoolean(const nlohmann::json &json, const std::string &key,
-                          bool *value) {
+bool JsonUtil::GetBoolean(const nlohmann::json& json, const std::string& key,
+                          bool* value) {
   const auto iter = json.find(key);
   if (iter == json.end()) {
     AERROR << "The json has no such key: " << key;
@@ -149,11 +161,22 @@ bool JsonUtil::GetBoolean(const nlohmann::json &json, const std::string &key,
   return true;
 }
 
-bool JsonUtil::GetBooleanByPath(const Json &json, const std::string &path,
-                                bool *value) {
+bool JsonUtil::GetBooleanByPath(const Json& json, const std::string& path,
+                                bool* value) {
+  if (path.empty()) {
+    AERROR << "JSON path must not be empty";
+    return false;
+  }
+
   std::vector<std::string> paths = absl::StrSplit(path, '.');
-  std::string key = paths.back();
+  std::string key                = paths.back();
   paths.pop_back();
+
+  if (key.empty()) {
+    AERROR << "Invalid path: " << path;
+    return false;
+  }
+
   Json upper_layer_json;
   if (!GetJsonByPath(json, paths, &upper_layer_json)) {
     return false;
