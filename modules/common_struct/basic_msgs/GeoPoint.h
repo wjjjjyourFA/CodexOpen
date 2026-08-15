@@ -10,11 +10,11 @@
 
 namespace jojo {
 namespace common_struct {
-  
+
 struct GeoPoint {
-  double longitude;  // deg
-  double latitude;  // deg
-  double altitude;  // meters
+  double longitude{};  // deg
+  double latitude{};  // deg
+  double altitude{};  // meters
 };
 
 }  // namespace common_struct

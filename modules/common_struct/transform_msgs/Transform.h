@@ -1,9 +1,14 @@
 #pragma once
 
+#include <cinttypes>
+#include <cstdio>
 #include <string>
 
 #include "modules/common_struct/basic_msgs/Header.h"
 #include "modules/common_struct/basic_msgs/Pose6D.h"
+
+namespace jojo {
+namespace common_struct {
 
 struct Transform {
   Header header;
@@ -28,10 +33,14 @@ struct TransformStamped {
   // 输出为字符串（调试用）
   std::string ToString() const {
     char buf[256];
-    snprintf(buf, sizeof(buf),
-             "[%s] x=%.2f y=%.2f z=%.2f yaw=%.2f pitch=%.2f roll=%.2f time=%ld",
-             child_frame_id.c_str(), pose.x, pose.y, pose.z, pose.azimuth,
-             pose.pitch, pose.roll, static_cast<long>(header.timestamp));
+    std::snprintf(buf, sizeof(buf),
+                  "[%s] x=%.2f y=%.2f z=%.2f yaw=%.2f pitch=%.2f roll=%.2f "
+                  "time=%" PRIu64,
+                  child_frame_id.c_str(), pose.x, pose.y, pose.z, pose.azimuth,
+                  pose.pitch, pose.roll, header.timestamp);
     return std::string(buf);
   }
 };
+
+}  // namespace common_struct
+}  // namespace jojo

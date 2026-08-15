@@ -14,10 +14,10 @@ namespace common_struct {
 
 struct ImuData {
   // std::uint64_t time;
-  double time;
+  double time{};
 
   Vector3d gyro;  // [rad/s]
-  Vector3d acc;   // [m/s^2]
+  Vector3d acc;  // [m/s^2]
 };
 
 }  // namespace common_struct

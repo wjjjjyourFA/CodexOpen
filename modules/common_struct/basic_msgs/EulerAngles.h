@@ -11,9 +11,9 @@ namespace jojo {
 namespace common_struct {
 
 struct EulerAngles {  // rad
-  double roll;
-  double pitch;
-  double yaw;
+  double roll{};
+  double pitch{};
+  double yaw{};
 };
 
 }  // namespace common_struct

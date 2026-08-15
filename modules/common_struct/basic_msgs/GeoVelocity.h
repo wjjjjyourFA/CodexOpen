@@ -16,12 +16,12 @@
 
 namespace jojo {
 namespace common_struct {
-  
+
 struct GeoVelocity {
-  double east;  // m/s
-  double north;
-  double up;
-  double speed;  // m/s
+  double east{};  // m/s
+  double north{};
+  double up{};
+  double speed{};  // m/s
 };
 
 }  // namespace common_struct

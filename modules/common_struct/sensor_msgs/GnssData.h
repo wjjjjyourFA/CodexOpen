@@ -7,10 +7,10 @@
 #include <string>
 
 #include "modules/common_struct/basic_msgs/GeoPoint.h"
-#include "modules/common_struct/basic_msgs/VectorPoint.h"
-#include "modules/common_struct/basic_msgs/OrientationAngles.h"
 #include "modules/common_struct/basic_msgs/GeoVelocity.h"
+#include "modules/common_struct/basic_msgs/OrientationAngles.h"
 #include "modules/common_struct/basic_msgs/Pose6D.h"
+#include "modules/common_struct/basic_msgs/VectorPoint.h"
 
 // namespace cstruct = jojo::common_struct;
 
@@ -18,9 +18,9 @@ namespace jojo {
 namespace common_struct {
 
 struct GnssData {
-  int info;
-  int week;
-  std::uint64_t time;
+  int info{};
+  int week{};
+  std::uint64_t time{};
 
   // longitude latitude altitude;
   GeoPoint position;
@@ -37,13 +37,13 @@ struct GnssData {
   // east north up velocity
   GeoVelocity velocity;
 
-  int main_satellite_num;
-  int vice_satellite_num;
-  int status;
-  int age;
+  int main_satellite_num{};
+  int vice_satellite_num{};
+  int status{};
+  int age{};
 
-  int warning;
-  std::string check_sum = "";
+  int warning{};
+  std::string check_sum;
 };
 
 inline SE3Pose ConvertGnssToPose(const GnssData& src,
@@ -52,6 +52,7 @@ inline SE3Pose ConvertGnssToPose(const GnssData& src,
 
   SE3Pose pose;
 
+  pose.time = static_cast<double>(src.time);
   // =========================
   // 1. 位置（假设已是ENU / map坐标）
   // =========================
