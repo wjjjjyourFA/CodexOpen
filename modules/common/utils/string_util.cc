@@ -14,10 +14,9 @@
  * limitations under the License.
  *****************************************************************************/
 
-#include "modules/common/util/string_util.h"
+#include "modules/common/utils/string_util.h"
 
-#include <cmath>
-#include <vector>
+#include <cstdint>
 
 // #include "absl/strings/str_cat.h"
 

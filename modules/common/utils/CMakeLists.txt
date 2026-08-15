@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(common_util)
+project(common_utils)
 
 option(BUILD_TESTING "Enable Unit Tests" OFF)
 
@@ -38,6 +38,13 @@ target_include_directories(${PROJECT_NAME}
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
-target_link_libraries(${PROJECT_NAME} PUBLIC absl_base absl_strings cyber_binary)
+target_link_libraries(${PROJECT_NAME}
+  PUBLIC
+    absl_base
+    absl_strings
+    cyber_binary
+    nlohmann_json::nlohmann_json
+    protobuf::libprotobuf
+)
 
-install_module(${PROJECT_NAME} modules/common/util)
+install_module(${PROJECT_NAME} modules/common/utils)

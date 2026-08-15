@@ -14,6 +14,7 @@
 #include "modules/perception/tools/pcl/show_pcd_head.h"
 // #include "modules/perception/common/lidar/convert/robosense.h"
 #include "modules/perception/tools/pcl/point_types.h"
+#include "modules/perception/tools/pcl/viewer_runner.h"
 
 void SpinViewer(pcl::visualization::PCLVisualizer::Ptr viewer);
 
@@ -22,8 +23,12 @@ void ViewerShowCloud(
     const typename pcl::PointCloud<PointT>::Ptr& cloud,
     /*可外部创建传入*/ pcl::visualization::PCLVisualizer::Ptr* viewer = nullptr,
     const std::string& name = "cloud") {
-  // 如果外部没有传 viewer，则使用内部的静态 viewer
-  static pcl::visualization::PCLVisualizer::Ptr internal_viewer = nullptr;
+  if (!cloud || cloud->empty()) {
+    return;
+  }
+
+  // 未传 viewer 时，本次阻塞调用使用局部 viewer，不跨调用共享 GUI 状态。
+  pcl::visualization::PCLVisualizer::Ptr internal_viewer;
   if (viewer == nullptr) {
     viewer = &internal_viewer;
   }
@@ -105,6 +110,13 @@ void show_pointcloud_height(const pcl::PointCloud<PointT>& cloud,
 
   const int width  = static_cast<int>(cloud.width);
   const int height = static_cast<int>(cloud.height);
+  const auto expected_size =
+      static_cast<std::size_t>(width) * static_cast<std::size_t>(height);
+  if (cloud.points.size() < expected_size) {
+    std::cerr
+        << "[show_pointcloud_height] inconsistent organized cloud size.\n";
+    return;
+  }
 
   // clang-format off
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr colored(new pcl::PointCloud<pcl::PointXYZRGB>);
@@ -156,14 +168,12 @@ void show_pointcloud_num(const pcl::PointCloud<PointT>& cloud,
 
   int count = 0;
   for (const auto& p : cloud.points) {
-    count++;
+    if (target_num >= 0 && count >= target_num) {
+      break;
+    }
+
     // 用 ring 上色
     int r = 1;
-    if (target_num != -1) {
-      if (count >= target_num) {
-        break;
-      }
-    }
 
     pcl::PointXYZRGB pt;
     pt.x = p.x;
@@ -174,6 +184,7 @@ void show_pointcloud_num(const pcl::PointCloud<PointT>& cloud,
     pt.b = (r * 120) % 255;
 
     colored->points.push_back(pt);
+    ++count;
   }
   colored->width    = colored->points.size();
   colored->height   = 1;
@@ -192,21 +203,10 @@ void show_pointcloud_strategy(const pcl::PointCloud<PointT>& cloud,
   colored->points.resize(cloud.points.size());
   // clang-format on
 
-  // ==== 预处理：max ring ====
-  static int max_ring = -1;
-
   // ==== 预处理：timestamp 范围 ====
   double tmin = 1e9, tmax = -1e9;
 
   if (mode == ColorMode::RING) {
-    if (max_ring < 0) {
-      max_ring = 0;
-      for (auto& p : cloud.points) {
-        if (p.ring > max_ring) max_ring = p.ring;
-      }
-      // max_ring = 128;
-      std::cout << "max_ring initialized = " << max_ring << std::endl;
-    }
   } else if (mode == ColorMode::AZIMUTH) {
   } else if (mode == ColorMode::RANGE) {
   } else if (mode == ColorMode::TIMESTAMP) {
@@ -289,6 +289,10 @@ void show_pointcloud_strategy(const pcl::PointCloud<PointT>& cloud,
 template <typename PointT>
 void show_pointcloud_timestamp(
     const typename pcl::PointCloud<PointT>::Ptr& cloud) {
+  if (!cloud || cloud->empty()) {
+    return;
+  }
+
   /* pcl > 1.13
   auto idx = pcl::getFieldIndex<PointT>(cloud, "timestamp");
   if (!idx) {

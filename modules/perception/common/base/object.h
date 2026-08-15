@@ -45,7 +45,8 @@ struct Object {
   // @brief convex hull of the object, required
   // PointCloud<PointD> polygon;
   // 改成智能指针，object 的凸包，因此用的 PointXYZ
-  pcl::PointCloud<pcl::PointXYZ>::Ptr polygon;
+  pcl::PointCloud<pcl::PointXYZ>::Ptr polygon =
+      std::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
 
   // oriented boundingbox information
   // @brief main direction of the object, required

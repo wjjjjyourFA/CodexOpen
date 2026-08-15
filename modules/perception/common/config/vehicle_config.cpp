@@ -8,11 +8,11 @@ void VehicleConfig::SetLoadPath(const std::string& load_path) {
   LoadPath = load_path;
 }
 
-void VehicleConfig::LoadFromFile(const std::string& config_file) {
+bool VehicleConfig::LoadFromFile(const std::string& config_file) {
   std::ifstream fin(config_file);
   if (!fin.is_open()) {
     std::cerr << "Cannot open config file: " << config_file << std::endl;
-    exit(-1);
+    return false;
   }
 
   std::string t_s;
@@ -32,7 +32,7 @@ void VehicleConfig::LoadFromFile(const std::string& config_file) {
     else if (t_s == "RONI_max_z")
       fin >> RONI_max_z;
   }
-  fin.close();
+  return fin.eof() && !fin.bad();
 }
 
 }  // namespace config

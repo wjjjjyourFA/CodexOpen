@@ -82,4 +82,4 @@ inline static bool ConvertXYZtoXYZI(
   return true;
 }
 
-#endif  // __PCL_TYPES
+#endif  // PERCEPTION_TOOLS_PCL_TYPES_H

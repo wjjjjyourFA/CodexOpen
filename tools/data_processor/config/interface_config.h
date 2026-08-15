@@ -19,21 +19,26 @@ class InterfaceConfig : public jojo::common::config::ConfigFileBase {
   void LoadConfig(const std::string& config_path) override;
 
  public:
-  bool b_local_pose, b_global_pose, b_imu_data;
-  bool b_lidar;
-  int b_radar, b_radar4d;
-  int b_camera, b_infra, b_star;
+  bool b_local_pose{false};
+  bool b_global_pose{false};
+  bool b_imu_data{false};
+  bool b_lidar{false};
+  int b_radar{0};
+  int b_radar4d{0};
+  int b_camera{0};
+  int b_infra{0};
+  int b_star{0};
 
   std::string topic_local_pose_sub;
   std::string topic_global_pose_sub;
   std::string topic_imu_data_sub;
   std::string topic_pose_sub;
 
-  bool b_difop;
+  bool b_difop{false};
   std::string topic_lidar_sub;
   std::string topic_lidar_ori_sub, topic_lidar_difop_sub;
 
-  bool b_compressed;
+  bool b_compressed{false};
   std::vector<std::string> topic_camera_sub;
   std::vector<std::string> topic_infra_sub;
   std::vector<std::string> topic_star_sub;

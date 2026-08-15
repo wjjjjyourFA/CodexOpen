@@ -44,7 +44,7 @@ bool UndistortionHandler::InitModel(const CameraDistortionModel& sensor_type) {
   // clang-format on
   // std::cout << "InitModel()" << std::endl;
 
-  if (distort_model == nullptr) {
+  if (distort_model == nullptr && type != CameraDistortionModel::Raw) {
     return false;
   }
 
@@ -56,6 +56,9 @@ bool UndistortionHandler::InitParams(size_t width, size_t height, double k1,
                                      double fx, double fy, double cx,
                                      double cy) {
   if (type != CameraDistortionModel::Brown) {
+    return false;
+  }
+  if (width == 0 || height == 0 || !distort_model) {
     return false;
   }
 
@@ -93,6 +96,9 @@ bool UndistortionHandler::InitParams(size_t width, size_t height, double k1,
   if (type != CameraDistortionModel::Kannala) {
     return false;
   }
+  if (width == 0 || height == 0 || !distort_model) {
+    return false;
+  }
 
   width_  = width;
   height_ = height;
@@ -123,6 +129,9 @@ bool UndistortionHandler::InitParams(size_t width, size_t height, double k1,
 
 bool UndistortionHandler::InitParams(size_t width, size_t height,
                                      const Eigen::VectorXf& params) {
+  if (width == 0 || height == 0 || !distort_model) {
+    return false;
+  }
   width_  = width;
   height_ = height;
   // std::cout << "width_: " << width << std::endl;
@@ -178,11 +187,19 @@ bool UndistortionHandler::Init(const std::string& sensor_name) {
 }
 
 bool UndistortionHandler::Handle(const cv::Mat& src_img, cv::Mat* dst_img) {
-  if (dst_img == nullptr) {
+  if (dst_img == nullptr || src_img.empty()) {
     return false;  // 防止空指针
   }
 
   if (!inited_) {
+    return false;
+  }
+  if (type == CameraDistortionModel::Raw) {
+    // 把 src_img 的像素数据复制到 dst_img 自己的数据缓冲区，两者之后互不共享这块图像数据。
+    src_img.copyTo(*dst_img);
+    return true;
+  }
+  if (src_img.cols != width_ || src_img.rows != height_) {
     return false;
   }
 
@@ -461,6 +478,10 @@ std::pair<double, double> UndistortionHandler::ApplyFisheyeDistortion(
 
 bool UndistortionHandler::CorrectImage(const cv::Mat& src_img,
                                        cv::Mat& dst_img) {
+  if (src_img.empty() || src_img.type() != CV_8UC3 ||
+      src_img.cols != width_ || src_img.rows != height_) {
+    return false;
+  }
   /* // just copy value
   // 直接拷贝，不知道怎么回事，会报错；可能是内存对齐的问题
   for (const std::pair<Eigen::Vector2i, Eigen::Vector2i> &vec : uv_map_) {

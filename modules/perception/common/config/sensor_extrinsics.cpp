@@ -8,7 +8,7 @@ void SensorExtrinsics::SetLoadPath(const std::string& load_path) {
   LoadPath = load_path;
 }
 
-void SensorExtrinsics::LoadFromName(const std::string& sensor_name,
+bool SensorExtrinsics::LoadFromName(const std::string& sensor_name,
                                     const std::string& ext) {
   std::string sensor_file = LoadPath + "/" + sensor_name + ext;
 
@@ -16,14 +16,14 @@ void SensorExtrinsics::LoadFromName(const std::string& sensor_name,
   std::cout << ">>>>>>>> " << sensor_name << "_" << sensor_p_num << " : "
             << std::endl;
 
-  ReadFileWrapper(sensor_file);
+  return ReadFileWrapper(sensor_file);
 }
 
-void SensorExtrinsics::LoadFromFile(const std::string& sensor_file) {
+bool SensorExtrinsics::LoadFromFile(const std::string& sensor_file) {
   int sensor_p_num = extrinsics_.size() + 1;
   std::cout << ">>>>>>>> " << "sensor_" << sensor_p_num << " : " << std::endl;
 
-  ReadFileWrapper(sensor_file);
+  return ReadFileWrapper(sensor_file);
 }
 
 bool SensorExtrinsics::LoadFromFileBase(const std::string& filename,
@@ -31,7 +31,6 @@ bool SensorExtrinsics::LoadFromFileBase(const std::string& filename,
   std::ifstream fin2(filename);
   if (fin2.is_open() != 1) {
     std::cerr << "Fail to open params file: " << filename << std::endl;
-    abort();
     return false;
   }
 
@@ -52,8 +51,16 @@ bool SensorExtrinsics::LoadFromFileBase(const std::string& filename,
       fin2 >> b_mm_or_m;
     }
   }
-  fin2.close();
+  if (fin2.fail() && !fin2.eof()) {
+    std::cerr << "Malformed params file: " << filename << std::endl;
+    return false;
+  }
   // clang-format on
+
+  if (!extrinsic_matrix.allFinite()) {
+    std::cerr << "Invalid extrinsic matrix in: " << filename << std::endl;
+    return false;
+  }
 
   // Set the last row for RT and P matrices
   extrinsic_matrix(3, 0) = 0;
@@ -81,7 +88,6 @@ bool SensorExtrinsics::ReadFileWrapper(const std::string& sensor_file) {
 
   if (!LoadFromFileBase(filename, *extrinsic_matrix)) {
     std::cerr << "Fail to open params file: " << filename << std::endl;
-    exit(EXIT_FAILURE);
     return false;
   }
 

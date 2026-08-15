@@ -83,9 +83,9 @@ bool RsToPcl(pcl::PointCloud<robosense_ros::PointIF>::Ptr point_rs_,
              bool structured = true);
 
 // 数据集构建
-bool Rs128ToPcl(pcl::PointCloud<robosense_ros::PointII>::Ptr point_in_,
-                pcl::PointCloud<pcl::PointXYZIRT>::Ptr point_out_,
-                bool structured = true);
+bool RsToPcl(pcl::PointCloud<robosense_ros::PointII>::Ptr point_in_,
+             pcl::PointCloud<pcl::PointXYZIRT>::Ptr point_out_,
+             bool structured = true);
 
 template <typename PointT>
 bool PclToRsSMap128(typename pcl::PointCloud<PointT>::Ptr point_in_,

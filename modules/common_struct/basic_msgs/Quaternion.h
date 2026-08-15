@@ -5,7 +5,7 @@
 
 namespace jojo {
 namespace common_struct {
-  
+
 // struct Quaternion {
 //   double qx = 0;
 //   double qy = 0;

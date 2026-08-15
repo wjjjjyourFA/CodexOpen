@@ -33,13 +33,19 @@ set(CODEX_SOURCES
   # ${CMAKE_SOURCE_DIR}/modules/perception/tools/common/show_data_3d.cpp
 )
 
-file(GLOB SOURCES
+set(SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/data_processor.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/config/sensor_config.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/config/runtime_config.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/config/interface_config.cpp
 )
 
 option(BUILD_ROS1 "Enable ROS1" OFF)
+option(BUILD_ROS2 "Enable ROS2" OFF)
+
+if(BUILD_ROS1 AND BUILD_ROS2)
+  message(FATAL_ERROR "data_processor can target only one ROS version per build")
+endif()
 
 if(BUILD_ROS1)
   # 通过 catkin 添加 ROS 支持
@@ -62,6 +68,7 @@ if(BUILD_ROS1)
     ${CMAKE_CURRENT_SOURCE_DIR}/ros1_convert.cpp
     ${CMAKE_SOURCE_DIR}/tools/common/utils/rosbag_utils.cpp
   )
+  target_compile_definitions(data_processor_ros1 PRIVATE DATA_PROCESSOR_ROS1)
 
   ## 包含头文件目录
   target_include_directories(data_processor_ros1 PUBLIC 
@@ -91,8 +98,6 @@ if(BUILD_ROS1)
   )
 endif()
 
-option(BUILD_ROS2 "Enable ROS1" OFF)
-
 if(BUILD_ROS2)
   set(CMAKE_CXX_STANDARD 17)
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -115,6 +120,7 @@ if(BUILD_ROS2)
     ${CMAKE_SOURCE_DIR}/tools/common/utils/rosbag_utils.cpp
     ${CMAKE_SOURCE_DIR}/tools/common/utils/rclcpp_utils.cpp
   )
+  target_compile_definitions(data_processor_ros2 PRIVATE DATA_PROCESSOR_ROS2)
 
   target_include_directories(data_processor_ros2 PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/ros2_message

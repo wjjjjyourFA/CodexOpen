@@ -8,7 +8,10 @@
 
 inline void show_pcd_head(const std::string& file) {
   pcl::PCLPointCloud2 cloud;
-  pcl::io::loadPCDFile(file, cloud);
+  if (pcl::io::loadPCDFile(file, cloud) < 0) {
+    std::cerr << "Failed to load PCD file: " << file << std::endl;
+    return;
+  }
 
   /* pcl > 1.12
   for (const auto& field : cloud.fields) {

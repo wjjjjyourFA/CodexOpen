@@ -145,6 +145,7 @@ list(REMOVE_DUPLICATES SRCS)
 
 # 创建静态库或动态库（建议静态）
 add_library(${PROJECT_NAME} STATIC ${SRCS})
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 target_include_directories(${PROJECT_NAME} 
   PUBLIC 
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}>

@@ -28,7 +28,7 @@ class UndistortionHandler {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   UndistortionHandler() {}
-  ~UndistortionHandler() { Release(); }
+  virtual ~UndistortionHandler() { Release(); }
 
   // bool set_device(int device);
 

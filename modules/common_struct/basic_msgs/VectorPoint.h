@@ -4,8 +4,7 @@ namespace jojo {
 namespace common_struct {
 
 struct Vector2f {
-  Vector2f(float x_ = 0, float y_ = 0) 
-      : x(x_), y(y_) {}
+  Vector2f(float x_ = 0, float y_ = 0) : x(x_), y(y_) {}
 
   float x;
   float y;
@@ -28,8 +27,7 @@ struct Vector2f {
 // # int32 z         # in cm
 
 struct Vector3f {
-  Vector3f(float x_ = 0, float y_ = 0, float z_ = 0) 
-      : x(x_), y(y_), z(z_) {}
+  Vector3f(float x_ = 0, float y_ = 0, float z_ = 0) : x(x_), y(y_), z(z_) {}
 
   float x;
   float y;
@@ -37,7 +35,7 @@ struct Vector3f {
 };
 
 struct Vector4f {
-  Vector4f(float x_ = 0, float y_ = 0, float z_ = 0, float w_ = 0) 
+  Vector4f(float x_ = 0, float y_ = 0, float z_ = 0, float w_ = 0)
       : x(x_), y(y_), z(z_), w(w_) {}
 
   float x;
@@ -47,8 +45,7 @@ struct Vector4f {
 };
 
 struct Vector3d {
-  Vector3d(double x_ = 0, double y_ = 0, double z_ = 0) 
-      : x(x_), y(y_), z(z_) {}
+  Vector3d(double x_ = 0, double y_ = 0, double z_ = 0) : x(x_), y(y_), z(z_) {}
 
   double x;
   double y;

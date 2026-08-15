@@ -1,5 +1,7 @@
 #include "tools/data_processor/ros2_convert.h"
 
+#include <stdexcept>
+
 #define foreach BOOST_FOREACH
 
 /*  注意检查输入点云的 坐标系 是右前上 还是前左上
@@ -14,7 +16,7 @@ Ros2Convert::Ros2Convert(std::shared_ptr<rclcpp::Node> nh) { nh_ = nh; }
 
 Ros2Convert::~Ros2Convert() {}
 
-void Ros2Convert::Init(std::shared_ptr<jojo::tools::RuntimeConfig> rparam,
+bool Ros2Convert::Init(std::shared_ptr<jojo::tools::RuntimeConfig> rparam,
                        std::shared_ptr<jojo::tools::InterfaceConfig> iparam) {
   rparam_ = rparam;
   iparam_ = iparam;
@@ -41,8 +43,7 @@ void Ros2Convert::Init(std::shared_ptr<jojo::tools::RuntimeConfig> rparam,
 void Ros2Convert::Run() {
   sleep(1);
   if (!rparam_->b_save_data) {
-    std::cout << "b_save_data is false! " << std::endl;
-    abort();
+    throw std::invalid_argument("Ros2Convert requires b_save_data=true");
   }
 
   rosbag2_cpp::StorageOptions storage_options;
@@ -220,7 +221,7 @@ void Ros2Convert::Run() {
   // clang-format on
   std::cout.flush();
   RCLCPP_INFO(nh_->get_logger(), "...");  // ROS日志自带刷新
-  exit(1);
+  return;
 }
 
 void Ros2Convert::Ros2bagParseBase(
@@ -495,6 +496,7 @@ void Ros2Convert::RadarHandler(
         fp_radar = fopen(file_radar, "w");
         if (fp_radar == NULL) {
           perror("Radar file create error!");
+          return;
         }
 
         for (int i = 0; i < PointCloud.size(); i++) {
@@ -556,6 +558,7 @@ void Ros2Convert::Radar4DHandler(
         fp_radar4d = fopen(file_radar4d, "w");
         if (fp_radar4d == NULL) {
           perror("Radar4D file create error!");
+          return;
         }
 
         for (int i = 0; i < PointCloud.size(); i++) {
@@ -590,6 +593,7 @@ void Ros2Convert::Radar4DHandler(
         fp_radar4d = fopen(file_radar4d, "w");
         if (fp_radar4d == NULL) {
           perror("Radar4D file create error!");
+          return;
         }
 
         float tmp_x, tmp_y, tmp_z;

@@ -11,6 +11,7 @@ CONFIG -= app_bundle
 CONFIG -= qt
 CONFIG += object_parallel_to_source
 TARGET = data_processor_ros2
+DEFINES += DATA_PROCESSOR_ROS2
 
 CODEX_PATH = $$PWD/../../../../CodexOpen
 PREFIX = $$CODEX_PATH/modules/perception
@@ -151,4 +152,3 @@ LIBS += \
   -lself_state__rosidl_typesupport_cpp \
   -lars548_interface__rosidl_typesupport_cpp \
 }
-

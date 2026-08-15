@@ -1,5 +1,7 @@
 #include "tools/data_processor/ros1_convert.h"
 
+#include <stdexcept>
+
 #define foreach BOOST_FOREACH
 
 /*  注意检查输入点云的 坐标系 是右前上 还是前左上
@@ -44,8 +46,7 @@ bool Ros1Convert::Init(std::shared_ptr<jojo::tools::RuntimeConfig> rparam,
 void Ros1Convert::Run() {
   sleep(1);
   if (!rparam_->b_save_data) {
-    std::cout << "b_save_data is false! " << std::endl;
-    abort();
+    throw std::invalid_argument("Ros1Convert requires b_save_data=true");
   }
 
   rosbag::Bag bag;
@@ -203,7 +204,7 @@ void Ros1Convert::Run() {
   ROS_INFO("\033[1;32m----> txt file generated over.\033[0m");
   std::cout.flush();
   ROS_INFO("...");  // ROS日志自带刷新
-  exit(1);
+  return;
 }
 
 void Ros1Convert::Ros1bagParseBase(const rosbag::MessageInstance& m) {
@@ -483,6 +484,7 @@ void Ros1Convert::RadarHandler(const rosbag::MessageInstance& m) {
         fp_radar = fopen(file_radar, "w");
         if (fp_radar == NULL) {
           perror("Radar file create error!");
+          return;
         }
 
         for (int i = 0; i < PointCloud.size(); i++) {
@@ -533,6 +535,7 @@ void Ros1Convert::RadarHandler(const rosbag::MessageInstance& m) {
         fp_radar = fopen(file_radar, "w");
         if (fp_radar == NULL) {
           perror("Radar file create error!");
+          return;
         }
 
         for (int i = 0; i < PointCloud.size(); i++) {
@@ -593,6 +596,7 @@ void Ros1Convert::Radar4DHandler(const rosbag::MessageInstance& m, int idx) {
         fp_radar4d = fopen(file_radar4d, "w");
         if (fp_radar4d == NULL) {
           perror("Radar4D file create error!");
+          return;
         }
 
         for (int i = 0; i < PointCloud.size(); i++) {
@@ -655,6 +659,7 @@ void Ros1Convert::Radar4DHandler(const rosbag::MessageInstance& m, int idx) {
         fp_radar4d = fopen(file_radar4d, "w");
         if (fp_radar4d == NULL) {
           perror("Radar4D file create error!");
+          return;
         }
 
         float tmp_x, tmp_y, tmp_z;

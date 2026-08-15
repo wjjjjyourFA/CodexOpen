@@ -14,9 +14,7 @@
  * limitations under the License.
  *****************************************************************************/
 
-#include "modules/common/util/string_util.h"
-
-#include <vector>
+#include "modules/common/utils/string_util.h"
 
 #include "gtest/gtest.h"
 
@@ -32,6 +30,11 @@ TEST(StringUtilTest, EncodeBase64) {
   EXPECT_EQ("Zm9vYg==", EncodeBase64("foob"));
   EXPECT_EQ("Zm9vYmE=", EncodeBase64("fooba"));
   EXPECT_EQ("Zm9vYmFy", EncodeBase64("foobar"));
+}
+
+TEST(StringUtilTest, EncodeBase64BinaryData) {
+  EXPECT_EQ("AID/", EncodeBase64(std::string("\0\x80\xff", 3)));
+  EXPECT_EQ("AGEAYQ==", EncodeBase64(std::string("\0a\0a", 4)));
 }
 
 }  // namespace util

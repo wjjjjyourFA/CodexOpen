@@ -22,8 +22,7 @@ struct PoseStamped {
 
   // 构造函数
   PoseStamped() = default;  // 所有成员会按照它们各自的默认构造规则来初始化
-  PoseStamped(const Header& h, const std::uint64_t& ts,
-              const Pose6D& p)
+  PoseStamped(const Header& h, const std::uint64_t& ts, const Pose6D& p)
       : header(h), recv_timestamp(ts), pose(p) {}
 };
 

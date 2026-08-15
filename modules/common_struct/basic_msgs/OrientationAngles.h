@@ -9,11 +9,11 @@
 
 namespace jojo {
 namespace common_struct {
-  
+
 struct OrientationAngles {  // rad
-  double roll;
-  double pitch;
-  double azimuth;
+  double roll{};
+  double pitch{};
+  double azimuth{};
 };
 
 }  // namespace common_struct

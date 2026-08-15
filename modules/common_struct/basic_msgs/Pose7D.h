@@ -1,4 +1,4 @@
-// # This represents a vector in free space. 
+// # This represents a vector in free space.
 
 // Pose6DInt pose
 
@@ -10,11 +10,11 @@
 
 namespace jojo {
 namespace common_struct {
-  
+
 struct Pose7D {
   Pose6D pose;
 
-  double speed;
+  double speed{};
 };
 
 }  // namespace common_struct

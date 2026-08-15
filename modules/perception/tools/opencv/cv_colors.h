@@ -3,6 +3,8 @@
 
 #include <opencv2/opencv.hpp>
 
+#include "modules/perception/tools/opencv/common.h"
+
 cv::Scalar GetColor(int index);
 
 cv::Scalar GetColorByDistance(float distance, float max_range = 100.0f,

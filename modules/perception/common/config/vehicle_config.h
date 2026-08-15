@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include <iostream>
 #include <fstream>  // 用于 std::ifstream
+#include <iostream>
 #include <memory>
 #include <vector>
 
@@ -19,14 +19,14 @@ class VehicleConfig {
 
   void SetLoadPath(const std::string& load_path);
 
-  void LoadFromFile(const std::string& config_file);
+  bool LoadFromFile(const std::string& config_file);
 
-  float RONI_min_x;
-  float RONI_max_x;
-  float RONI_min_y;
-  float RONI_max_y;
-  float RONI_min_z;
-  float RONI_max_z;
+  float RONI_min_x = 0.0f;
+  float RONI_max_x = 0.0f;
+  float RONI_min_y = 0.0f;
+  float RONI_max_y = 0.0f;
+  float RONI_min_z = 0.0f;
+  float RONI_max_z = 0.0f;
 
  private:
   std::string LoadPath = "";

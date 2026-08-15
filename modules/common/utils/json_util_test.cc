@@ -14,12 +14,14 @@
  * limitations under the License.
  *****************************************************************************/
 
-#include "modules/common/util/json_util.h"
+#include "modules/common/utils/json_util.h"
 
 #include "gmock/gmock.h"
-#include "google/protobuf/util/json_util.h"
 #include "gtest/gtest.h"
+
 #include "modules/common_msgs/basic_msgs/error_code.pb.h"
+
+#include "google/protobuf/util/json_util.h"
 
 namespace apollo {
 namespace common {
@@ -76,6 +78,24 @@ TEST(JsonUtilTest, GetStringVector) {
   // String array.
   EXPECT_TRUE(JsonUtil::GetStringVector(json_obj, "str_array", &value));
   EXPECT_THAT(value, testing::ElementsAre("str1", "str2"));
+}
+
+TEST(JsonUtilTest, RejectsEmptyAndMalformedPaths) {
+  const Json json_obj = {
+      {"nested", {{"text", "value"}, {"enabled", true}, {"count", 3}}}};
+  std::string text;
+  bool enabled = false;
+  int count    = 0;
+
+  EXPECT_FALSE(JsonUtil::GetStringByPath(json_obj, "", &text));
+  EXPECT_FALSE(JsonUtil::GetBooleanByPath(json_obj, "nested.", &enabled));
+  EXPECT_FALSE(JsonUtil::GetNumberByPath(json_obj, ".nested", &count));
+  EXPECT_TRUE(JsonUtil::GetStringByPath(json_obj, "nested.text", &text));
+  EXPECT_EQ("value", text);
+  EXPECT_TRUE(JsonUtil::GetBooleanByPath(json_obj, "nested.enabled", &enabled));
+  EXPECT_TRUE(enabled);
+  EXPECT_TRUE(JsonUtil::GetNumberByPath(json_obj, "nested.count", &count));
+  EXPECT_EQ(3, count);
 }
 
 }  // namespace util

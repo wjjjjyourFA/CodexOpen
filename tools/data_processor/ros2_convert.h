@@ -149,7 +149,7 @@ class Ros2Convert {
   std::shared_ptr<jojo::tools::RuntimeConfig> rparam_;
   std::shared_ptr<jojo::tools::InterfaceConfig> iparam_;
 
-  std::shared_ptr<rclcpp::Node> node;
+  std::shared_ptr<rclcpp::Node> nh_;
 
   int num_global_pose = 0;
   int num_local_pose  = 0;
@@ -195,13 +195,13 @@ void Ros2Convert::PrintParserCount(
     const std::string& name) {
   size_t size = counts.size();
   if (size == 0) {
-    RCLCPP_INFO(node->get_logger(), "----> message %s num %d", name.c_str(), 0);
+    RCLCPP_INFO(nh_->get_logger(), "----> message %s num %d", name.c_str(), 0);
   } else if (size == 1) {
-    RCLCPP_INFO(node->get_logger(), "----> message %s num %d", name.c_str(),
+    RCLCPP_INFO(nh_->get_logger(), "----> message %s num %d", name.c_str(),
                 counts.at(0).num);
   } else {
     for (size_t i = 0; i < size; ++i) {
-      RCLCPP_INFO(node->get_logger(), "----> message %s_%zu num %d",
+      RCLCPP_INFO(nh_->get_logger(), "----> message %s_%zu num %d",
                   name.c_str(), i + 1, counts.at(i).num);
     }
   }

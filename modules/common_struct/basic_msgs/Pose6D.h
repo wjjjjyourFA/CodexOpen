@@ -35,10 +35,10 @@ struct Pose6D {
 };
 
 struct SE3Pose {
-  double time;
+  double time{};
 
-  Eigen::Vector3d pos;  // 平移
-  Eigen::Quaterniond rot;  // 旋转
+  Eigen::Vector3d pos{Eigen::Vector3d::Zero()};  // 平移
+  Eigen::Quaterniond rot{Eigen::Quaterniond::Identity()};  // 旋转
 
   // 转 4x4 矩阵（float，给PCL用）
   Eigen::Matrix4f matrix() const {
@@ -61,10 +61,11 @@ struct SE3Pose {
   }
 
   // 从矩阵构造
-  static SE3Pose FromMatrix(const Eigen::Matrix4d& T) {
+  static SE3Pose FromMatrix(const Eigen::Matrix4d& T, double timestamp = 0.0) {
     SE3Pose pose;
-    pose.pos = T.block<3, 1>(0, 3);
-    pose.rot = Eigen::Quaterniond(T.block<3, 3>(0, 0));
+    pose.time = timestamp;
+    pose.pos  = T.block<3, 1>(0, 3);
+    pose.rot  = Eigen::Quaterniond(T.block<3, 3>(0, 0));
     return pose;
   }
 
@@ -72,8 +73,9 @@ struct SE3Pose {
   SE3Pose inverse() const {
     SE3Pose inv;
 
-    inv.rot = rot.conjugate();
-    inv.pos = -(inv.rot * pos);
+    inv.time = time;
+    inv.rot  = rot.conjugate();
+    inv.pos  = -(inv.rot * pos);
 
     return inv;
   }
@@ -87,8 +89,10 @@ struct SE3Pose {
   SE3Pose operator*(const SE3Pose& other) const {
     SE3Pose res;
 
-    res.rot = rot * other.rot;
-    res.pos = rot * other.pos + pos;
+    // A composed transform belongs to the left-hand pose's observation time.
+    res.time = time;
+    res.rot  = rot * other.rot;
+    res.pos  = rot * other.pos + pos;
 
     return res;
   }

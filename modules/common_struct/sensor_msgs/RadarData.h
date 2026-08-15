@@ -36,9 +36,9 @@ namespace common_struct {
 
 // 目标级信息
 struct RadarObs {
-  std::uint64_t time;
+  std::uint64_t time{};
 
-  std::int32_t obstacle_id;
+  std::int32_t obstacle_id{};
 
   /*  relative position
   // longitude distance to the radar; (+) = forward; unit = m
@@ -56,32 +56,32 @@ struct RadarObs {
   */
   Vector2f velocity;
 
-  float azimuth;
+  float azimuth{};
 
-  float doppler;
+  float doppler{};
 
   // obstacle Radar Cross-Section; unit = dBsm
-  double rcs;
+  double rcs{};
 
   // 0 = moving, 1 = stationary, 2 = oncoming, 3 = stationary candidate
   // 4 = unknown, 5 = crossing stationary, 6 = crossing moving, 7 = stopped
-  std::int32_t dynprop;  // dynamic_property
+  std::int32_t dynprop{};  // dynamic_property
 
-  float probexist;  // prob_of_exist
+  float probexist{};  // prob_of_exist
 
   // 0: point; 1: car; 2: truck; 3: pedestrian; 4: motorcycle; 5: bicycle; 6:
   // wide; 7: unknown
-  std::int32_t obstacle_class;
+  std::int32_t obstacle_class{};
 
   Vector2f position_rms;
   Vector2f velocity_rms;
 
-  float azimuth_rms;
-  float doppler_rms;
+  float azimuth_rms{};
+  float doppler_rms{};
 };
 
 struct RadarData {
-  std::uint64_t time;
+  std::uint64_t time{};
 
   std::vector<RadarObs> obs;
 };

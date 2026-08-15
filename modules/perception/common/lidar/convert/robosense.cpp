@@ -550,14 +550,10 @@ bool RsToPcl(pcl::PointCloud<robosense_ros::Point>::Ptr point_rs_,
   return true;
 }
 
-bool Rs128ToPcl(pcl::PointCloud<robosense_ros::PointII>::Ptr point_in_,
-                pcl::PointCloud<pcl::PointXYZIRT>::Ptr point_out_,
-                bool structured) {
-  if (!point_in_ || !point_out_ ||
-      (structured &&
-       (point_in_->height != 128 || point_in_->width == 0 ||
-        static_cast<size_t>(point_in_->width) * point_in_->height !=
-            point_in_->points.size()))) {
+bool RsToPcl(pcl::PointCloud<robosense_ros::PointII>::Ptr point_in_,
+             pcl::PointCloud<pcl::PointXYZIRT>::Ptr point_out_,
+             bool structured) {
+  if (!point_in_ || !point_out_) {
     return false;
   }
   // std::cout << "omp not enabled" << std::endl;
@@ -588,6 +584,8 @@ bool Rs128ToPcl(pcl::PointCloud<robosense_ros::PointII>::Ptr point_in_,
 
   point_out_->clear();
   if (structured) {
+    // TODO: 按不同的雷达类型，使用不同的 sortMap
+
     // 获取 sortMap（128线映射表），仅在 structured 模式使用
     // GetMap128().laser_sort[physical_ring] => sorted_row_index
     const auto& smap = GetMap128();

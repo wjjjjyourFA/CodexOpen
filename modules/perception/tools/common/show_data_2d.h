@@ -10,6 +10,7 @@
 #include <pcl/point_types.h>
 
 #include "modules/perception/common/base/point.h"
+#include "modules/perception/tools/common/bev_projector.h"
 #include "modules/perception/tools/pcl/point_types.h"
 
 // clang-format off
@@ -30,33 +31,40 @@ void show2d_lidar_data_normal(const typename pcl::PointCloud<PointT>::Ptr& cloud
                               cv::Mat* ext_img = nullptr) {
   if (!cloud || cloud->empty()) return;
 
-  static int width  = 1024;
-  static int height = 768;
+  int width  = 1024;
+  int height = 768;
   // static int width  = 1920;
   // static int height = 1080;
 
-  static float resolution = 100 / 20.0f;
-  static int width_half   = width / 2;
-  static int height_half  = height / 2;
+  static constexpr float resolution = 100 / 20.0f;
 
   cv::Mat LidarImage;
   if (ext_img != nullptr) {
+    if (!jojo::perception::tools::IsValidBgrImage(*ext_img)) {
+      std::cerr << "ext_img must be a non-empty CV_8UC3 image" << std::endl;
+      return;
+    }
     LidarImage = *ext_img;
+    width      = LidarImage.cols;
+    height     = LidarImage.rows;
   } else {
     LidarImage = cv::Mat::zeros(height, width, CV_8UC3);
   }
+  const int width_half  = width / 2;
+  const int height_half = height / 2;
+  const jojo::perception::tools::BevProjector projector(
+      jojo::perception::tools::BevRenderConfig{width, height, resolution});
 
   for (size_t i = 0; i < cloud->size(); i++) {
-    int x = (int)(-cloud->points[i].y * resolution + width_half);
-    int y = (int)(height_half - cloud->points[i].x * resolution);
-    if (x > 0 && y > 0 && x < width && y < height) {
+    jojo::perception::tools::BevPixel pixel;
+    if (projector.Project(cloud->points[i].x, cloud->points[i].y, &pixel)) {
       cv::Vec3b color(0, 97, static_cast<uchar>(cloud->points[i].z));
 
       if (mode == 0) {
         // LidarImage.at<cv::Vec3b>(y,x) = cv::Vec3b(0, 97, 255);
-        LidarImage.at<cv::Vec3b>(y, x) = color;
+        LidarImage.at<cv::Vec3b>(pixel.y, pixel.x) = color;
       } else if (mode == 1) {
-        cv::circle(LidarImage, cv::Point(x, y), 1, color, -1);
+        cv::circle(LidarImage, cv::Point(pixel.x, pixel.y), 1, color, -1);
       }
     }
   }

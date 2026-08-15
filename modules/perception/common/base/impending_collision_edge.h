@@ -19,8 +19,7 @@
 #include <vector>
 
 #include "Eigen/Core"
-
-#include "modules/common/util/eigen_defs.h"
+#include "modules/common/utils/eigen_defs.h"
 
 namespace apollo {
 namespace perception {
