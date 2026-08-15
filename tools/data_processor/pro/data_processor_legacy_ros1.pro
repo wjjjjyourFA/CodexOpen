@@ -6,11 +6,12 @@ unix{
 MY_ROS_INFO = 1
 
 TEMPLATE = app
-CONFIG += console c++14
+CONFIG += console c++17
 CONFIG -= app_bundle
 CONFIG -= qt
 CONFIG += object_parallel_to_source
 TARGET = data_processor_legacy_ros1
+DEFINES += DATA_PROCESSOR_ROS1_LEGACY
 
 CODEX_PATH = $$PWD/../../../../CodexOpen
 PREFIX = $$CODEX_PATH/modules/perception
@@ -143,4 +144,3 @@ LIBS += \
   -lmessage_filters -lclass_loader -lrospack -lcpp_common \
   -lrosbag_storage \
 }
-

@@ -6,11 +6,12 @@ unix{
 MY_ROS_INFO = 1
 
 TEMPLATE = app
-CONFIG += console c++14
+CONFIG += console c++17
 CONFIG -= app_bundle
 CONFIG -= qt
 CONFIG += object_parallel_to_source
 TARGET = data_processor_ros1_fast
+DEFINES += DATA_PROCESSOR_ROS1_FAST
 
 CODEX_PATH = $$PWD/../../../../CodexOpen
 PREFIX = $$CODEX_PATH/modules/perception
@@ -61,6 +62,9 @@ SOURCES += \
 SOURCES -= \
   $$PREFIX/tools/pcl/pcl_viewer_test.cpp \
   $$SELF_PATH/config/runtime_config_legacy.cpp \
+  $$PREFIX/common/config/config_core_test.cpp \
+  $$PREFIX/common/camera/params/camera_params_core_test.cpp \
+  $$PREFIX/common/lidar/convert/lidar_convert_core_test.cpp
 
 HEADERS += \
   $$CODEX_PATH/cyber/binary.h \
@@ -148,4 +152,3 @@ LIBS += \
   -lmessage_filters -lclass_loader -lrospack -lcpp_common \
   -lrosbag_storage \
 }
-

@@ -27,7 +27,7 @@ enum class RadarType { UNKNOWN = 0, ESR, ARS408 };
 
 enum class Radar4dType { UNKNOWN = 0, ARS548, ARBE };
 
-enum class LidarType { UNKNOWN = 0, RS128, M1P, MID360 };
+enum class LidarType { UNKNOWN = 0, RS128, M1P, MID360, RSEMX, RSE1};
 
 class SensorRegistry {
  public:

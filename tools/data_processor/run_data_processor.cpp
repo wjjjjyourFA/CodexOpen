@@ -1,73 +1,105 @@
+#include <exception>
+#include <iostream>
+#include <stdexcept>
 #include <thread>
 
 #include "modules/common/environment_conf.h"
-#if defined(ENABLE_ROS1)
-// #include "tools/data_processor/ros1_convert_legacy.h"
-// #include "tools/data_processor/ros1_convert.h"
+#if defined(DATA_PROCESSOR_ROS1_LEGACY)
+#include "tools/data_processor/ros1_convert_legacy.h"
+#elif defined(DATA_PROCESSOR_ROS1)
+#include "tools/data_processor/ros1_convert.h"
+#elif defined(DATA_PROCESSOR_ROS1_FAST)
 #include "tools/data_processor/ros1_convert_fast.h"
-#elif defined(ENABLE_ROS2)
+#elif defined(DATA_PROCESSOR_ROS2)
 #include "tools/data_processor/ros2_convert.h"
+#else
+#error "Define exactly one DATA_PROCESSOR_ROS1*, or DATA_PROCESSOR_ROS2"
 #endif
 
 using namespace std;
 using namespace jojo::tools;
 
 int main(int argc, char** argv) {
-  // clang-format off
-  std::string name = "DataProcessor";
-  std::string config_path = "./../../config/DataProcessor/DataProcessor.ini";
-  // std::string config_path = "./../../config/DataProcessor/DataProcessor.json";
-  // clang-format on
+  try {
+    // clang-format off
+    std::string name = "DataProcessor";
+    std::string config_path = "./../../config/DataProcessor/DataProcessor.ini";
+    // std::string config_path = "./../../config/DataProcessor/DataProcessor.json";
+    // clang-format on
 
-  // 如果命令行参数提供了自定义配置路径，则使用该路径
-  if (argc > 1) {
-    config_path = argv[1];
-  }
+    // 如果命令行参数提供了自定义配置路径，则使用该路径
+    if (argc > 1) {
+      config_path = argv[1];
+    }
 
-  auto runtime_config = std::make_shared<jojo::tools::RuntimeConfig>();
-  runtime_config->set_name(name);
-  runtime_config->LoadConfig(config_path);
+    auto runtime_config = std::make_shared<jojo::tools::RuntimeConfig>();
+    runtime_config->set_name(name);
+    runtime_config->LoadConfig(config_path);
 
-  std::string if_config_path = "./../../config/DataProcessor/Interface.ini";
+    std::string if_config_path = "./../../config/DataProcessor/Interface.ini";
+    if (argc > 2) {
+      if_config_path = argv[2];
+    }
 
-  auto interface_config = std::make_shared<jojo::tools::InterfaceConfig>();
-  interface_config->set_name(name);
-  interface_config->LoadConfig(if_config_path);
+    auto interface_config = std::make_shared<jojo::tools::InterfaceConfig>();
+    interface_config->set_name(name);
+    interface_config->LoadConfig(if_config_path);
 
-#if defined(ENABLE_ROS1)
-  ROS_INFO("\033[1;32m----> DataProcessor Started (auto version).\033[0m");
+#if !defined(DATA_PROCESSOR_ROS2)
 
   ros::init(argc, argv, name);
+  ROS_INFO("\033[1;32m----> DataProcessor Started (auto version).\033[0m");
   ros::NodeHandle nh;
   ros::NodeHandle private_nh("~");
 
   auto _pRos1Convert = std::make_shared<Ros1Convert>(nh, private_nh);
-  _pRos1Convert->Init(runtime_config, interface_config);
+  if (!_pRos1Convert->Init(runtime_config, interface_config)) {
+    throw std::runtime_error("failed to initialize ROS1 data processor");
+  }
 
-  // _pRos1Convert->Run();
-
-  std::thread a(&Ros1Convert::Run, _pRos1Convert);
-  a.detach();
+  int worker_status = 0;
+  std::thread worker([&]() {
+    try {
+      _pRos1Convert->Run();
+    } catch (const std::exception& e) {
+      std::cerr << "DataProcessor worker failed: " << e.what() << std::endl;
+      worker_status = 1;
+    }
+    ros::shutdown();
+  });
 
   // spin 与 thread 联动，保证了 lidar drvier 触发顺序
   ros::spin();
+  if (worker.joinable()) worker.join();
+  return worker_status;
 
-#elif defined(ENABLE_ROS2)
+#else
   rclcpp::init(argc, argv);
   auto nh = std::make_shared<rclcpp::Node>(name);
 
   auto _pRos2Convert = std::make_shared<Ros2Convert>(nh);
-  _pRos2Convert->Init(runtime_config, interface_config);
+  if (!_pRos2Convert->Init(runtime_config, interface_config)) {
+    throw std::runtime_error("failed to initialize ROS2 data processor");
+  }
 
-  // _pRos2Convert->Run();
-
-  std::thread a(&Ros2Convert::Run, _pRos2Convert);
-  a.detach();
+  int worker_status = 0;
+  std::thread worker([&]() {
+    try {
+      _pRos2Convert->Run();
+    } catch (const std::exception& e) {
+      std::cerr << "DataProcessor worker failed: " << e.what() << std::endl;
+      worker_status = 1;
+    }
+    rclcpp::shutdown();
+  });
 
   rclcpp::spin(nh);
-  rclcpp::shutdown();
+  if (worker.joinable()) worker.join();
+  return worker_status;
 
 #endif
-
-  return 0;
+  } catch (const std::exception& e) {
+    std::cerr << "DataProcessor startup failed: " << e.what() << std::endl;
+    return 1;
+  }
 }

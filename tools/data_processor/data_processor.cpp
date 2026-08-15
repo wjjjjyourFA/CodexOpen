@@ -1,5 +1,12 @@
 #include "tools/data_processor/data_processor.h"
 
+#include <cerrno>
+#include <cstring>
+#include <limits>
+#include <memory>
+#include <stdexcept>
+#include <system_error>
+
 #define foreach BOOST_FOREACH
 
 namespace jojo {
@@ -10,10 +17,13 @@ namespace cfg    = jojo::perception::config;
 
 DataProcessor::DataProcessor() {}
 
-DataProcessor::~DataProcessor() {}
+DataProcessor::~DataProcessor() { Stop(); }
 
 bool DataProcessor::Init(std::shared_ptr<jojo::tools::RuntimeConfig> rparam,
                          std::shared_ptr<jojo::tools::InterfaceConfig> iparam) {
+  if (rparam == nullptr || iparam == nullptr) {
+    throw std::invalid_argument("DataProcessor configuration must not be null");
+  }
   rparam_ = rparam;
   iparam_ = iparam;
 
@@ -67,8 +77,7 @@ void DataProcessor::InitUndistortion() {
 void DataProcessor::Start() {
   sleep(1);
   if (!rparam_->b_save_data) {
-    std::cout << "b_save_data is false! " << std::endl;
-    abort();
+    throw std::invalid_argument("DataProcessor requires b_save_data=true");
   }
 
   MkdirDataFolder();
@@ -161,34 +170,44 @@ void DataProcessor::OpenWriteFile() {
   // 使用std::string和std::ofstream来处理文件路径和打开文件
   // 使用 fopen 打开文件，并赋值给 FILE* 类型的指针
   // clang-format off
-  if (iparam_->b_global_pose) {
-    std::string file_global_pose = this->prefix + "/" + "global_pose.txt";
-    fp_global_pose = fopen(file_global_pose.c_str(), "w");
-  }
-  if (iparam_->b_local_pose) {
-    std::string file_local_pose = this->prefix + "/" + "local_pose.txt";
-    fp_local_pose = fopen(file_local_pose.c_str(), "w");
-  }
-  // 你可以继续打开其他文件
-  if (iparam_->b_imu_data) {
-    std::string file_imu_data = this->prefix + "/" + "imu_data.txt";
-    fp_imu_data = fopen(file_imu_data.c_str(), "w");
+  const auto open_file = [](const std::string& path) {
+    FILE* file = std::fopen(path.c_str(), "w");
+    if (file == nullptr) {
+      throw std::system_error(errno, std::generic_category(), path);
+    }
+    return file;
+  };
+
+  try {
+    if (iparam_->b_global_pose) {
+      fp_global_pose = open_file(this->prefix + "/global_pose.txt");
+    }
+    if (iparam_->b_local_pose) {
+      fp_local_pose = open_file(this->prefix + "/local_pose.txt");
+    }
+    // 你可以继续打开其他文件
+    if (iparam_->b_imu_data) {
+      fp_imu_data = open_file(this->prefix + "/imu_data.txt");
+    }
+  } catch (...) {
+    CloseWriteFile();
+    throw;
   }
   // clang-format on
 }
 
 void DataProcessor::CloseWriteFile() {
   // 确保文件指针被关闭
-  if (iparam_->b_global_pose && fp_global_pose != nullptr) {
-    fclose(fp_global_pose);
-  }
-  if (iparam_->b_local_pose && fp_local_pose != nullptr) {
-    fclose(fp_local_pose);
-  }
+  const auto close_file = [](FILE*& file) {
+    if (file != nullptr) {
+      std::fclose(file);
+      file = nullptr;
+    }
+  };
+  close_file(fp_global_pose);
+  close_file(fp_local_pose);
+  close_file(fp_imu_data);
   // 继续关闭其他文件
-  if (iparam_->b_imu_data && fp_imu_data != nullptr) {
-    fclose(fp_imu_data);
-  }
 }
 
 void DataProcessor::SaveLidarData(pcl::PointCloud<pcl::PointXYZI>::Ptr Cloud,
@@ -196,11 +215,14 @@ void DataProcessor::SaveLidarData(pcl::PointCloud<pcl::PointXYZI>::Ptr Cloud,
   char buff[500];
   if (rparam_->use_bin_or_pcd == 0) {
     sprintf(buff, "%s/%013ld.bin", path_lidar.c_str(), filename);
-    FILE* fp_lidar;
-    fp_lidar = fopen(buff, "wb");
-    if (fp_lidar == NULL) {
-      perror("Lidar file create error!");
+    FILE* raw_file = std::fopen(buff, "wb");
+    if (raw_file == nullptr) {
+      std::cerr << "Lidar file create error: " << buff << ": "
+                << std::strerror(errno) << std::endl;
+      return;
     }
+    const std::unique_ptr<FILE, decltype(&std::fclose)> fp_lidar(raw_file,
+                                                                 &std::fclose);
     int tmp_x, tmp_y, tmp_z, tmp_intensity = 1;
     for (int i = 0; i < Cloud->points.size(); i++) {
       tmp_x         = int(Cloud->points[i].x * 100);
@@ -222,14 +244,14 @@ void DataProcessor::SaveLidarData(pcl::PointCloud<pcl::PointXYZI>::Ptr Cloud,
         continue;
       }
 
-      fwrite(&(tmp_x), sizeof(int), 1, fp_lidar);
-      fwrite(&(tmp_y), sizeof(int), 1, fp_lidar);
-      fwrite(&(tmp_z), sizeof(int), 1, fp_lidar);
-      fwrite(&tmp_intensity, sizeof(int), 1, fp_lidar);
+      const int point[] = {tmp_x, tmp_y, tmp_z, tmp_intensity};
+      if (std::fwrite(point, sizeof(int), 4, fp_lidar.get()) != 4) {
+        std::cerr << "Lidar file write error: " << buff << std::endl;
+        return;
+      }
       // std::cout << tmp_x << ", " << tmp_y << ", " << tmp_z << ", "
       //           << tmp_intensity << std::endl;
     }
-    fclose(fp_lidar);
   } else {
     sprintf(buff, "%s/%013ld.pcd", path_lidar.c_str(), filename);
     /*
@@ -291,7 +313,7 @@ void DataProcessor::ProcessCameraImage(cv::Mat& image, uint64_t filename,
 
     default:
       std::cout << "set mode error!" << std::endl;
-      break;
+      return;
   }
 
   if (rparam_->b_do_undistort) {
@@ -387,40 +409,43 @@ void DataProcessor::ProcessCameraImage(cv::Mat& image, uint64_t filename,
   }
 }
 
-bool DataProcessor::CheckSampledTime(uint64_t msg_time, size_t& sampled_index,
-                                     int64_t& diff) {
+DataProcessor::SampledTimeState DataProcessor::GetSampledTimeState(
+    uint64_t msg_time, size_t sampled_index, int64_t& diff) const {
   if (rparam_->prepare_data_num == -1) {
-    return true;
+    return SampledTimeState::kInWindow;
   }
 
+  std::lock_guard<std::mutex> lock(sampled_time_mutex_);
   if (sampled_time.empty() || sampled_index >= sampled_time.size()) {
-    return false;
+    return SampledTimeState::kFinished;
   }
 
-  static const int tolerance = 150;
-
-  uint64_t ref_time = sampled_time[sampled_index];
-  // std::cout << " " << ref_time << " " << msg_time << std::endl;
-  diff = static_cast<int64_t>(msg_time) - static_cast<int64_t>(ref_time);
-
-  if (diff < -tolerance) {
-    // 太早
-    return false;
+  const uint64_t ref_time = sampled_time[sampled_index];
+  if (msg_time >= ref_time) {
+    const uint64_t delta = msg_time - ref_time;
+    diff = delta > static_cast<uint64_t>(std::numeric_limits<int64_t>::max())
+               ? std::numeric_limits<int64_t>::max()
+               : static_cast<int64_t>(delta);
+  } else {
+    const uint64_t delta = ref_time - msg_time;
+    diff = delta > static_cast<uint64_t>(std::numeric_limits<int64_t>::max())
+               ? std::numeric_limits<int64_t>::min()
+               : -static_cast<int64_t>(delta);
   }
 
-  if (diff > tolerance) {
-    // 太晚，移除过期的时间戳
-    // sampled_time.erase(sampled_time.begin());
-    // 推进游标
-    // ++sampled_index;
-    return false;
+  if (diff < -kSampledTimeToleranceMs) {
+    return SampledTimeState::kTooEarly;
   }
+  if (diff > kSampledTimeToleranceMs) {
+    return SampledTimeState::kTooLate;
+  }
+  return SampledTimeState::kInWindow;
+}
 
-  // 在允许的范围内，命中消费掉这个时间点
-  // 如果有 12 14 16 都像 15 逼近的话，会导致在 12 就把游标推进
-  // 因此修改为由外部判断游标是否需要推进
-  // ++sampled_index;
-  return true;
+bool DataProcessor::CheckSampledTime(uint64_t msg_time,
+                                     size_t& sampled_index, int64_t& diff) {
+  return GetSampledTimeState(msg_time, sampled_index, diff) ==
+         SampledTimeState::kInWindow;
 }
 
 bool DataProcessor::PushSampledTime(uint64_t msg_time) {
@@ -430,14 +455,20 @@ bool DataProcessor::PushSampledTime(uint64_t msg_time) {
     return true;
   }
 
+  std::lock_guard<std::mutex> lock(sampled_time_mutex_);
+  if (b_final.load()) {
+    return false;
+  }
+
   if (b_first_grab) {
     start_time   = msg_time;
     b_first_grab = false;
   }
 
   // s ==> ms
-  const int useless_time = rparam_->useless_time * 1000;
-  if (msg_time - start_time < useless_time) {
+  const uint64_t useless_time =
+      static_cast<uint64_t>(rparam_->useless_time) * 1000U;
+  if (msg_time < start_time || msg_time - start_time < useless_time) {
     return false;
   }
 
@@ -449,15 +480,17 @@ bool DataProcessor::PushSampledTime(uint64_t msg_time) {
   }
   data_count++;
 
-  if (sampled_time.size() > rparam_->prepare_data_num) {
-    b_final = true;
+  if (sampled_time.size() >=
+      static_cast<size_t>(rparam_->prepare_data_num)) {
+    b_final.store(true);
   }
 
   // 表示本次采样有效
-  return b_grab && !b_final;
+  return b_grab;
 }
 
 bool DataProcessor::IsEnd(size_t& sampled_index) {
+  std::lock_guard<std::mutex> lock(sampled_time_mutex_);
   return sampled_index >= sampled_time.size();
 }
 

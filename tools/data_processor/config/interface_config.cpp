@@ -1,5 +1,7 @@
 #include "tools/data_processor/config/interface_config.h"
 
+#include <stdexcept>
+
 namespace jojo {
 namespace tools {
 
@@ -40,10 +42,23 @@ void InterfaceConfig::LoadConfig(const std::string& config_path) {
     topic_radar_sub = pt.get<std::string>("topics.topic_radar_sub", "");
     topic_radar4d_sub = ReadStringArray(pt, "topics.topic_radar4d_sub_", b_radar4d);
 
+    if (b_radar < 0 || b_radar4d < 0 || b_camera < 0 || b_infra < 0 ||
+        b_star < 0) {
+      throw std::invalid_argument("sensor counts must be non-negative");
+    }
+    if (topic_camera_sub.size() != static_cast<size_t>(b_camera) ||
+        topic_infra_sub.size() != static_cast<size_t>(b_infra) ||
+        topic_star_sub.size() != static_cast<size_t>(b_star) ||
+        topic_radar4d_sub.size() != static_cast<size_t>(b_radar4d)) {
+      throw std::invalid_argument(
+          "enabled sensor count does not match configured topic count");
+    }
+
     // 打印其他参数...
     // clang-format on
   } catch (const std::exception& e) {
-    std::cerr << "Error reading ini file: " << e.what() << std::endl;
+    throw std::runtime_error("failed to load interface config '" + config_path +
+                             "': " + e.what());
   }
 }
 

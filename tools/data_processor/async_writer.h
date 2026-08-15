@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <mutex>
 #include <queue>
+#include <stdexcept>
 #include <string>
 #include <thread>
 #include <vector>
@@ -12,15 +13,20 @@
 class AsyncWriter {
  public:
   explicit AsyncWriter(FILE* fp) : fp_(fp), running_(true) {
+    if (fp_ == nullptr) {
+      throw std::invalid_argument("AsyncWriter requires a valid FILE pointer");
+    }
     writer_thread_ = std::thread(&AsyncWriter::WriteThread, this);
   }
 
   ~AsyncWriter() { Stop(); }
 
-  void Push(const char* data, size_t len) {
+  bool Push(const char* data, size_t len) {
     std::lock_guard<std::mutex> lk(mutex_);
+    if (!running_) return false;
     queue_.emplace(data, len);
     cv_.notify_one();
+    return true;
   }
 
   void Stop() {
@@ -35,11 +41,13 @@ class AsyncWriter {
     std::vector<std::string> batch;
     batch.reserve(1024);
 
-    while (running_ || !queue_.empty()) {
+    while (true) {
       {
         std::unique_lock<std::mutex> lk(mutex_);
 
         cv_.wait(lk, [&] { return !queue_.empty() || !running_; });
+
+        if (queue_.empty() && !running_) break;
 
         while (!queue_.empty() && batch.size() < 1024) {
           batch.emplace_back(std::move(queue_.front()));
@@ -48,13 +56,13 @@ class AsyncWriter {
       }
 
       for (auto& s : batch) {
-        fwrite(s.data(), 1, s.size(), fp_);
+        std::fwrite(s.data(), 1, s.size(), fp_);
       }
 
       batch.clear();
     }
 
-    fflush(fp_);
+    std::fflush(fp_);
   }
 
  private:

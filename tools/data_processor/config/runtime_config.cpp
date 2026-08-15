@@ -1,9 +1,12 @@
 #include "tools/data_processor/config/runtime_config.h"
 
+#include <stdexcept>
+
 namespace jojo {
 namespace tools {
 
 void RuntimeConfig::LoadConfig(const std::string& config_path) {
+  compress_params.clear();
   try {
     // 创建一个 property_tree 对象
     boost::property_tree::ptree pt;
@@ -43,6 +46,21 @@ void RuntimeConfig::LoadConfig(const std::string& config_path) {
     radar_type = pt.get<std::string>("device_names.RadarType", "");
     radar4d_type = pt.get<std::string>("device_names.Radar4DType", "");
 
+    if (sample_interval <= 0) {
+      throw std::invalid_argument("general.sample_interval must be positive");
+    }
+    if (prepare_data_num == 0 || prepare_data_num < -1) {
+      throw std::invalid_argument(
+          "general.prepare_data_num must be -1 or positive");
+    }
+    if (useless_time < 0 || distance_epsilon < 0 || intensity_epsilon < 0) {
+      throw std::invalid_argument(
+          "time and point filtering thresholds must be non-negative");
+    }
+    if (use_jpg_or_png < -1 || use_jpg_or_png > 1) {
+      throw std::invalid_argument("general.b_jpg_or_png must be -1, 0, or 1");
+    }
+
     // 打印读取的配置
     std::cout << "rosbag_path: " << rosbag_path << std::endl;
     std::cout << "rosbag_name: " << rosbag_name << std::endl;
@@ -53,7 +71,8 @@ void RuntimeConfig::LoadConfig(const std::string& config_path) {
     // 打印其他参数...
     // clang-format on
   } catch (const std::exception& e) {
-    std::cerr << "Error reading ini file: " << e.what() << std::endl;
+    throw std::runtime_error("failed to load runtime config '" + config_path +
+                             "': " + e.what());
   }
 
   switch (use_jpg_or_png) {

@@ -21,21 +21,22 @@ class RuntimeConfig : public jojo::common::config::ConfigFileBase {
  public:
   std::string rosbag_path;
   std::string rosbag_name;
-  bool b_save_data;
+  bool b_save_data{false};
   std::string save_path;
   int prepare_data_num   = -1;
   int sample_interval    = 1;
   int useless_time       = 0;  // s ==> ms
   float distance_epsilon = 1e-3;  // 小于这个就当作 0, 并移除
-  int intensity_epsilon  = 1e-3;  // 小于这个就当作 0, 并移除
+  float intensity_epsilon = 1e-3F;  // 小于这个就当作 0, 并移除
 
-  bool use_bin_or_pcd, use_txt_or_pcd;
-  int use_jpg_or_png;
+  bool use_bin_or_pcd{false};
+  bool use_txt_or_pcd{false};
+  int use_jpg_or_png{0};
 
-  bool b_compensation_cloud;
-  int b_lt_none_rt;
+  bool b_compensation_cloud{false};
+  int b_lt_none_rt{1};
 
-  bool b_do_undistort;
+  bool b_do_undistort{false};
   std::string calib_file_dir;
   std::vector<int> compress_params;
 
