@@ -4,6 +4,10 @@ namespace base = jojo::perception::base;
 
 void show3d_lidar_data(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& cloud,
                        const std::string& viewer_name) {
+  if (!cloud || cloud->empty()) {
+    return;
+  }
+
   // 适用于 单线程、局部使用。
   auto viewer =
       std::make_shared<pcl::visualization::PCLVisualizer>(viewer_name);
@@ -48,12 +52,17 @@ void show3d_lidar_data(const pcl::PointCloud<pcl::PointXYZI>::Ptr &cloud,
 */
 void show3d_lidar_data(const pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud,
                        const std::string& viewer_name) {
+  if (!cloud || cloud->empty()) {
+    return;
+  }
+
   pcl::visualization::CloudViewer viewer(viewer_name);
 
   viewer.showCloud(cloud);
 
   while (!viewer.wasStopped()) {
     // 不需要 spinOnce
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
   }
 }
 
@@ -64,6 +73,10 @@ void show3d_lidar_data_shared(
     std::shared_ptr<pcl::visualization::PCLVisualizer> viewer,
     const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& cloud,
     const std::string& cloud_name) {
+  if (!viewer || !cloud || cloud->empty()) {
+    return;
+  }
+
   // clang-format off
   pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(cloud);
   if (!viewer->updatePointCloud<pcl::PointXYZRGB>(cloud, rgb, cloud_name)) {
@@ -83,6 +96,10 @@ void show3d_lidar_data_realtime(
     std::shared_ptr<pcl::visualization::PCLVisualizer> viewer,
     pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
     const std::string& cloud_name) {
+  if (!viewer || !cloud || cloud->empty()) {
+    return;
+  }
+
   // clang-format off
   pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(cloud);
   if (!viewer->updatePointCloud<pcl::PointXYZRGB>(cloud, rgb, cloud_name)) {
@@ -98,6 +115,10 @@ void show3d_box3d_shared(
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr,
     const base::Point3DF (&vertex_p)[8],  // 使用数组传递 8 个 Point3DF 对象
     const std::string& box_name) {
+  if (!viewer) {
+    return;
+  }
+
   // PointCloudColorHandler 类，用于指定如何为点云中的每个点着色
   // "y" 是字段的名称，表示我们将根据点云中每个点的 y 坐标值来给点云着色。
   if (cloud_ptr) {  // 检查 cloud_ptr 是否为空
@@ -135,7 +156,8 @@ void show3d_box3d_shared(
     int end   = connections[i][1];
 
     // 为每条线设置不同的ID，并连接相应的顶点
-    std::string line_id = "line_" + std::to_string(i + 1);
+    std::string line_id = box_name + "_line_" + std::to_string(i + 1);
+    viewer->removeShape(line_id);
     viewer->addLine<pcl::PointXYZ>(vertex[start], vertex[end], 1.0f, 0.0f, 0.0f,
                                    line_id);
   }

@@ -10,6 +10,7 @@
 
 #include "modules/common/math/math_utils.h"
 #include "modules/common/math/math_utils_extra.h"
+#include "modules/common/math/unit_converter.h"
 
 template <typename PointT>
 inline void pcl_to_eigen(const typename pcl::PointCloud<PointT>::Ptr& pcl_cloud,
@@ -44,20 +45,27 @@ inline void point_to_eigen(const PointT& point,
 template <typename PointT>
 inline void point_mm_to_eigen_cm(const PointT& point,
                                  Eigen::Vector4f& transformed_point) {
-  transformed_point << point.x * 10.0f, point.y * 10.0f, point.z * 10.0f, 1.0f;
+  namespace math = jojo::common::math;
+  transformed_point << math::MillimetersToCentimeters(point.x),
+      math::MillimetersToCentimeters(point.y),
+      math::MillimetersToCentimeters(point.z), 1.0f;
 }
 
 template <typename PointT>
 inline void point_mm_to_eigen_m(const PointT& point,
                                 Eigen::Vector4f& transformed_point) {
-  transformed_point << point.x * 1000.0f, point.y * 1000.0f, point.z * 1000.0f,
+  namespace math = jojo::common::math;
+  transformed_point << math::MillimetersToMeters(point.x),
+      math::MillimetersToMeters(point.y), math::MillimetersToMeters(point.z),
       1.0f;
 }
 
 template <typename PointT>
 inline void point_m_to_eigen_cm(const PointT& point,
                                 Eigen::Vector4f& transformed_point) {
-  transformed_point << point.x / 100.0f, point.y / 100.0f, point.z / 100.0f,
+  namespace math = jojo::common::math;
+  transformed_point << math::MetersToCentimeters(point.x),
+      math::MetersToCentimeters(point.y), math::MetersToCentimeters(point.z),
       1.0f;
 }
 
