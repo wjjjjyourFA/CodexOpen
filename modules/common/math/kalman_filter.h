@@ -275,8 +275,16 @@ inline void KalmanFilter<T, XN, ZN, UN>::Correct(
 
   x_ = x_ + K_ * y_;
 
+  // P_ = static_cast<Eigen::Matrix<T, XN, XN>>(
+  //     (Eigen::Matrix<T, XN, XN>::Identity() - K_ * H_) * P_);
+	  
+  const Eigen::Matrix<T, XN, XN> identity_minus_gain_observation =
+      Eigen::Matrix<T, XN, XN>::Identity() - K_ * H_;
+  P_ = identity_minus_gain_observation * P_ *
+           identity_minus_gain_observation.transpose() +
+       K_ * R_ * K_.transpose();
   P_ = static_cast<Eigen::Matrix<T, XN, XN>>(
-      (Eigen::Matrix<T, XN, XN>::Identity() - K_ * H_) * P_);
+      (P_ + P_.transpose()) * static_cast<T>(0.5));
 }
 
 template <typename T, unsigned int XN, unsigned int ZN, unsigned int UN>

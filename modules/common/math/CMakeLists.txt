@@ -56,6 +56,17 @@ if(BUILD_TESTING)
     cyber_binary
   )
 
+  add_executable(math_utils_extra_test
+    math_utils_extra_test.cc
+    math_utils.cc
+    math_utils_extra.cpp
+    vec2d.cc
+  )
+  target_link_libraries(math_utils_extra_test GTest::GTest GTest::Main glog
+    absl::base absl::strings
+    cyber_binary
+  )
+
   add_executable(matrix_operations_test
     matrix_operations_test.cc
     matrix_operations.cc
@@ -71,6 +82,16 @@ if(BUILD_TESTING)
     ${SOURCES}
   )
   target_link_libraries(kalman_filter_test GTest::GTest GTest::Main glog
+    cyber_binary
+  )
+
+  add_executable(kalman_filter_1d_test
+    kalman_filter_1d_test.cc
+    math_utils.cc
+    math_utils_extra.cpp
+    unit_converter.cpp
+  )
+  target_link_libraries(kalman_filter_1d_test GTest::GTest GTest::Main glog
     cyber_binary
   )
 
@@ -132,15 +153,17 @@ if(BUILD_TESTING)
   )
   target_link_libraries(polygon2d_test GTest::GTest GTest::Main glog
     absl_base absl_strings
-    cyber_binary common_util
+    cyber_binary common_utils
   )
 
   # 添加测试到 CTest
   add_test(NAME AngleTest COMMAND angle_test)
   add_test(NAME MathUtilsTest COMMAND math_utils_test)
+  add_test(NAME MathUtilsExtraTest COMMAND math_utils_extra_test)
   add_test(NAME Vec2dTest COMMAND vec2d_test)
   add_test(NAME MatrixOperationsTest COMMAND matrix_operations_test)
   add_test(NAME KalmanFilterTest COMMAND kalman_filter_test)
+  add_test(NAME KalmanFilter1DTest COMMAND kalman_filter_1d_test)
   add_test(NAME EulerAnglesXyzTest COMMAND euler_angles_xyz_test)
   add_test(NAME QuaternionTest COMMAND quaternion_test)
   add_test(NAME Aabox2dTest COMMAND aabox2d_test)
@@ -167,6 +190,11 @@ target_include_directories(${PROJECT_NAME}
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
-target_link_libraries(${PROJECT_NAME} PUBLIC cyber_binary common_util)
+target_link_libraries(${PROJECT_NAME}
+  PUBLIC
+    Eigen3::Eigen
+    cyber_binary
+    common_utils
+)
 
 install_module(${PROJECT_NAME} modules/common/math)

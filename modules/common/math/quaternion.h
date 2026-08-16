@@ -26,6 +26,8 @@
 #pragma once
 
 #include <cmath>
+#include <limits>
+#include <stdexcept>
 
 #include "Eigen/Dense"
 #include "Eigen/Geometry"
@@ -135,9 +137,10 @@ inline Eigen::Vector3d QuaternionRotate(const Quaternion &orientation,
 */
 inline Eigen::Vector3d QuaternionRotate(const Eigen::Quaterniond &orientation,
                                         const Eigen::Vector3d &original) {
-  Eigen::Quaternion<double> quaternion(orientation.w(), orientation.x(),
-                                       orientation.y(), orientation.z());
-  return static_cast<Eigen::Vector3d>(quaternion.toRotationMatrix() * original);
+  if (!(orientation.squaredNorm() > std::numeric_limits<double>::epsilon())) {
+    throw std::domain_error("Cannot rotate with a zero quaternion");
+  }
+  return orientation.normalized() * original;
 }
 
 // clang-format off
@@ -151,9 +154,10 @@ inline Eigen::Vector3d InverseQuaternionRotate(const Quaterniond &orientation,
 */
 inline Eigen::Vector3d InverseQuaternionRotate(const Eigen::Quaterniond &orientation,
                                                const Eigen::Vector3d &rotated) {
-  Eigen::Quaternion<double> quaternion(orientation.w(), orientation.x(),
-                                       orientation.y(), orientation.z());
-  return static_cast<Eigen::Vector3d>(quaternion.toRotationMatrix().inverse() * rotated);
+  if (!(orientation.squaredNorm() > std::numeric_limits<double>::epsilon())) {
+    throw std::domain_error("Cannot rotate with a zero quaternion");
+  }
+  return orientation.normalized().conjugate() * rotated;
 }
 // clang-format on
 

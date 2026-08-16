@@ -10,7 +10,8 @@ void Ro2Ang(const Eigen::Matrix3d& R, Eigen::Vector3d& ypr) {
   // ypr[0] = yaw; ypr[1] = pitch; ypr[2] = roll
 
   // ypr(1)  = -std::asin(R(1, 2));
-  double v = std::clamp(-R(1, 2), -1.0, 1.0);
+  // double v = std::clamp(-R(1, 2), -1.0, 1.0);
+  double v = std::min(std::max(-R(1, 2), -1.0), 1.0);
   ypr(1)   = std::asin(v);
 
   double cp = std::cos(ypr(1));
@@ -25,6 +26,10 @@ void Ro2Ang(const Eigen::Matrix3d& R, Eigen::Vector3d& ypr) {
 }
 
 void Transform2NormalTr(float* transform, Eigen::Matrix4f& RT) {
+  if (transform == nullptr) {
+    RT.setIdentity();
+    return;
+  }
   // transform: Tr_BA in loam coordinate (left-up-forward)
   // RT: Tr_AB in our coordinate (right-forward-up)
 
@@ -106,7 +111,17 @@ void Transform2NormalTr(float* transform, Eigen::Matrix4f& RT) {
   }
 }
 
+Eigen::Matrix4f Transform2NormalTr(const TransformArray& transform) {
+  Eigen::Matrix4f result;
+  TransformArray mutable_transform = transform;
+  Transform2NormalTr(mutable_transform.data(), result);
+  return result;
+}
+
 void NormalTr2Transform(const Eigen::Matrix4f& RT, float* transform) {
+  if (transform == nullptr) {
+    return;
+  }
   // RT: Tr_AB in our coordinate (right-forward-up)
   // transform: Tr_BA in loam coordinate (left-up-forward)
 
@@ -174,7 +189,7 @@ void NormalTr2Transform(const Eigen::Matrix4f& RT, float* transform) {
     Eigen::Vector3f T_BA = -R_AB.transpose() * T_AB;
 
     Eigen::Vector3d ypr;
-    Ro2Ang(R_AB, ypr);
+    Ro2Ang(R_AB.cast<double>(), ypr);
 
     transform[0] = -ypr(1);
     transform[1] = -ypr(0);
@@ -183,6 +198,12 @@ void NormalTr2Transform(const Eigen::Matrix4f& RT, float* transform) {
     transform[4] = T_BA(1);
     transform[5] = T_BA(2);
   }
+}
+
+TransformArray NormalTr2Transform(const Eigen::Matrix4f& RT) {
+  TransformArray result{{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f}};
+  NormalTr2Transform(RT, result.data());
+  return result;
 }
 
 }  // namespace loam

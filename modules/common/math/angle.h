@@ -24,6 +24,8 @@
 #include <cmath>
 #include <cstdint>
 #include <limits>
+#include <stdexcept>
+#include <type_traits>
 
 /**
  * @namespace apollo::common::math
@@ -132,8 +134,10 @@ class Angle {
    * @param other Another Angle object
    * @return Result of sum
    */
-  Angle operator+=(Angle other) {
-    value_ = static_cast<T>(value_ + other.value_);
+  Angle& operator+=(Angle other) {
+    using Unsigned = typename std::make_unsigned<T>::type;
+    value_ = static_cast<T>(static_cast<Unsigned>(value_) +
+                            static_cast<Unsigned>(other.value_));
     return *this;
   }
 
@@ -142,8 +146,10 @@ class Angle {
    * @param other Another Angle object
    * @return Result of subtraction
    */
-  Angle operator-=(Angle other) {
-    value_ = static_cast<T>(value_ - other.value_);
+  Angle& operator-=(Angle other) {
+    using Unsigned = typename std::make_unsigned<T>::type;
+    value_ = static_cast<T>(static_cast<Unsigned>(value_) -
+                            static_cast<Unsigned>(other.value_));
     return *this;
   }
 
@@ -153,7 +159,7 @@ class Angle {
    * @return Result of multiplication
    */
   template <typename Scalar>
-  Angle operator*=(Scalar s) {
+  Angle& operator*=(Scalar s) {
     value_ = static_cast<T>(std::lround(value_ * s));
     return *this;
   }
@@ -164,7 +170,10 @@ class Angle {
    * @return Result of division
    */
   template <typename Scalar>
-  Angle operator/=(Scalar s) {
+  Angle& operator/=(Scalar s) {
+    if (s == Scalar{0}) {
+      throw std::domain_error("Cannot divide an angle by zero");
+    }
     value_ = static_cast<T>(std::lround(value_ / s));
     return *this;
   }
@@ -246,6 +255,9 @@ Angle<T> operator/(Angle<T> lhs, Scalar rhs) {
  */
 template <typename T>
 double operator/(Angle<T> lhs, Angle<T> rhs) {
+  if (rhs.raw() == 0) {
+    throw std::domain_error("Cannot divide by a zero angle");
+  }
   return static_cast<double>(lhs.raw()) / rhs.raw();
 }
 

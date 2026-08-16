@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cfloat>   // DBL_MIN, DBL_EPSILON
 #include <random>
+#include <vector>
 
 #include <Eigen/Core>
 
@@ -53,8 +54,8 @@ inline float RandomFloatNeg1To1() {
 
 // 返回的随机数范围是 [-1, 1]
 inline float RandomFloatNeg1To1() {
-  static std::mt19937 gen(std::random_device{}());
-  static std::uniform_real_distribution<float> dist(-1.0f, 1.0f);
+  thread_local std::mt19937 gen(std::random_device{}());
+  thread_local std::uniform_real_distribution<float> dist(-1.0f, 1.0f);
   return dist(gen);
 }
 
@@ -68,8 +69,8 @@ inline float RandomFloat0To1() {
 
 // 返回的随机数范围是 [0, 1]
 inline float RandomFloat0To1() {
-  static std::mt19937 gen(std::random_device{}());
-  static std::uniform_real_distribution<float> dist(0.0f, 1.0f);
+  thread_local std::mt19937 gen(std::random_device{}());
+  thread_local std::uniform_real_distribution<float> dist(0.0f, 1.0f);
   return dist(gen);
 }
 
@@ -90,6 +91,7 @@ inline Eigen::Matrix4f GetTransMatrix(int b_flu_none_rfu) {
                      -1, 0, 0, 0,
                       0, 0, 1, 0,
                       0, 0, 0, 1;
+      break;
     case 1:
       break;
     case 2:  // FLUToRFU 前左上 转 右前上
@@ -122,7 +124,8 @@ inline bool double_equal(const double& a, const double& b, double RELATIVE_ERROR
   return (abs_diff / abs_max) <= (RELATIVE_ERROR_FACTOR * DBL_EPSILON);
 }
 
-int FindNearestTimestampIdx(int64_t query_time, std::vector<int64_t> time_db);
+int FindNearestTimestampIdx(int64_t query_time,
+                            const std::vector<int64_t>& sorted_time_db);
 
 }  // namespace math
 }  // namespace common

@@ -1,5 +1,7 @@
 #include "modules/common/math/math_utils_extra.h"
 
+#include <limits>
+
 namespace jojo {
 namespace common {
 namespace math {
@@ -36,20 +38,44 @@ float angle_diff(const float from, const float to) {
   return normalize_angle(to - from);
 }
 
-int FindNearestTimestampIdx(int64_t query_time, std::vector<int64_t> time_db) {
-  if (time_db.empty()) return -1;
+namespace {
 
-  auto it = std::lower_bound(time_db.begin(), time_db.end(), query_time);
+std::uint64_t TimestampDistance(std::int64_t lhs, std::int64_t rhs) {
+  return lhs >= rhs ? static_cast<std::uint64_t>(lhs) -
+                          static_cast<std::uint64_t>(rhs)
+                    : static_cast<std::uint64_t>(rhs) -
+                          static_cast<std::uint64_t>(lhs);
+}
 
-  if (it == time_db.begin()) return 0;
-  if (it == time_db.end()) return time_db.size() - 1;
+}  // namespace
 
-  int prev_idx = it - time_db.begin() - 1;
-  int next_idx = prev_idx + 1;
+int FindNearestTimestampIdx(int64_t query_time,
+                            const std::vector<int64_t>& sorted_time_db) {
+  if (sorted_time_db.empty()) return -1;
 
-  return (query_time - time_db[prev_idx] <= time_db[next_idx] - query_time)
-             ? prev_idx
-             : next_idx;
+  auto it = std::lower_bound(sorted_time_db.begin(), sorted_time_db.end(),
+                             query_time);
+
+  if (it == sorted_time_db.begin()) return 0;
+  if (it == sorted_time_db.end()) {
+    const std::size_t last = sorted_time_db.size() - 1U;
+    return last <= static_cast<std::size_t>(std::numeric_limits<int>::max())
+               ? static_cast<int>(last)
+               : -1;
+  }
+
+  const std::size_t next_idx =
+      static_cast<std::size_t>(it - sorted_time_db.begin());
+  const std::size_t prev_idx = next_idx - 1U;
+  const std::size_t result =
+      TimestampDistance(query_time, sorted_time_db[prev_idx]) <=
+              TimestampDistance(sorted_time_db[next_idx], query_time)
+          ? prev_idx
+          : next_idx;
+
+  return result <= static_cast<std::size_t>(std::numeric_limits<int>::max())
+             ? static_cast<int>(result)
+             : -1;
 }
 
 }  // namespace math

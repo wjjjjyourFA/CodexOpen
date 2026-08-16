@@ -1,7 +1,5 @@
 #include "modules/common/math/sin_table_extra.h"
 
-#pragma once
-
 namespace jojo {
 namespace common {
 namespace math {

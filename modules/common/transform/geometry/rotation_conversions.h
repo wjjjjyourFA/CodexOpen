@@ -1,5 +1,7 @@
 #pragma once
 
+#include <algorithm>
+
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
@@ -110,7 +112,7 @@ void RotationToEulerZXY(const Eigen::Matrix<T, 3, 3>& R,
 
   // ypr[0] = yaw; ypr[1] = pitch; ypr[2] = roll
 
-  ypr(1) = std::asin(R(2, 1));  // pitch
+  ypr(1) = std::asin(std::min(std::max(R(2, 1), T{-1}), T{1}));  // pitch
   T cp   = std::cos(ypr(1));
 
   if (std::abs(cp) > T(1e-6)) {
@@ -131,7 +133,7 @@ void RotationToEulerZYX(const Eigen::Matrix<T, 3, 3>& R,
 
   // ypr = [yaw, pitch, roll]
 
-  ypr(1) = -std::asin(R(2, 0));  // pitch
+  ypr(1) = std::asin(std::min(std::max(-R(2, 0), T{-1}), T{1}));  // pitch
   T cp   = std::cos(ypr(1));
 
   if (std::abs(cp) > T(1e-6)) {

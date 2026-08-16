@@ -18,6 +18,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <sstream>
 #include <utility>
 
 // #include "absl/strings/str_cat.h"
@@ -419,6 +420,12 @@ std::string Box2d::DebugString() const {
   // return absl::StrCat("box2d ( center = ", center_.DebugString(),
   //                     "  heading = ", heading_, "  length = ", length_,
   //                     "  width = ", width_, " )");
+
+  std::ostringstream stream;
+  stream << "box2d ( center = " << center_.DebugString()
+         << "  heading = " << heading_ << "  length = " << length_
+         << "  width = " << width_ << " )";
+  return stream.str();
 }
 
 }  // namespace math
