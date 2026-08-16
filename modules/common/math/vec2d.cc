@@ -17,6 +17,7 @@
 #include "modules/common/math/vec2d.h"
 
 #include <cmath>
+#include <sstream>
 
 // #include "absl/strings/str_cat.h"
 
@@ -124,6 +125,10 @@ Vec2d operator*(const double ratio, const Vec2d &vec) { return vec * ratio; }
 
 std::string Vec2d::DebugString() const {
   // return absl::StrCat("vec2d ( x = ", x_, "  y = ", y_, " )");
+
+  std::ostringstream stream;
+  stream << "vec2d ( x = " << x_ << "  y = " << y_ << " )";
+  return stream.str();
 }
 
 }  // namespace math

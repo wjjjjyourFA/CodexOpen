@@ -78,6 +78,16 @@ TEST(EulerAnglesXYZTest, FullConstructFloat) {
   EXPECT_NEAR(q.z(), q2.z(), 5e-7);
 }
 
+TEST(EulerAnglesXYZTest, ClampsNonNormalizedQuaternionInput) {
+  EulerAnglesXYZd angles(0.8, 0.8, 0.0, 0.0);
+  EXPECT_TRUE(std::isfinite(angles.pitch()));
+  EXPECT_DOUBLE_EQ(M_PI_2, angles.pitch());
+}
+
+TEST(EulerAnglesXYZTest, RejectsZeroQuaternion) {
+  EXPECT_THROW(EulerAnglesXYZd(0.0, 0.0, 0.0, 0.0), std::domain_error);
+}
+
 TEST(EulerAnglesXYZTest, IsValid) {
   EulerAnglesXYZd a(0.35, 5.0, -1.0);
   EXPECT_TRUE(a.IsValid());

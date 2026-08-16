@@ -17,6 +17,8 @@
 #include "modules/common/math/angle.h"
 
 #include <cmath>
+#include <limits>
+#include <stdexcept>
 
 #include "gtest/gtest.h"
 #include "modules/common/math/sin_table.h"
@@ -61,6 +63,21 @@ TEST(Angle, operators) {
   a = 7 * (a + b * 0.7);
   a /= 1.1;
   EXPECT_DOUBLE_EQ(-63.65478515625, a.to_deg());
+}
+
+TEST(Angle, ModularArithmeticDoesNotUseSignedOverflow) {
+  Angle32 max_angle(std::numeric_limits<int32_t>::max());
+  max_angle += Angle32(1);
+  EXPECT_EQ(std::numeric_limits<int32_t>::min(), max_angle.raw());
+
+  Angle32 min_angle(std::numeric_limits<int32_t>::min());
+  min_angle -= Angle32(1);
+  EXPECT_EQ(std::numeric_limits<int32_t>::max(), min_angle.raw());
+}
+
+TEST(Angle, RejectsDivisionByZero) {
+  EXPECT_THROW(Angle16(1) / 0, std::domain_error);
+  EXPECT_THROW(Angle16(1) / Angle16(0), std::domain_error);
 }
 
 }  // namespace math

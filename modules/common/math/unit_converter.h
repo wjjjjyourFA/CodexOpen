@@ -43,11 +43,11 @@ class UnitConverter {
     return static_cast<int32_t>(std::llround(angle_to_rad(deg) * 1000.0));
   }
 
-  static inline double millirad_to_rad(int millirad) {
+  static inline double millirad_to_rad(double millirad) {
     return static_cast<double>(millirad) / 1000.0;
   }
 
-  static inline double millirad_to_angle(int millirad) {
+  static inline double millirad_to_angle(double millirad) {
     return static_cast<double>(rad_to_angle(millirad_to_rad(millirad)));
   }
 
@@ -63,7 +63,7 @@ class UnitConverter {
     return static_cast<int32_t>(std::llround(meters * 1000.0));
   }
 
-  static inline double mm_to_meters(int mm) {
+  static inline double mm_to_meters(double mm) {
     return static_cast<double>(mm) / 1000.0;
   }
 
@@ -72,10 +72,27 @@ class UnitConverter {
     return static_cast<int32_t>(std::llround(deg * 1e7));
   }
 
-  static inline double int_to_latlon(int encoded) {
+  static inline double int_to_latlon(double encoded) {
     return static_cast<double>(encoded) / 1e7;
   }
 };
+
+
+template <typename T>
+constexpr T MillimetersToCentimeters(T value) {
+  return value / static_cast<T>(10);
+}
+
+template <typename T>
+constexpr T MillimetersToMeters(T value) {
+  return value / static_cast<T>(1000);
+}
+
+template <typename T>
+constexpr T MetersToCentimeters(T value) {
+  return value * static_cast<T>(100);
+}
+
 
 }  // namespace math
 }  // namespace common

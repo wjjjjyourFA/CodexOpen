@@ -46,9 +46,15 @@ bool ContinuousToDiscrete(const Eigen::MatrixXd &m_a,
     return false;
   }
 
+  if (ptr_a_d == nullptr || ptr_b_d == nullptr || ptr_c_d == nullptr ||
+      ptr_d_d == nullptr) {
+    AERROR << "ContinuousToDiscrete: output pointer is null";
+    return false;
+  }
+
   // Only matrix_a is mandatory to be non-zeros in matrix
   // conversion.
-  if (m_a.rows() == 0) {
+  if (m_a.rows() == 0 || m_a.rows() != m_a.cols()) {
     AERROR << "ContinuousToDiscrete: matrix_a size 0 ";
     return false;
   }
@@ -59,17 +65,25 @@ bool ContinuousToDiscrete(const Eigen::MatrixXd &m_a,
     return false;
   }
 
-  Eigen::MatrixXd m_identity =
-      Eigen::MatrixXd::Identity(m_a.cols(), m_a.rows());
+  const Eigen::MatrixXd m_identity =
+      Eigen::MatrixXd::Identity(m_a.rows(), m_a.cols());
 
-  *ptr_a_d =
-      (m_identity - ts * 0.5 * m_a).inverse() * (m_identity + ts * 0.5 * m_a);
+  const Eigen::MatrixXd lhs = m_identity - ts * 0.5 * m_a;
 
-  *ptr_b_d = std::sqrt(ts) * (m_identity - ts * 0.5 * m_a).inverse() * m_b;
+  const Eigen::FullPivLU<Eigen::MatrixXd> decomposition(lhs);
+  if (!decomposition.isInvertible()) {
+    AERROR << "ContinuousToDiscrete: bilinear transform matrix is singular";
+    return false;
+  }
+  const Eigen::MatrixXd lhs_inverse = decomposition.inverse();
 
-  *ptr_c_d = std::sqrt(ts) * m_c * (m_identity - ts * 0.5 * m_a).inverse();
+  *ptr_a_d = lhs_inverse * (m_identity + ts * 0.5 * m_a);
 
-  *ptr_d_d = 0.5 * m_c * (m_identity - ts * 0.5 * m_a).inverse() * m_b + m_d;
+  *ptr_b_d = std::sqrt(ts) * lhs_inverse * m_b;
+
+  *ptr_c_d = std::sqrt(ts) * m_c * lhs_inverse;
+
+  *ptr_d_d = 0.5 * m_c * lhs_inverse * m_b + m_d;
 
   return true;
 }

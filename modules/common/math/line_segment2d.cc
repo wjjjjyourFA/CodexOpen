@@ -18,6 +18,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <sstream>
 #include <utility>
 
 // #include "absl/strings/str_cat.h"
@@ -222,6 +223,11 @@ double LineSegment2d::GetPerpendicularFoot(const Vec2d &point,
 std::string LineSegment2d::DebugString() const {
   // return absl::StrCat("segment2d ( start = ", start_.DebugString(),
   //                     "  end = ", end_.DebugString(), " )");
+
+  std::ostringstream stream;
+  stream << "segment2d ( start = " << start_.DebugString()
+         << "  end = " << end_.DebugString() << " )";
+  return stream.str();
 }
 
 }  // namespace math

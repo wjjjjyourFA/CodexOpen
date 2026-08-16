@@ -35,6 +35,8 @@ TEST(StringUtilTest, EncodeBase64) {
 TEST(StringUtilTest, EncodeBase64BinaryData) {
   EXPECT_EQ("AID/", EncodeBase64(std::string("\0\x80\xff", 3)));
   EXPECT_EQ("AGEAYQ==", EncodeBase64(std::string("\0a\0a", 4)));
+  EXPECT_EQ("/w==", EncodeBase64(std::string("\xff", 1)));
+  EXPECT_EQ("//8=", EncodeBase64(std::string("\xff\xff", 2)));
 }
 
 }  // namespace util

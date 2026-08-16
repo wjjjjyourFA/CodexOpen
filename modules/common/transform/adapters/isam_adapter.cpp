@@ -8,6 +8,10 @@ void Ro2Ang(const Eigen::Matrix3d& R, Eigen::Vector3d& ypr) {
 }
 
 void Transform2Tr(float* transform, Eigen::Matrix4f& RT) {
+  if (transform == nullptr) {
+    RT.setIdentity();
+    return;
+  }
   // transformSum: Tr_w_l in isam coordinate (forward-left-up)
   // RT: Tr_w_l in isam coordinate (forward-left-up)
 
@@ -46,7 +50,17 @@ void Transform2Tr(float* transform, Eigen::Matrix4f& RT) {
   RT(3, 3) = 1;
 }
 
+Eigen::Matrix4f Transform2Tr(const TransformArray& transform) {
+  Eigen::Matrix4f result;
+  TransformArray mutable_transform = transform;
+  Transform2Tr(mutable_transform.data(), result);
+  return result;
+}
+
 void Tr2Transform(const Eigen::Matrix4f& RT, float* transform) {
+  if (transform == nullptr) {
+    return;
+  }
   // RT: Tr_AB in isam coordinate
   // transform: Tr_AB in isam coordinate (forward-left-up)
 
@@ -54,7 +68,7 @@ void Tr2Transform(const Eigen::Matrix4f& RT, float* transform) {
   Eigen::Vector3f T_AB = RT.topRightCorner<3, 1>();
 
   Eigen::Vector3d ypr;
-  Ro2Ang(R_AB, ypr);
+  Ro2Ang(R_AB.cast<double>(), ypr);
 
   transform[3] = static_cast<float>(ypr(0));
   transform[4] = static_cast<float>(ypr(1));
@@ -62,6 +76,12 @@ void Tr2Transform(const Eigen::Matrix4f& RT, float* transform) {
   transform[0] = T_AB(0);
   transform[1] = T_AB(1);
   transform[2] = T_AB(2);
+}
+
+TransformArray Tr2Transform(const Eigen::Matrix4f& RT) {
+  TransformArray result{{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f}};
+  Tr2Transform(RT, result.data());
+  return result;
 }
 
 }  // namespace isam

@@ -23,7 +23,10 @@
 
 // TODO(all): should use Angle class internally.
 
+#include <algorithm>
 #include <cmath>
+#include <limits>
+#include <stdexcept>
 
 #include "Eigen/Geometry"
 #include "modules/common/math/math_utils.h"
@@ -111,14 +114,34 @@ class EulerAnglesXYZ {
    * @param qy Quaternion y-coordinate
    * @param qz Quaternion z-coordinate
    */
-  // clang-format off
-  EulerAnglesXYZ(T qw, T qx, T qy, T qz)
-      : roll_(std::atan2(static_cast<T>(2.0) * (qw * qy - qx * qz),
-                         static_cast<T>(2.0) * (Square<T>(qw) + Square<T>(qz)) - static_cast<T>(1.0))),
-        pitch_(std::asin(static_cast<T>(2.0) * (qw * qx + qy * qz))),
-        yaw_(std::atan2(static_cast<T>(2.0) * (qw * qz - qx * qy),
-                        static_cast<T>(2.0) * (Square<T>(qw) + Square<T>(qy)) - static_cast<T>(1.0))) {}
-  // clang-format on
+  EulerAnglesXYZ(T qw, T qx, T qy, T qz) : roll_(0), pitch_(0), yaw_(0) {
+    // 0. 模长计算与防零除保护
+    const T norm = std::sqrt(Square<T>(qw) + Square<T>(qx) + Square<T>(qy) +
+                             Square<T>(qz));
+    if (!(norm > std::numeric_limits<T>::epsilon())) {
+      throw std::domain_error(
+          "Cannot convert a zero quaternion to Euler angles");
+    }
+    qw /= norm;
+    qx /= norm;
+    qy /= norm;
+    qz /= norm;
+
+    // 1. Roll (绕 Y 轴/车身纵向轴 侧倾)
+    roll_ = std::atan2(static_cast<T>(2.0) * (qw * qy - qx * qz),
+                       static_cast<T>(2.0) * (Square<T>(qw) + Square<T>(qz)) -
+                           static_cast<T>(1.0));
+
+    // 2. Pitch (绕 X 轴/车身横向轴 俯仰，通过 clamp 彻底杜绝 NaN 崩溃)
+    const T sin_pitch = std::min(
+        std::max(static_cast<T>(2.0) * (qw * qx + qy * qz), T{-1}), T{1});
+    pitch_ = std::asin(sin_pitch);
+
+    // 3. Yaw (绕 Z 轴/天向轴 偏航)
+    yaw_ = std::atan2(static_cast<T>(2.0) * (qw * qz - qx * qy),
+                      static_cast<T>(2.0) * (Square<T>(qw) + Square<T>(qy)) -
+                          static_cast<T>(1.0));
+  }
 
   /**
    * @brief Constructs a rotation from quaternion.

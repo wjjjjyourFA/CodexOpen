@@ -6,6 +6,7 @@
 #include <iostream>
 #include <iomanip>
 #include <cmath>
+#include <limits>
 
 #include <Eigen/Dense>
 
@@ -64,6 +65,8 @@ class KalmanFilter1D {
   void CorrectTheta(double cur_value);
 
   T GetStateEstimate() const { return x_(0, 0); }
+
+  T GetStateCovariance() const { return P_(0, 0); }
 
   bool IsInitialized() const { return is_initialized_; }
 
@@ -131,7 +134,10 @@ inline void KalmanFilter1D<T>::PredictTheta(double pre_value, double cur_value) 
 
 template <typename T>
 inline void KalmanFilter1D<T>::Correct(double z) {
-  // ACHECK(is_initialized_);
+  if (!is_initialized_) {
+    std::cerr << "[KalmanFilter1D] Not initialized!\n";
+    return;
+  }
 
   Eigen::Matrix<T, 1, 1> z_vec;
   z_vec(0, 0) = static_cast<T>(z);
@@ -140,20 +146,31 @@ inline void KalmanFilter1D<T>::Correct(double z) {
   y_ = z_vec - H_ * x_;  // innovation
 
   // 卡尔曼增益
-  S_ = H_ * P_ * H_.transpose() + R_;
-
-  K_ = P_ * H_.transpose() * S_.inverse();
+  // S_ = H_ * P_ * H_.transpose() + R_;
+  const T innovation_variance = P_(0, 0) + R_(0, 0);
+  if (!(innovation_variance > std::numeric_limits<T>::epsilon())) {
+    std::cerr << "[KalmanFilter1D] Invalid innovation variance!\n";
+    return;
+  }
+  S_(0, 0) = innovation_variance;
+  
+  // K_ = P_ * H_.transpose() * S_.inverse();
+  K_(0, 0) = P_(0, 0) / innovation_variance;
 
   // 更新状态
   x_ = x_ + K_ * y_;
 
   // 更新协方差
-  P_ = (I_ - K_ * H_) * P_;
+  // P_ = (I_ - K_ * H_) * P_;
+  P_(0, 0) = (T{1} - K_(0, 0)) * P_(0, 0);
 }
 
 template <typename T>
 inline void KalmanFilter1D<T>::CorrectTheta(double cur_value) {
-  // ACHECK(is_initialized_);
+  if (!is_initialized_) {
+    std::cerr << "[KalmanFilter1D] Not initialized!\n";
+    return;
+  }
 
   // 1. 计算创新（语义层）
   Eigen::Matrix<T, 1, 1> z_vec;
@@ -166,15 +183,23 @@ inline void KalmanFilter1D<T>::CorrectTheta(double cur_value) {
 
   // 2. 后续完全走原 Correct 数学
   // 卡尔曼增益
-  S_ = H_ * P_ * H_.transpose() + R_;
+  // S_ = H_ * P_ * H_.transpose() + R_;
+  const T innovation_variance = P_(0, 0) + R_(0, 0);
+  if (!(innovation_variance > std::numeric_limits<T>::epsilon())) {
+    std::cerr << "[KalmanFilter1D] Invalid innovation variance!\n";
+    return;
+  }
+  S_(0, 0) = innovation_variance;
 
-  K_ = P_ * H_.transpose() * S_.inverse();
+  // K_ = P_ * H_.transpose() * S_.inverse();
+  K_(0, 0) = P_(0, 0) / innovation_variance;
 
   // 更新状态
   x_ = x_ + K_ * y_;
 
   // 更新协方差
-  P_ = (I_ - K_ * H_) * P_;
+  // P_ = (I_ - K_ * H_) * P_;
+  P_(0, 0) = (T{1} - K_(0, 0)) * P_(0, 0);
 
   // 3. 状态归一化
   x_(0, 0) = static_cast<T>(NormalizeAngle0To2Pi(x_(0, 0)));

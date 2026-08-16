@@ -87,6 +87,17 @@ TEST(QuaternionTest, InverseQuaternionRotate) {
   EXPECT_NEAR(original[2], -0.15861744649897938, 1e-9);
 }
 
+TEST(QuaternionTest, NormalizesInputAndRejectsZeroQuaternion) {
+  const Eigen::Quaterniond scaled(2.0, 0.0, 0.0, 0.0);
+  const Eigen::Vector3d vector(1.0, 2.0, 3.0);
+  EXPECT_TRUE(QuaternionRotate(scaled, vector).isApprox(vector));
+  EXPECT_TRUE(InverseQuaternionRotate(scaled, vector).isApprox(vector));
+
+  const Eigen::Quaterniond zero(0.0, 0.0, 0.0, 0.0);
+  EXPECT_THROW(QuaternionRotate(zero, vector), std::domain_error);
+  EXPECT_THROW(InverseQuaternionRotate(zero, vector), std::domain_error);
+}
+
 }  // namespace math
 }  // namespace common
 }  // namespace apollo

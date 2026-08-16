@@ -72,6 +72,53 @@ TEST(PseudoInverseTest, PseudoInverseII) {
   EXPECT_FLOAT_EQ(D(0, 4), 0);
 }
 
+TEST(PseudoInverseTest, WideRankDeficientMatrixSatisfiesMoorePenroseIdentity) {
+  Eigen::Matrix<double, 2, 3> matrix;
+  matrix << 1.0, 2.0, 3.0, 2.0, 4.0, 6.0;
+  const auto inverse = PseudoInverse<double, 2, 3>(matrix);
+  EXPECT_TRUE((matrix * inverse * matrix).isApprox(matrix, 1e-10));
+  EXPECT_TRUE((inverse * matrix * inverse).isApprox(inverse, 1e-10));
+}
+
+TEST(ContinuousToDiscreteTest, RejectsNullOutputAndNonSquareSystem) {
+  const Eigen::Matrix<double, 1, 1> a =
+      Eigen::Matrix<double, 1, 1>::Zero();
+  const Eigen::Matrix<double, 1, 1> b =
+      Eigen::Matrix<double, 1, 1>::Zero();
+  const Eigen::Matrix<double, 1, 1> c =
+      Eigen::Matrix<double, 1, 1>::Zero();
+  const Eigen::Matrix<double, 1, 1> d =
+      Eigen::Matrix<double, 1, 1>::Zero();
+  Eigen::Matrix<double, 1, 1> output;
+  EXPECT_FALSE(ContinuousToDiscrete<double, 1, 1, 1>(
+      a, b, c, d, 0.1, nullptr, &output, &output, &output));
+
+  const Eigen::MatrixXd dynamic_a = Eigen::MatrixXd::Zero(2, 3);
+  const Eigen::MatrixXd dynamic_b = Eigen::MatrixXd::Zero(3, 1);
+  const Eigen::MatrixXd dynamic_c = Eigen::MatrixXd::Zero(1, 3);
+  const Eigen::MatrixXd dynamic_d = Eigen::MatrixXd::Zero(1, 1);
+  Eigen::MatrixXd a_out, b_out, c_out, d_out;
+  EXPECT_FALSE(ContinuousToDiscrete(dynamic_a, dynamic_b, dynamic_c, dynamic_d,
+                                    0.1, &a_out, &b_out, &c_out, &d_out));
+}
+
+TEST(DenseToCSCMatrixTest, ReusedOutputsAreCleared) {
+  Eigen::Matrix2d matrix;
+  matrix << 1.0, 0.0, 0.0, 2.0;
+  std::vector<double> data{99.0};
+  std::vector<int> indices{99};
+  std::vector<int> indptr{99};
+
+  DenseToCSCMatrix(matrix, &data, &indices, &indptr);
+  EXPECT_EQ((std::vector<double>{1.0, 2.0}), data);
+  EXPECT_EQ((std::vector<int>{0, 1}), indices);
+  EXPECT_EQ((std::vector<int>{0, 1, 2}), indptr);
+
+  DenseToCSCMatrix(matrix, &data, &indices, &indptr);
+  EXPECT_EQ(2U, data.size());
+  EXPECT_EQ((std::vector<int>{0, 1, 2}), indptr);
+}
+
 TEST(ContinuousToDiscreteTest, c2d_fixed_size) {
   double ts = 0.0;
 

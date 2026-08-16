@@ -73,9 +73,27 @@ Eigen::Matrix<T, N, N> PseudoInverse(const Eigen::Matrix<T, N, N> &m,
 template <typename T, unsigned int M, unsigned int N>
 Eigen::Matrix<T, N, M> PseudoInverse(const Eigen::Matrix<T, M, N> &m,
                                      const double epsilon = 1.0e-6) {
+  /* way 1
   Eigen::Matrix<T, M, M> t = m * m.transpose();
+
   return static_cast<Eigen::Matrix<T, N, M>>(m.transpose() *
                                              PseudoInverse<T, M>(t));
+  */
+										 
+  Eigen::JacobiSVD<Eigen::Matrix<T, M, N>> svd(
+      m, Eigen::ComputeFullU | Eigen::ComputeFullV);
+
+  Eigen::Matrix<T, N, M> singular_values_inverse =
+      Eigen::Matrix<T, N, M>::Zero();
+
+  const unsigned int diagonal_size = M < N ? M : N;
+  for (unsigned int i = 0; i < diagonal_size; ++i) {
+    if (std::abs(svd.singularValues()(i)) > epsilon) {
+      singular_values_inverse(i, i) = T{1} / svd.singularValues()(i);
+    }
+  }
+
+  return svd.matrixV() * singular_values_inverse * svd.matrixU().adjoint();
 }
 
 /**
@@ -108,6 +126,12 @@ bool ContinuousToDiscrete(const Eigen::Matrix<T, L, L> &m_a,
     return false;
   }
 
+  if (ptr_a_d == nullptr || ptr_b_d == nullptr || ptr_c_d == nullptr ||
+      ptr_d_d == nullptr) {
+    AERROR << "ContinuousToDiscrete: output pointer is null";
+    return false;
+  }
+
   // Only matrix_a is mandatory to be non-zeros in matrix
   // conversion.
   if (m_a.rows() == 0) {
@@ -115,18 +139,16 @@ bool ContinuousToDiscrete(const Eigen::Matrix<T, L, L> &m_a,
     return false;
   }
 
-  Eigen::Matrix<T, L, L> m_identity = Eigen::Matrix<T, L, L>::Identity();
-  *ptr_a_d = PseudoInverse<T, L>(m_identity - ts * 0.5 * m_a) *
-             (m_identity + ts * 0.5 * m_a);
+  const Eigen::Matrix<T, L, L> m_identity = Eigen::Matrix<T, L, L>::Identity();
+  const Eigen::Matrix<T, L, L> lhs_inverse = PseudoInverse<T, L>(m_identity - ts * 0.5 * m_a);
 
-  *ptr_b_d =
-      std::sqrt(ts) * PseudoInverse<T, L>(m_identity - ts * 0.5 * m_a) * m_b;
+  *ptr_a_d = lhs_inverse * (m_identity + ts * 0.5 * m_a);
 
-  *ptr_c_d =
-      std::sqrt(ts) * m_c * PseudoInverse<T, L>(m_identity - ts * 0.5 * m_a);
+  *ptr_b_d = std::sqrt(ts) * lhs_inverse * m_b;
 
-  *ptr_d_d =
-      0.5 * m_c * PseudoInverse<T, L>(m_identity - ts * 0.5 * m_a) * m_b + m_d;
+  *ptr_c_d = std::sqrt(ts) * m_c * lhs_inverse;
+
+  *ptr_d_d = 0.5 * m_c * lhs_inverse * m_b + m_d;
 
   return true;
 }
@@ -142,6 +164,15 @@ template <typename T, int M, int N, typename D>
 void DenseToCSCMatrix(const Eigen::Matrix<T, M, N> &dense_matrix,
                       std::vector<T> *data, std::vector<D> *indices,
                       std::vector<D> *indptr) {
+  CHECK_NOTNULL(data);
+  CHECK_NOTNULL(indices);
+  CHECK_NOTNULL(indptr);
+  data->clear();
+  indices->clear();
+  indptr->clear();
+  data->reserve(static_cast<std::size_t>(dense_matrix.size()));
+  indices->reserve(static_cast<std::size_t>(dense_matrix.size()));
+  indptr->reserve(static_cast<std::size_t>(dense_matrix.cols()) + 1U);
   static constexpr double epsilon = 1e-9;
   int data_count = 0;
   for (int c = 0; c < dense_matrix.cols(); ++c) {

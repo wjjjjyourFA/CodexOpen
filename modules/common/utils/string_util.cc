@@ -16,6 +16,9 @@
 
 #include "modules/common/utils/string_util.h"
 
+#include <algorithm>
+#include <array>
+#include <cstddef>
 #include <cstdint>
 
 // #include "absl/strings/str_cat.h"
@@ -25,6 +28,7 @@ namespace common {
 namespace util {
 namespace {
 
+/* way 1
 static const char kBase64Array[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
@@ -41,18 +45,32 @@ std::string Base64Piece(const char in0, const char in1, const char in2) {
   }
   return out;
 }
+*/
+
+constexpr char kBase64Array[] =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+std::array<char, 4> Base64Piece(std::uint8_t a, std::uint8_t b, std::uint8_t c,
+                                std::size_t valid) {
+  const std::uint32_t bits =
+      (std::uint32_t{a} << 16) | (std::uint32_t{b} << 8) | c;
+  return {kBase64Array[(bits >> 18) & 0x3f], kBase64Array[(bits >> 12) & 0x3f],
+          valid > 1 ? kBase64Array[(bits >> 6) & 0x3f] : '=',
+          valid > 2 ? kBase64Array[bits & 0x3f] : '='};
+}
 
 }  // namespace
 
-// std::string EncodeBase64(std::string_view in) {
 std::string EncodeBase64(const std::string& in) {
   std::string out;
   if (in.empty()) {
     return out;
   }
 
-  const size_t in_size = in.length();
+  const std::size_t in_size = in.length();
   out.reserve(((in_size - 1) / 3 + 1) * 4);
+  
+  /* way 1
   for (size_t i = 0; i + 2 < in_size; i += 3) {
     // absl::StrAppend(&out, Base64Piece(in[i], in[i + 1], in[i + 2]));
   }
@@ -61,6 +79,16 @@ std::string EncodeBase64(const std::string& in) {
   }
   if (in_size % 3 == 2) {
     // absl::StrAppend(&out, Base64Piece(in[in_size - 2], in[in_size - 1], 0));
+  }
+  */
+
+  for (std::size_t i = 0; i < in_size; i += 3) {
+    const std::size_t valid = std::min<std::size_t>(3, in_size - i);
+    const auto piece        = Base64Piece(
+        static_cast<std::uint8_t>(in[i]),
+        valid > 1 ? static_cast<std::uint8_t>(in[i + 1]) : 0,
+        valid > 2 ? static_cast<std::uint8_t>(in[i + 2]) : 0, valid);
+    out.append(piece.data(), piece.size());
   }
   return out;
 }
