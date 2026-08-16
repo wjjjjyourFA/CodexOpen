@@ -1,5 +1,7 @@
 #include "toolz/data_processor/ros1_convert_fast.h"
 
+#include <stdexcept>
+
 #define foreach BOOST_FOREACH
 
 /*  注意检查输入点云的 坐标系 是右前上 还是前左上
@@ -22,7 +24,7 @@ namespace tools {
  */
 static void ImageWorkerFunc(BlockingQueue<ImageTask>* queue,
                             DataProcessor* proc, RuntimeConfig* param) {
-  ImageTask task;
+  ImageTask task{};
   while (queue->Pop(task)) {
     DataStatistic<cv::Mat>& ds = *task.ds;
 
@@ -47,26 +49,68 @@ static void ImageWorkerFunc(BlockingQueue<ImageTask>* queue,
             ? (task.raw_msg->header.stamp.toSec() * 1000)
             : (task.compressed_msg->header.stamp.toSec() * 1000);
 
-    // 检查采样时间窗口（CheckSampledTime 内部有锁，可并发调用）
+    // 采样列表在第二阶段开始前已经完整生成；Worker 只读该列表。
     int64_t diff = 0;
-    if (!proc->CheckSampledTime(msg_time, ds.sampled_index, diff)) continue;
 
     if (param->prepare_data_num != -1) {
-      // 有采样数量限制：寻找最接近采样点的帧
-      if (std::abs(diff) < std::abs(ds.diff)) {
-        ds.diff     = diff;
-        ds.msg_time = msg_time;
-        ds.data     = cv_ptr->image;
-        // 还不是最接近的，继续等下一帧
-        continue;
-      } else {
-        // 上一帧已是最接近的，处理上一帧
-        proc->ProcessCameraImage(ds.data, ds.msg_time, task.channel_idx,
-                                 task.sensor_mode);
-        ds.sampled_index++;
+      // 有采样数量限制：按时间顺序为每个雷达采样点选择最近图像。
+      // 一帧图像可能在提交前一个采样点后，仍可用于下一个采样点，因此
+      // kTooLate 和“当前帧不如候选帧近”都要继续用同一帧匹配下一采样点。
+      const auto reset_candidate = [&ds]() {
         ds.diff     = INT64_MAX;
         ds.msg_time = 0;
+      };
+      const auto flush_candidate = [&]() {
+        if (ds.msg_time == 0) {
+          return;
+        }
+        proc->ProcessCameraImage(ds.data, ds.msg_time, task.channel_idx,
+                                 task.sensor_mode);
+        ++ds.num;
+        reset_candidate();
+      };
+
+      bool match_current_frame = true;
+      while (match_current_frame) {
+        diff = 0;
+        const DataProcessor::SampledTimeState state =
+            proc->GetSampledTimeState(msg_time, ds.sampled_index, diff);
+
+        switch (state) {
+          case DataProcessor::SampledTimeState::kTooEarly:
+            // 当前帧早于当前采样窗口；按时间顺序，它也不会匹配后续采样点。
+            match_current_frame = false;
+            break;
+
+          case DataProcessor::SampledTimeState::kFinished:
+            // 所有雷达采样点均已处理完。
+            match_current_frame = false;
+            break;
+
+          case DataProcessor::SampledTimeState::kTooLate:
+            // 当前采样点已被当前帧越过：有候选则写出，无候选则跳过。
+            // 无论哪种情况都推进游标，并用同一帧继续匹配下一个采样点。
+            flush_candidate();
+            ++ds.sampled_index;
+            break;
+
+          case DataProcessor::SampledTimeState::kInWindow:
+            if (ds.msg_time == 0 || std::abs(diff) < std::abs(ds.diff)) {
+              // 当前帧是当前采样点更近的候选；等待后续帧来确认它是否最优。
+              ds.diff     = diff;
+              ds.msg_time = msg_time;
+              ds.data     = cv_ptr->image;
+              match_current_frame = false;
+              break;
+            }
+
+            // 候选帧已经比当前帧更近，提交候选；当前帧仍可能匹配下一采样点。
+            flush_candidate();
+            ++ds.sampled_index;
+            break;
+        }
       }
+      continue;
     } else {
       // 无采样限制：直接处理当前帧
       ds.msg_time = msg_time;
@@ -76,7 +120,20 @@ static void ImageWorkerFunc(BlockingQueue<ImageTask>* queue,
     }
     ds.num++;
   }
-  // queue 关闭且清空后，线程自然退出
+
+  // 最后一个采样点通常没有“下一帧”触发提交；队列结束时补写候选帧。
+  // 否则最后一个雷达采样点会稳定地漏写，而不是偶发问题。
+  if (param->prepare_data_num != -1 && task.ds != nullptr) {
+    DataStatistic<cv::Mat>& ds = *task.ds;
+    if (ds.msg_time != 0) {
+      proc->ProcessCameraImage(ds.data, ds.msg_time, task.channel_idx,
+                               task.sensor_mode);
+      ds.sampled_index++;
+      ds.num++;
+      ds.diff     = INT64_MAX;
+      ds.msg_time = 0;
+    }
+  }
 }
 
 Ros1Convert::Ros1Convert(ros::NodeHandle& nh, ros::NodeHandle& private_nh) {
@@ -84,18 +141,46 @@ Ros1Convert::Ros1Convert(ros::NodeHandle& nh, ros::NodeHandle& private_nh) {
   pnh_ = private_nh;
 }
 
-Ros1Convert::~Ros1Convert() {
-  if (lpose_writer_) {
-    lpose_writer_->Stop();
-    delete lpose_writer_;
-  }
-  if (gpose_writer_) {
-    gpose_writer_->Stop();
-    delete gpose_writer_;
-  }
-  if (imu_writer_) {
-    imu_writer_->Stop();
-    delete imu_writer_;
+Ros1Convert::~Ros1Convert() { StopAsyncWriters(); }
+
+void Ros1Convert::StopAsyncWriters() {
+  lpose_writer_.reset();
+  gpose_writer_.reset();
+  imu_writer_.reset();
+}
+
+void Ros1Convert::ProcessLidarMessage(const rosbag::MessageInstance& m,
+                                      const std::string& topic) {
+  const auto type =
+      SensorRegistry::Instance().GetLidarType(rparam_->lidar_type);
+
+  switch (type) {
+    case LidarType::M1P:
+    case LidarType::RS128:
+      if (iparam_->b_difop == 0) {
+        if (topic == iparam_->topic_lidar_sub) {
+          LidarHandler(m.instantiate<sensor_msgs::PointCloud2>());
+        }
+      } else {
+        SendLidarHandler(m, topic);
+      }
+      break;
+
+    case LidarType::MID360:
+      if (topic == iparam_->topic_lidar_sub) {
+#if defined(LIVOX_OLD)
+        LivoxLidarHandler(m.instantiate<livox_ros_driver2::CustomMsg>());
+#elif defined(LIVOX_NEW)
+        LidarHandler(m.instantiate<sensor_msgs::PointCloud2>());
+#endif
+      }
+      break;
+
+    default:
+      if (topic == iparam_->topic_lidar_sub) {
+        NormalLidarHandler(m.instantiate<sensor_msgs::PointCloud2>());
+      }
+      break;
   }
 }
 
@@ -147,8 +232,11 @@ bool Ros1Convert::Init(std::shared_ptr<jojo::tools::RuntimeConfig> rparam,
 void Ros1Convert::Run() {
   sleep(1);
   if (!rparam_->b_save_data) {
-    std::cout << "b_save_data is false! " << std::endl;
-    abort();
+    throw std::invalid_argument("Ros1Convert requires b_save_data=true");
+  }
+  if (rparam_->prepare_data_num != -1 && !iparam_->b_lidar) {
+    throw std::invalid_argument(
+        "prepare_data_num requires lidar: sampled timestamps are lidar-driven");
   }
 
   // ── 打开 bag（只在主线程操作）──────────────────────────────
@@ -177,28 +265,34 @@ void Ros1Convert::Run() {
 
   /* ---------------- topic 收集 ---------------- */
   std::vector<std::string> topics;
+  std::vector<std::string> lidar_topics;
   if (iparam_->b_local_pose) {
-    lpose_writer_ = new AsyncWriter(data_processor->fp_local_pose);
+    lpose_writer_ =
+        std::make_unique<AsyncWriter>(data_processor->fp_local_pose);
     topics.push_back(iparam_->topic_local_pose_sub);
     ROS_INFO("\033[1;32m----> start local_pose.\033[0m");
   }
   if (iparam_->b_global_pose) {
-    gpose_writer_ = new AsyncWriter(data_processor->fp_global_pose);
+    gpose_writer_ =
+        std::make_unique<AsyncWriter>(data_processor->fp_global_pose);
     topics.push_back(iparam_->topic_global_pose_sub);
     ROS_INFO("\033[1;32m----> start global_pose.\033[0m");
   }
   if (iparam_->b_imu_data) {
-    imu_writer_ = new AsyncWriter(data_processor->fp_imu_data);
+    imu_writer_ = std::make_unique<AsyncWriter>(data_processor->fp_imu_data);
     topics.push_back(iparam_->topic_imu_data_sub);
     ROS_INFO("\033[1;32m----> start imu_data.\033[0m");
   }
   if (iparam_->b_lidar) {
     ROS_INFO("\033[1;32m----> start lidar.\033[0m");
-    if (iparam_->b_difop == 0)
+    if (iparam_->b_difop == 0) {
       topics.push_back(iparam_->topic_lidar_sub);
-    else {
+      lidar_topics.push_back(iparam_->topic_lidar_sub);
+    } else {
       topics.push_back(iparam_->topic_lidar_ori_sub);
       topics.push_back(iparam_->topic_lidar_difop_sub);
+      lidar_topics.push_back(iparam_->topic_lidar_ori_sub);
+      lidar_topics.push_back(iparam_->topic_lidar_difop_sub);
     }
   }
   if (iparam_->b_camera) {
@@ -230,100 +324,96 @@ void Ros1Convert::Run() {
     }
   }
 
+  const bool two_pass_sampling = rparam_->prepare_data_num != -1;
+
+  // 第一阶段只遍历激光雷达 topic：先稳定地生成全部采样时刻并保存被采样的雷达帧。
+  // 其它传感器不在这个 View 内，因此不会在第一阶段发生反序列化。
+  if (two_pass_sampling) {
+    ROS_INFO("----> phase 1/2: collect lidar sampled timestamps.");
+    rosbag::View lidar_view(bag, rosbag::TopicQuery(lidar_topics));
+    for (const rosbag::MessageInstance& m : lidar_view) {
+      ProcessLidarMessage(m, m.getTopic());
+      if (data_processor->b_final.load()) break;
+    }
+
+    if (!data_processor->b_final.load()) {
+      ROS_WARN("Lidar sampling ended before prepare_data_num was reached.");
+    }
+  }
+
   this->CreateImageWorker();
 
-  // ── rosbag View ──────────────────────────────────────────
-  rosbag::View view(bag, rosbag::TopicQuery(topics));
-
-  // ── Reader 主循环 ─────────────────────────────────────────
-  //
-  //  所有 m.instantiate<T>() 必须在这里（主线程）完成，
-  //  不得将 MessageInstance 的引用或指针传递给任何其他线程！
-  //
-  for (const rosbag::MessageInstance& m : view) {
-    const std::string& topic = m.getTopic();
-
-    // ── 轻量数据（pose/imu）：主线程直接处理 ────────────────
-    Ros1bagParseBase(m);
-
-    // ── Lidar：必须单线程 ─────────────────────────────────
-    if (iparam_->b_lidar) {
-      auto type = SensorRegistry::Instance().GetLidarType(rparam_->lidar_type);
-
-      switch (type) {
-        case LidarType::M1P:
-        case LidarType::RS128:
-          if (iparam_->b_difop == 0) {
-            if (topic == iparam_->topic_lidar_sub) {
-              // instantiate 在主线程
-              auto msg = m.instantiate<sensor_msgs::PointCloud2>();
-              this->LidarHandler(msg);
-            }
-          } else {
-            this->SendLidarHandler(m, topic);
-          }
-          break;
-
-        case LidarType::MID360:
-          if (topic == iparam_->topic_lidar_sub) {
-            // std::cout << "MID360: " << iparam_->topic_lidar_sub << std::endl;
-            // instantiate 在主线程
-#if defined(LIVOX_OLD)
-            auto msg = m.instantiate<livox_ros_driver2::CustomMsg>();
-            this->LivoxLidarHandler(msg);
-#elif defined(LIVOX_NEW)
-            auto msg = m.instantiate<sensor_msgs::PointCloud2>();
-            this->LidarHandler(msg);
-#endif
-          }
-          break;
-
-        default:
-          auto msg = m.instantiate<sensor_msgs::PointCloud2>();
-          this->NormalLidarHandler(msg);
-          break;
-      }
+  // 第二阶段不再读取 lidar。
+  // 采样时刻已经完整，ImageWorker 不会与 PushSampledTime 并发竞争，
+  // 从而避免先消费图像、后生成采样点的漏写。
+  std::vector<std::string> reader_topics;
+  if (two_pass_sampling) {
+    const std::unordered_set<std::string> lidar_topic_set(lidar_topics.begin(),
+                                                          lidar_topics.end());
+    for (const auto& topic : topics) {
+      // 将包含在 lidar_topics 中的话题过滤掉
+      if (lidar_topic_set.count(topic) == 0) reader_topics.push_back(topic);
     }
+  } else {
+    reader_topics = topics;
+  }
 
-    // ── 采样结束判断 ──────────────────────────────────────
-    if (rparam_->prepare_data_num != -1) {
-      if (data_processor->b_final) break;
-      continue;  // 有采样数量限制时，图像通过 LidarHandler 驱动，不走下方分发
-    }
+  // 空 TopicQuery 会匹配 bag 中所有 topic；只配置 lidar 时第二阶段应跳过。
+  if (!reader_topics.empty()) {
+    // ── rosbag View ────────────────────────────────────────
+    rosbag::View view(bag, rosbag::TopicQuery(reader_topics));
 
-    // ── Radar（不涉及图像，主线程直接处理）────────────────
-    if (iparam_->b_radar) {
-      RadarHandler(m);
-    }
-
-    if (iparam_->b_radar4d) {
-      auto it = radar4d_topic_map.find(topic);
-      if (it != radar4d_topic_map.end()) {
-        Radar4DHandler(m, it->second);
-      }
-    }
-
-    // ── 图像分发：主线程 instantiate，Worker 线程解码 ─────
+    // ── Reader 主循环 ───────────────────────────────────────
     //
-    //  关键：m.instantiate<T>() 在主线程调用，返回 shared_ptr，
-    //  生命周期与 bag 迭代器解耦，可安全跨线程传递。
+    // 所有 m.instantiate<T>() 必须在这里（主线程）完成，
+    // 不得将 MessageInstance 的引用或指针传递给任何其他线程！
     //
-    // camera
-    if (iparam_->b_camera) {
-      TryDispatchImageTask(m, topic, camera_topic_map, camera_queues,
-                           ds_camera);
-    }
+    for (const rosbag::MessageInstance& m : view) {
+      const std::string& topic = m.getTopic();
 
-    // infra
-    if (iparam_->b_infra) {
-      TryDispatchImageTask(m, topic, infra_topic_map, infra_queues, ds_infra);
-    }
+      // ── 轻量数据（pose/imu）：主线程直接处理 ────────────────
+      Ros1bagParseBase(m);
 
-    // star
-    if (iparam_->b_star) {
-      TryDispatchImageTask(m, topic, star_topic_map, star_queues, ds_star);
-    }
-  }  // end for m : view
+      // 无采样数量限制时，雷达和其它 topic 同一遍读取；
+      // 有限采样时，雷达已在第一阶段完成，reader_topics 中也没有雷达 topic。
+      if (iparam_->b_lidar && !two_pass_sampling) {
+        ProcessLidarMessage(m, topic);
+      }
+
+      // ── Radar（不涉及图像，主线程直接处理）────────────────
+      if (iparam_->b_radar && topic == iparam_->topic_radar_sub) {
+        RadarHandler(m);
+      }
+
+      if (iparam_->b_radar4d) {
+        auto it = radar4d_topic_map.find(topic);
+        if (it != radar4d_topic_map.end()) {
+          Radar4DHandler(m, it->second);
+        }
+      }
+
+      // ── 图像分发：主线程 instantiate，Worker 线程解码 ─────
+      //
+      //  关键：m.instantiate<T>() 在主线程调用，返回 shared_ptr，
+      //  生命周期与 bag 迭代器解耦，可安全跨线程传递。
+      //
+      // camera
+      if (iparam_->b_camera) {
+        TryDispatchImageTask(m, topic, camera_topic_map, camera_queues,
+                             ds_camera);
+      }
+
+      // infra
+      if (iparam_->b_infra) {
+        TryDispatchImageTask(m, topic, infra_topic_map, infra_queues, ds_infra);
+      }
+
+      // star
+      if (iparam_->b_star) {
+        TryDispatchImageTask(m, topic, star_topic_map, star_queues, ds_star);
+      }
+    }  // end for m : view
+  }
   std::cout << "end for m : view" << std::endl;
 
   // ── 关闭所有队列，等待 Worker 处理完毕后退出 ──────────────
@@ -346,6 +436,7 @@ void Ros1Convert::Run() {
   // ── 所有 Worker 已退出，可以安全关闭 bag ─────────────────
   bag.close();
 
+  StopAsyncWriters();
   data_processor->Stop();
 
   std::cout << "--- --- stop && end --- --- " << std::endl;
@@ -365,7 +456,7 @@ void Ros1Convert::Run() {
   ROS_INFO("\033[1;32m----> txt file generated over.\033[0m");
   std::cout.flush();
   ROS_INFO("...");  // ROS日志自带刷新
-  exit(1);
+  return;
 }
 
 void Ros1Convert::Ros1bagParseBase(const rosbag::MessageInstance& m) {
@@ -649,6 +740,7 @@ void Ros1Convert::RadarHandler(const rosbag::MessageInstance& m) {
         fp_radar = fopen(file_radar, "w");
         if (fp_radar == NULL) {
           perror("Radar file create error!");
+          return;
         }
 
         for (int i = 0; i < PointCloud.size(); i++) {
@@ -699,6 +791,7 @@ void Ros1Convert::RadarHandler(const rosbag::MessageInstance& m) {
         fp_radar = fopen(file_radar, "w");
         if (fp_radar == NULL) {
           perror("Radar file create error!");
+          return;
         }
 
         for (int i = 0; i < PointCloud.size(); i++) {
@@ -767,6 +860,7 @@ void Ros1Convert::Radar4DHandler(const rosbag::MessageInstance& m, int idx) {
         fp_radar4d = fopen(file_radar4d, "w");
         if (fp_radar4d == NULL) {
           perror("Radar4D file create error!");
+          return;
         }
 
         for (int i = 0; i < PointCloud.size(); i++) {
@@ -830,6 +924,7 @@ void Ros1Convert::Radar4DHandler(const rosbag::MessageInstance& m, int idx) {
         fp_radar4d = fopen(file_radar4d, "w");
         if (fp_radar4d == NULL) {
           perror("Radar4D file create error!");
+          return;
         }
 
         for (int i = 0; i < PointCloud.data.size(); i++) {
@@ -993,8 +1088,9 @@ void Ros1Convert::NormalLidarHandler(
 }
 
 void Ros1Convert::InitRslidar() {
-  sem_init(&sem_a, 0, 1);
-  // sem_init(&sem_b, 0, 1);
+  // 每个 scan 都必须等待对应回调完成；初始值为 0 才不会让首帧越过等待。
+  sem_init(&sem_a, 0, 0);
+  // sem_init(&sem_a, 0, 1);
 
   sub_cloud = nh_.subscribe(iparam_->topic_lidar_sub, 10,
                             &Ros1Convert::RecvLidarHandler, this);
@@ -1052,9 +1148,12 @@ void Ros1Convert::RecvLidarHandler(const sensor_msgs::PointCloud2& msg) {
   uint64_t msg_time = msg.header.stamp.toSec() * 1000;
   // std::cout << "lidar msg_time: " << msg_time << std::endl;
 
-  sem_post(&sem_a);
-
-  if (!data_processor->PushSampledTime(msg_time)) return;
+  // SendLidarHandler 必须等到本帧的采样时间已经写入 sampled_time 后
+  // 才能继续读 bag；否则第二阶段可能看到尚未完整的采样列表。
+  if (!data_processor->PushSampledTime(msg_time)) {
+    sem_post(&sem_a);
+    return;
+  }
 
   cloud_buffer_->clear();
   pcl::fromROSMsg(msg, *cloud_buffer_);
@@ -1086,6 +1185,7 @@ void Ros1Convert::RecvLidarHandler(const sensor_msgs::PointCloud2& msg) {
   }
 
   num_lidar_recv++;
+  sem_post(&sem_a);
 }
 
 }  // namespace tools

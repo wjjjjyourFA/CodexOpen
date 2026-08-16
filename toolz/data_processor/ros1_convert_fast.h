@@ -45,6 +45,7 @@
 #include <stdint.h>
 
 #include <iostream>
+#include <memory>
 #include <thread>
 #include <unordered_set>
 #include <vector>
@@ -166,9 +167,13 @@ class Ros1Convert {
   int num_local_pose  = 0;
   int num_imu_data    = 0;
 
-  AsyncWriter* gpose_writer_ = nullptr;
-  AsyncWriter* lpose_writer_ = nullptr;
-  AsyncWriter* imu_writer_   = nullptr;
+  std::unique_ptr<AsyncWriter> gpose_writer_;
+  std::unique_ptr<AsyncWriter> lpose_writer_;
+  std::unique_ptr<AsyncWriter> imu_writer_;
+
+  void StopAsyncWriters();
+  void ProcessLidarMessage(const rosbag::MessageInstance& m,
+                           const std::string& topic);
 
   std::unordered_map<std::string, int> camera_topic_map;
   std::unordered_map<std::string, int> infra_topic_map;

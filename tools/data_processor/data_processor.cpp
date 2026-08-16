@@ -434,9 +434,11 @@ DataProcessor::SampledTimeState DataProcessor::GetSampledTimeState(
   }
 
   if (diff < -kSampledTimeToleranceMs) {
+    // 太早
     return SampledTimeState::kTooEarly;
   }
   if (diff > kSampledTimeToleranceMs) {
+    // 太晚
     return SampledTimeState::kTooLate;
   }
   return SampledTimeState::kInWindow;

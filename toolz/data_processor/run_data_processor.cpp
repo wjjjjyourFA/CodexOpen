@@ -1,3 +1,6 @@
+#include <exception>
+#include <iostream>
+#include <stdexcept>
 #include <thread>
 
 #include "modules/common/environment_conf.h"
@@ -33,9 +36,8 @@ int main(int argc, char** argv) {
   interface_config->LoadConfig(if_config_path);
 
 #if defined(ENABLE_ROS1)
-  ROS_INFO("\033[1;32m----> DataProcessor Started (auto version).\033[0m");
-
   ros::init(argc, argv, name);
+  ROS_INFO("\033[1;32m----> DataProcessor Started (auto version).\033[0m");
   ros::NodeHandle nh;
   ros::NodeHandle private_nh("~");
 

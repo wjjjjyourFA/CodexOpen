@@ -45,8 +45,7 @@ int main(int argc, char** argv) {
     interface_config->set_name(name);
     interface_config->LoadConfig(if_config_path);
 
-#if !defined(DATA_PROCESSOR_ROS2)
-
+#if defined(ENABLE_ROS1)
   ros::init(argc, argv, name);
   ROS_INFO("\033[1;32m----> DataProcessor Started (auto version).\033[0m");
   ros::NodeHandle nh;
@@ -73,7 +72,7 @@ int main(int argc, char** argv) {
   if (worker.joinable()) worker.join();
   return worker_status;
 
-#else
+#elif defined(ENABLE_ROS2)
   rclcpp::init(argc, argv);
   auto nh = std::make_shared<rclcpp::Node>(name);
 
