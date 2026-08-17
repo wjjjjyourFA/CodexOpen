@@ -1,5 +1,10 @@
 #include "toolz/data_loader/group_convert.h"
 
+#include <cinttypes>
+#include <cmath>
+#include <cstdio>
+#include <map>
+
 namespace jojo {
 namespace tools {
 namespace common    = apollo::cyber::common;
@@ -14,11 +19,24 @@ GroupConvertDataSet::~GroupConvertDataSet() {}
 bool GroupConvertDataSet::Init(
     std::shared_ptr<jojo::tools::RuntimeConfig> rparam,
     std::shared_ptr<jojo::tools::InterfaceConfig> iparam) {
+  if (!rparam || !iparam) {
+    std::cerr << "[ERROR] GroupConvert requires non-null configuration"
+              << std::endl;
+    return false;
+  }
+  if (!iparam->b_lidar) {
+    std::cerr << "[ERROR] GroupConvert requires lidar as the master clock"
+              << std::endl;
+    return false;
+  }
+
   rparam_ = rparam;
   iparam_ = iparam;
 
   data_loader = std::make_shared<DataLoaderDataSet>();
-  data_loader->Init(rparam_, iparam_);
+  if (!data_loader->Init(rparam_, iparam_)) {
+    return false;
+  }
   data_loader->Start();
 
   dc_camera.resize(iparam_->b_camera);
@@ -26,13 +44,16 @@ bool GroupConvertDataSet::Init(
   dc_star.resize(iparam_->b_star);
   dc_radar4d.resize(iparam_->b_radar4d);
 
-  this->InitGroup();
+  if (!this->InitGroup()) {
+    is_running_ = false;
+    return false;
+  }
   // std::cout << "GroupConvertDataSet Init End." << std::endl;
 
   return true;
 }
 
-void GroupConvertDataSet::InitGroup() {
+bool GroupConvertDataSet::InitGroup() {
   // 基类指针初始化
   group = std::make_shared<MeasureGroupDataSet>();
   // 拿到子类指针
@@ -47,9 +68,13 @@ void GroupConvertDataSet::InitGroup() {
         data_loader->SaveTimeStamp(data_loader->postfix, ts_file, dc_lidar);
       } else {
         std::cerr << name << " timestamp load failed" << std::endl;
+        return false;
       }
     }
-    dc_lidar.init_ts(rparam_->start_time);
+    if (dc_lidar.empty() || dc_lidar.init_ts(rparam_->start_time) == 0) {
+      std::cerr << name << " has no frame at or after start_time" << std::endl;
+      return false;
+    }
     // update the start time
     rparam_->start_time = dc_lidar.cur_time;
 
@@ -77,6 +102,7 @@ void GroupConvertDataSet::InitGroup() {
           data_loader->SaveTimeStamp(data_loader->postfix, ts_file, dc_camera.at(i));
         } else {
           std::cerr << name << " timestamp load failed" << std::endl;
+          return false;
         }
       }
       // clang-format on
@@ -104,6 +130,7 @@ void GroupConvertDataSet::InitGroup() {
           data_loader->SaveTimeStamp(data_loader->postfix, ts_file, dc_infra.at(i));
         } else {
           std::cerr << name << " timestamp load failed" << std::endl;
+          return false;
         }
       }
       // clang-format on
@@ -128,6 +155,7 @@ void GroupConvertDataSet::InitGroup() {
           data_loader->SaveTimeStamp(data_loader->postfix, ts_file, dc_star.at(i));
         } else {
           std::cerr << name << " timestamp load failed" << std::endl;
+          return false;
         }
       }
       // clang-format on
@@ -139,24 +167,33 @@ void GroupConvertDataSet::InitGroup() {
   if (iparam_->b_global_pose) {
     dc_se3_pose.set_name("global_pose");
     // LoadPose(data_loader->postfix, dc_se3_pose.name);
-    LoadPose(data_loader->path_global_pose);
+    if (!LoadPose(data_loader->path_global_pose) || dc_se3_pose.empty()) {
+      return false;
+    }
   } else if (iparam_->b_local_pose) {
     dc_se3_pose.set_name("local_pose");
     // LoadPose(data_loader->postfix, dc_se3_pose.name);
-    LoadPose(data_loader->path_local_pose);
+    if (!LoadPose(data_loader->path_local_pose) || dc_se3_pose.empty()) {
+      return false;
+    }
   }
+
+  return true;
 }
 
 std::shared_ptr<const MeasureGroupBase> GroupConvertDataSet::ReadNext() {
   // std::cout << "GroupConvert ReadNext." << std::endl;
-  static bool first_run = false;
-  if (!first_run) {
+  if (!is_running_) {
+    return nullptr;
+  }
+  if (!started_) {
     index_ts    = rparam_->start_time;
     is_running_ = true;
-    first_run   = true;
+    started_    = true;
   }
 
-  if (rparam_->end_time != 0 && index_ts >= rparam_->end_time) {
+  if (rparam_->end_time != 0 &&
+      index_ts >= static_cast<uint64_t>(rparam_->end_time)) {
     is_running_ = false;
     return nullptr;
   }
@@ -170,9 +207,14 @@ std::shared_ptr<const MeasureGroupBase> GroupConvertDataSet::ReadNext() {
       std::cerr << "[Warning] Failed to load lidar: "
                 << ", skipping frame." << std::endl;
       is_running_ = false;
+      return nullptr;
     }
     // 更新 基准 时间戳，但这里是下一帧的，因为 GetLidarBase 自增了迭代器
-    index_ts = dc_lidar.cur_time;
+    if (dc_lidar.is_end()) {
+      is_running_ = false;
+    } else {
+      index_ts = dc_lidar.cur_time;
+    }
   }
 
   if (iparam_->b_camera) {  // 加载图像
@@ -191,7 +233,7 @@ std::shared_ptr<const MeasureGroupBase> GroupConvertDataSet::ReadNext() {
   if (iparam_->b_infra) {  // 加载图像
     for (int i = 0; i < iparam_->b_infra; i++) {
       dc_infra.at(i).align_ts(last_ts);
-      this->GetImage(group->infra.at(i).data, group->infra.at(i).time, i, 1);
+      this->GetImage(group->infra.at(i).data, group->infra.at(i).time, i, 2);
       if (group->infra.at(i).data.empty()) {
         std::cerr << "[Warning] Failed to load infra : " << i + 1
                   << ", skipping frame." << std::endl;
@@ -203,7 +245,7 @@ std::shared_ptr<const MeasureGroupBase> GroupConvertDataSet::ReadNext() {
   if (iparam_->b_star) {  // 加载图像
     for (int i = 0; i < iparam_->b_star; i++) {
       dc_star.at(i).align_ts(last_ts);
-      this->GetImage(group->star.at(i).data, group->star.at(i).time, i, 1);
+      this->GetImage(group->star.at(i).data, group->star.at(i).time, i, 3);
       if (group->star.at(i).data.empty()) {
         std::cerr << "[Warning] Failed to load star : " << i + 1
                   << ", skipping frame." << std::endl;
@@ -236,69 +278,100 @@ std::shared_ptr<const MeasureGroupBase> GroupConvertDataSet::ReadNext() {
 
 bool GroupConvertDataSet::LoadPose(const std::string& path,
                                    const std::string& data_file) {
-  char file[300];
-  sprintf(file, "%s/%s.txt", path.c_str(), data_file.c_str());
+  if (path.empty() || data_file.empty()) {
+    std::cerr << "[ERROR] Pose path and file name must not be empty"
+              << std::endl;
+    return false;
+  }
 
-  return this->LoadImuData(std::string(file));
+  char file[300];
+  snprintf(file, sizeof(file), "%s/%s.txt", path.c_str(), data_file.c_str());
+
+  return this->LoadPose(std::string(file));
 }
 
 bool GroupConvertDataSet::LoadPose(const std::string& file) {
-  // std::cout << "LoadPose: " << file << std::endl;
-
-  // 这里将外部数据转换为这个接口
-  cstruct::SE3Pose pose;
+  if (file.empty()) {
+    std::cerr << "[ERROR] Pose file path must not be empty" << std::endl;
+    return false;
+  }
 
   if (!common::FileExists(file)) {
     std::cerr << "[ERROR] Failed to load file: " << file << std::endl;
     return false;
   }
 
-  FILE* _fp = NULL;
-  _fp       = fopen(file.c_str(), "r");
-  if (_fp != NULL) {
-    while (!feof(_fp)) {
-      // 优化后的位姿，时间戳使用的整型
-      int64_t local_time;
-      double x, y, z, roll, pitch, yaw;
-      // clang-format off
-      int itemsRead = fscanf(_fp, "%" SCNd64 " %lf %lf %lf %lf %lf %lf",
-                             &local_time, &x, &y, &z, &roll, &pitch, &yaw);
-      // clang-format on
-      pose.time    = static_cast<double>(local_time);
-      pose.pos.x() = x;
-      pose.pos.y() = y;
-      pose.pos.z() = z;
-      // std::cout << "pose.pos.z(): " << pose.pos.z() << std::endl;
-
-      // clang-format off
-      Eigen::Matrix3d R = transform::YPR2RotationZYX(Eigen::Matrix<double, 3, 1>(yaw, pitch, roll));
-      transform::RotationToQuaternion(R, pose.rot);
-      // clang-format on
-
-      if (itemsRead != 7) break;
-
-      dc_se3_pose.insert(uint64_t(pose.time), &pose);
-    }
-    fclose(_fp);
+  FILE* fp = fopen(file.c_str(), "r");
+  if (fp == nullptr) {
+    std::cerr << "[ERROR] Failed to open pose file: " << file << std::endl;
+    return false;
   }
 
+  // 这里将外部数据转换为这个接口
+  cstruct::SE3Pose pose;
+
+  while (true) {
+    // 优化后的位姿，时间戳使用的整型
+    int64_t local_time = 0;
+    double x = 0.0, y = 0.0, z = 0.0;
+    double roll = 0.0, pitch = 0.0, yaw = 0.0;
+    // clang-format off
+    const int items_read = fscanf(fp, "%" SCNd64 " %lf %lf %lf %lf %lf %lf",
+                                  &local_time, &x, &y, &z,
+                                  &roll, &pitch, &yaw);
+    // clang-format on
+
+    if (items_read == EOF) {
+      if (ferror(fp)) {
+        std::cerr << "[ERROR] Failed while reading pose file: " << file
+                  << std::endl;
+        fclose(fp);
+        return false;
+      }
+      break;
+    }
+
+    if (items_read != 7) {
+      std::cerr << "[ERROR] Malformed pose record " << " in: " << file
+                << ", expected 7 fields but read " << items_read << std::endl;
+      fclose(fp);
+      return false;
+    }
+
+    pose.time = static_cast<double>(local_time);
+    pose.pos  = Eigen::Vector3d(x, y, z);
+
+    // clang-format off
+    const Eigen::Matrix3d rotation = transform::YPR2RotationZYX(Eigen::Matrix<double, 3, 1>(yaw, pitch, roll));
+    transform::RotationToQuaternion(rotation, pose.rot);
+    pose.rot.normalize();
+    // clang-format on
+
+    dc_se3_pose.insert(uint64_t(pose.time), &pose);
+  }
+  fclose(fp);
+
   // clang-format off
-  // 找最后一个路径分隔符（兼容 Linux / Windows）
-  auto pos = file.find_last_of("/\\");
-  std::string parent = (pos == std::string::npos) ? "" : file.substr(0, pos);
-  const std::string p_c_path = parent + "/pose_center" + ".txt";
-  std::cout << "p_c_path: " << p_c_path << std::endl;
+  // 找最后一个路径分隔符（兼容 Linux / Windows）。
+  const auto pos = file.find_last_of("/\\");
+  const std::string parent = (pos == std::string::npos) ? "" : file.substr(0, pos);
+  const std::string pose_center_path = parent.empty() ? "pose_center.txt" : parent + "/pose_center.txt";
+  std::cout << "p_c_path: " << pose_center_path << std::endl;
   // clang-format on
 
   // 计算 pose center 用于调整偏移
-  double pose_center_x = 0, pose_center_y = 0, pose_center_z = 0;
+  double pose_center_x = 0.0;
+  double pose_center_y = 0.0;
+  double pose_center_z = 0.0;
 
-  if (common::FileExists(p_c_path)) {
+  if (common::FileExists(pose_center_path)) {
     // std::cout << "p_c_path exists." << std::endl;
 
-    _fp = fopen(p_c_path.c_str(), "r");
-    fscanf(_fp, "%lf %lf %lf", &pose_center_x, &pose_center_y, &pose_center_z);
-    fclose(_fp);
+    fp = fopen(pose_center_path.c_str(), "r");
+    if (fp != nullptr) {
+      fscanf(fp, "%lf %lf %lf", &pose_center_x, &pose_center_y, &pose_center_z);
+      fclose(fp);
+    }
   } else {
     std::cout << "p_c_path don't exists.. rebuild pose_center.txt" << std::endl;
 
@@ -331,9 +404,9 @@ bool GroupConvertDataSet::LoadPose(const std::string& file) {
     pose_center_y = center_y / double(num_of_key_frames);
     pose_center_z = center_z / double(num_of_key_frames);
 
-    _fp = fopen(p_c_path.c_str(), "w");
-    fprintf(_fp, "%lf %lf %lf", pose_center_x, pose_center_y, pose_center_z);
-    fclose(_fp);
+    fp = fopen(pose_center_path.c_str(), "w");
+    fprintf(fp, "%lf %lf %lf", pose_center_x, pose_center_y, pose_center_z);
+    fclose(fp);
   }
 
   group_ds->pose_center =
@@ -341,7 +414,7 @@ bool GroupConvertDataSet::LoadPose(const std::string& file) {
   // std::cout << std::fixed << std::setprecision(10);
   // std::cout << "pose_center: " << group_ds->pose_center.transpose() << std::endl;
 
-  return false;
+  return true;
 }
 
 void GroupConvertDataSet::print_pose_vec(

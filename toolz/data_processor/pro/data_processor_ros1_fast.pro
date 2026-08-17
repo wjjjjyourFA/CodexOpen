@@ -62,6 +62,9 @@ SOURCES += \
 SOURCES -= \
   $$PREFIX/tools/pcl/pcl_viewer_test.cpp \
   $$SELF_PATH/config/runtime_config_legacy.cpp \
+  $$PREFIX/common/config/config_core_test.cpp \
+  $$PREFIX/common/camera/params/camera_params_core_test.cpp \
+  $$PREFIX/common/lidar/convert/lidar_convert_core_test.cpp
 
 HEADERS += \
   $$CODEX_PATH/cyber/binary.h \

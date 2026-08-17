@@ -36,7 +36,7 @@ class GroupConvertDataSet : public GroupConvert {
   bool Init(std::shared_ptr<jojo::tools::RuntimeConfig> param,
             std::shared_ptr<jojo::tools::InterfaceConfig> interface) override;
 
-  void InitGroup() override;
+  bool InitGroup() override;
 
   // std::shared_ptr<const MeasureGroupDataSet> ReadNext();
   std::shared_ptr<const MeasureGroupBase> ReadNext() override;
@@ -56,6 +56,7 @@ class GroupConvertDataSet : public GroupConvert {
  private:
   std::shared_ptr<MeasureGroupDataSet> group_ds = nullptr;
 
+ protected:
   DataContainer<jojo::common_struct::SE3Pose> dc_se3_pose;
 
  protected:

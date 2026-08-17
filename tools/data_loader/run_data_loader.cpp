@@ -53,7 +53,7 @@ int main(int argc, char** argv) {
     if (!base) {
       break;
     }
-    group     = std::static_pointer_cast<const MeasureGroup>(base);
+    group = std::static_pointer_cast<const MeasureGroup>(base);
     // std::cout << "Frame " << frame_idx
     //           << ": Image Time = " << group->camera.at(0).time
     //           << ", Lidar Time = " << group->lidar.time

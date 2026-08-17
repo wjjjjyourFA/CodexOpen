@@ -1,8 +1,8 @@
 #include <chrono>
 
 #include <opencv2/opencv.hpp>
-#include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/common/io.h>
+#include <pcl/visualization/pcl_visualizer.h>
 
 #include "toolz/data_loader/group_convert.h"
 
@@ -29,7 +29,10 @@ int main(int argc, char** argv) {
   interface_config->LoadConfig(if_config_path);
 
   auto group_convert = std::make_shared<GroupConvertDataSet>();
-  group_convert->Init(runtime_config, interface_config);
+  if (!group_convert->Init(runtime_config, interface_config)) {
+    std::cerr << "[ERROR] Failed to initialize GroupConvert" << std::endl;
+    return 1;
+  }
 
   pcl::visualization::PCLVisualizer::Ptr viewer(
       new pcl::visualization::PCLVisualizer("Lidar Viewer"));
@@ -46,7 +49,10 @@ int main(int argc, char** argv) {
   std::shared_ptr<const MeasureGroupDataSet> group;
   while (!group_convert->IsEnd()) {
     auto base = group_convert->ReadNext();
-    group     = std::static_pointer_cast<const MeasureGroupDataSet>(base);
+    if (!base) {
+      break;
+    }
+    group = std::static_pointer_cast<const MeasureGroupDataSet>(base);
     // std::cout << "Frame " << frame_idx
     //           << ": Image Time = " << group->camera.at(0).time
     //           << ", Lidar Time = " << group->lidar.time
@@ -55,9 +61,9 @@ int main(int argc, char** argv) {
     //           << std::endl;
 
     // 显示图像
-    if (!group->camera.at(0).data.empty()) {
+    if (!group->camera.empty() && !group->camera.front().data.empty()) {
       // cv::Mat img_show = group->camera.at(0).data.clone();
-      cv::Mat img_show = group->camera.at(0).data;
+      cv::Mat img_show = group->camera.front().data;
       cv::putText(img_show, "Frame: " + std::to_string(frame_idx),
                   cv::Point(30, 30), cv::FONT_HERSHEY_SIMPLEX, 1.0,
                   cv::Scalar(0, 255, 0), 2);
