@@ -69,6 +69,7 @@ class MapCenterView {
   bool NeedUpdateROI(const Eigen::Vector3f& center);
 
   void BridView(const Eigen::Matrix4f& pose);
+  void UpdateTrajectory(const Eigen::Matrix4f& pose);
 
  private:
   std::shared_ptr<jojo::dreamview::StaticConfig> sparam_;
@@ -82,6 +83,7 @@ class MapCenterView {
   // 缓存
   pcl::PointCloud<pcl::PointXYZI>::Ptr frame_world = nullptr;
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr vis_cloud = nullptr;
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr trajectory_ = nullptr;
   pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI>::Ptr
       intensity_handler = nullptr;
 

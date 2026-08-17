@@ -11,7 +11,7 @@ CONFIG -= qt
 CONFIG += object_parallel_to_source
 TARGET = map_center_view
 
-CODEX_PATH = $$PWD/../../../../../CodexOpen
+CODEX_PATH = $$clean_path($$PWD/../../../..)
 PREFIX = $$CODEX_PATH/modules/perception/common
 SELF_PATH = $$CODEX_PATH/modules/dreamview/map_center_view
 KDTREE_PATH = $$CODEX_PATH/modules/perception/common/algorithm/point_cloud_processing/ikd-Tree
