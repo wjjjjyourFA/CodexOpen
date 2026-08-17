@@ -3,7 +3,10 @@
 
 #pragma once
 
+#include <cstdint>
 #include <iostream>
+#include <string>
+#include <vector>
 
 #include <opencv2/opencv.hpp>
 
@@ -21,22 +24,25 @@ class RuntimeConfig : public jojo::common::config::ConfigFileBase {
  public:
   std::string root_path;
   std::string file_name;
-  int64_t start_time, end_time, current_time;
-  float pause_time;
+  int64_t start_time{0};
+  int64_t end_time{0};
+  int64_t current_time{0};
+  float pause_time{1.0F};
 
-  bool use_bin_or_pcd, use_txt_or_pcd;
-  int use_jpg_or_png;
+  bool use_bin_or_pcd{false};
+  bool use_txt_or_pcd{false};
+  int use_jpg_or_png{0};
 
-  bool b_compensation_cloud;
-  int b_lt_none_rt;
+  bool b_compensation_cloud{false};
+  int b_lt_none_rt{1};
 
-  bool b_do_undistort;
+  bool b_do_undistort{false};
   std::string calib_file_dir;
 
   std::vector<int> compress_params;
 
-  bool b_imu_vec;
-  bool b_pose_vec;
+  bool b_imu_vec{false};
+  bool b_pose_vec{false};
 
   std::string lidar_type;
   std::vector<std::string> camera_name;

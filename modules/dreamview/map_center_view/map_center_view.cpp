@@ -10,6 +10,9 @@ MapCenterView::MapCenterView() {
   if (!map_roi) {
     map_roi.reset(new pcl::PointCloud<pcl::PointXYZI>);
   }
+  if (!trajectory_) {
+    trajectory_.reset(new pcl::PointCloud<pcl::PointXYZRGB>);
+  }
 };
 
 void MapCenterView::Init(
@@ -74,6 +77,14 @@ void MapCenterView::SetInitMap(
   crop_box.setInputCloud(map_);
 
   this->InitViewer();
+
+  // ROI 模式只显示动态裁剪结果，避免同时上传和渲染完整地图。
+  if (sparam_ && sparam_->b_display_roi) {
+    if (vis_->contains("map")) {
+      vis_->removePointCloud("map");
+    }
+    return;
+  }
 
   // clang-format off
   pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZI> map_color(map_, 128, 128, 128);
@@ -191,26 +202,7 @@ void MapCenterView::ShowFrame(const pcl::PointCloud<pcl::PointXYZI>::Ptr& frame,
   }
 
   // 4. traj
-  static pcl::PointCloud<pcl::PointXYZRGB>::Ptr traj(
-      new pcl::PointCloud<pcl::PointXYZRGB>);
-
-  pcl::PointXYZRGB pt;
-  pt.x = pose(0, 3);
-  pt.y = pose(1, 3);
-  pt.z = pose(2, 3);
-  pt.r = 255;
-  pt.g = 0;
-  pt.b = 0;
-
-  traj->points.push_back(pt);
-
-  if (!vis_->contains("traj")) {
-    vis_->addPointCloud(traj, "traj");
-    vis_->setPointCloudRenderingProperties(
-        pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 4, "traj");
-  } else {
-    vis_->updatePointCloud(traj, "traj");
-  }
+  UpdateTrajectory(pose);
 
   vis_->spinOnce(1);
   // vis_->spin();
@@ -237,6 +229,18 @@ void MapCenterView::UpdateMapROI(const Eigen::Matrix4f& pose) {
   crop_box.setMax(max_pt);
 
   crop_box.filter(*map_roi);
+
+  // clang-format off
+  pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZI> map_color(map_roi, 150, 150, 150);
+  // clang-format on
+
+  if (!vis_->contains("map_roi")) {
+    vis_->addPointCloud(map_roi, map_color, "map_roi");
+    vis_->setPointCloudRenderingProperties(
+        pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "map_roi");
+  } else {
+    vis_->updatePointCloud(map_roi, map_color, "map_roi");
+  }
 }
 
 void MapCenterView::UpdateMapROIKdTree(const Eigen::Matrix4f& pose) {
@@ -348,26 +352,7 @@ void MapCenterView::ShowFrameROI(
   }
 
   // 4. traj
-  static pcl::PointCloud<pcl::PointXYZRGB>::Ptr traj(
-      new pcl::PointCloud<pcl::PointXYZRGB>);
-
-  pcl::PointXYZRGB pt;
-  pt.x = pose(0, 3);
-  pt.y = pose(1, 3);
-  pt.z = pose(2, 3);
-  pt.r = 255;
-  pt.g = 0;
-  pt.b = 0;
-
-  traj->points.push_back(pt);
-
-  if (!vis_->contains("traj")) {
-    vis_->addPointCloud(traj, "traj");
-    vis_->setPointCloudRenderingProperties(
-        pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 4, "traj");
-  } else {
-    vis_->updatePointCloud(traj, "traj");
-  }
+  UpdateTrajectory(pose);
 
   // ---------- 5. 相机跟随（关键） ----------
   BridView(pose);
@@ -391,6 +376,36 @@ bool MapCenterView::NeedUpdateROI(const Eigen::Vector3f& center) {
   }
 
   return false;
+}
+
+void MapCenterView::UpdateTrajectory(const Eigen::Matrix4f& pose) {
+  constexpr std::size_t kMaxTrajectoryPoints = 10000;
+
+  pcl::PointXYZRGB pt;
+  pt.x = pose(0, 3);
+  pt.y = pose(1, 3);
+  pt.z = pose(2, 3);
+  pt.r = 255;
+  pt.g = 0;
+  pt.b = 0;
+  trajectory_->points.push_back(pt);
+
+  if (trajectory_->points.size() > kMaxTrajectoryPoints) {
+    const auto erase_end =
+        trajectory_->points.begin() +
+        (trajectory_->points.size() - kMaxTrajectoryPoints);
+    trajectory_->points.erase(trajectory_->points.begin(), erase_end);
+  }
+  trajectory_->width  = trajectory_->points.size();
+  trajectory_->height = 1;
+
+  if (!vis_->contains("traj")) {
+    vis_->addPointCloud(trajectory_, "traj");
+    vis_->setPointCloudRenderingProperties(
+        pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 4, "traj");
+  } else {
+    vis_->updatePointCloud(trajectory_, "traj");
+  }
 }
 
 void MapCenterView::BridView(const Eigen::Matrix4f& pose) {
@@ -437,6 +452,9 @@ void MapCenterView::BridView(const Eigen::Matrix4f& pose) {
     Eigen::Vector3f forward = R.col(0);
     // 只保留水平分量（去掉 pitch）
     forward.z() = 0.0f;
+    if (forward.squaredNorm() < 1e-6f) {
+      return;
+    }
     forward.normalize();
     // 固定世界up（避免roll/pitch影响）
     static Eigen::Vector3f up(0, 0, 1);

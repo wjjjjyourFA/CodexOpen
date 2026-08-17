@@ -7,12 +7,9 @@
 
 #include "cyber/common/file.h"
 #include "modules/common/math/unit_converter.h"
-#include "modules/perception/tools/pcl/pcl_viewer.h"
 #include "modules/perception/tools/pcl/point_types.h"
 #include "tools/data_loader/data_loader.h"
 #include "tools/data_processor/config/sensor_config.h"
-// #include "modules/perception/tools/common/show_data_3d.h"
-#include "modules/perception/tools/common/show_data_2d.h"
 
 namespace jojo {
 namespace tools {
@@ -76,7 +73,7 @@ class GroupConvert {
   virtual bool Init(std::shared_ptr<jojo::tools::RuntimeConfig> param,
                     std::shared_ptr<jojo::tools::InterfaceConfig> interface);
 
-  virtual void InitGroup();
+  virtual bool InitGroup();
 
   virtual std::shared_ptr<const MeasureGroupBase> ReadNext();
 
@@ -97,6 +94,7 @@ class GroupConvert {
   std::shared_ptr<MeasureGroupBase> group;  // 一帧数据
   // for IsEnd() default need to be true
   bool is_running_ = true;
+  bool started_    = false;
 
   uint64_t index_ts = 0;
 
@@ -119,8 +117,6 @@ class GroupConvert {
   DataContainer<jojo::common_struct::ImuData> dc_imu_data;
 
  protected:
-  void GetDataBase(DataContainerBase* tmp) {};
-
   uint64_t last_pcd_time_ = 0;
   // bool GetLidarBase(DataContainer<uint64_t>& data_c,
   //                   pcl::PointCloud<pcl::PointXYZI>::Ptr cur_cloud_ptr,
@@ -210,7 +206,6 @@ bool GroupConvert::GetLidarBase(
     // cloud->points.reserve(100000);
     cloud->is_dense = false;
 
-    int p_num = 0;
     int tmp_point[4];
     FILE* fp = fopen(file.c_str(), "rb");
     if (!fp) {

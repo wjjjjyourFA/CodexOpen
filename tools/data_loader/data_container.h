@@ -3,15 +3,22 @@
 
 #pragma once
 
-// #include <boost/unordered/unordered_map.hpp>
+#include <cstddef>
+#include <cstdint>
+#include <deque>
+#include <iostream>
+#include <iterator>
+#include <map>
+#include <string>
+#include <vector>
 
 namespace jojo {
 namespace tools {
 
 class DataContainerBase {
  public:
-  DataContainerBase()  = default;
-  ~DataContainerBase() = default;
+  DataContainerBase()          = default;
+  virtual ~DataContainerBase() = default;
 
   // 泛型接口
   virtual void insert(uint64_t t, const void* data)      = 0;
@@ -32,6 +39,9 @@ class DataContainerBase {
   virtual const void* GetCurDataPtr() const    = 0;
 
   virtual void GetAllTimeStamp(std::vector<uint64_t>& ts) const = 0;
+
+  virtual bool empty() const       = 0;
+  virtual std::size_t size() const = 0;
 
   bool first_run = false;
 };
@@ -81,58 +91,44 @@ class DataContainer : public DataContainerBase {
 
   // 用于主数据的时间校准
   uint64_t init_ts(const uint64_t& start_time) override {
-    this->reset_iter();
-
-    uint64_t inited_time = iter->first;
-    // 获得 大于起始点 的时刻
-    while (!this->is_end() && start_time > cur_time) {
-      inited_time = this->cur_time;
-      this->next();
+    // 返回首个 >= start_time 的节点时间。
+    iter = map.lower_bound(start_time);
+    if (iter == map.end()) {
+      cur_time = 0;
+      cur_data = T{};
+      return 0;
     }
-    // std::cout << name << " start time inited : " << cur_time << std::endl;
 
-    return inited_time;
+    cur_time = iter->first;
+    cur_data = iter->second;
+    return cur_time;
   }
 
   // 用于其他数据向主数据对齐：使用最近邻时间
   uint64_t align_ts(const uint64_t& target_time) override {
-    // 后续再查找时间戳，不用再从头开始
-    if (!first_run) {
-      this->reset_iter();
-      first_run = true;
+    if (map.empty()) {
+      iter     = map.end();
+      cur_time = 0;
+      cur_data = T{};
+      return 0;
     }
 
-    uint64_t best_time = iter->first;
-    // way 1 获得 最接近 的时刻
-    while (!this->is_end()) {
-      uint64_t cur = this->cur_time;
-
-      // 如果已经找到第一个大于 target_time 的点
-      if (cur > target_time) {
-        uint64_t prev_time = best_time;
-        uint64_t next_time = cur;
-
-        // 选取距离 target_time 最近的
-        if ((next_time - target_time) < (target_time - prev_time)) {
-          best_time = next_time;
-        } else {
-          best_time = prev_time;
-          this->prev();
-        }
-        break;
-      } else if (cur == target_time) {
-        best_time = cur;
-        break;
-      }
-
-      best_time = cur;
-      this->next();
+    auto next_it = map.lower_bound(target_time);
+    if (next_it == map.begin()) {
+      iter = next_it;
+    } else if (next_it == map.end()) {
+      iter = std::prev(map.end());
+    } else {
+      auto prev_it = std::prev(next_it);
+      iter = (next_it->first - target_time < target_time - prev_it->first)
+                 ? next_it
+                 : prev_it;
     }
 
-    // std::cout << name << " target_time : " << target_time << std::endl;
-    // std::cout << name << " align time inited : " << cur_time << std::endl;
-
-    return best_time;
+    cur_time  = iter->first;
+    cur_data  = iter->second;
+    first_run = true;
+    return cur_time;
   }
 
   void reset_iter() override {
@@ -210,7 +206,8 @@ class DataContainer : public DataContainerBase {
   ConstIterator begin() const { return map.begin(); }
   ConstIterator end() const { return map.end(); }
 
-  size_t size() const { return map.size(); }
+  bool empty() const override { return map.empty(); }
+  std::size_t size() const override { return map.size(); }
 
  protected:
   DataMap map;

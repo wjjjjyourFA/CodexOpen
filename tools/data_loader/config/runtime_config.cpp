@@ -4,6 +4,8 @@ namespace jojo {
 namespace tools {
 
 void RuntimeConfig::LoadConfig(const std::string& config_path) {
+  compress_params.clear();
+
   try {
     // 创建一个 property_tree 对象
     boost::property_tree::ptree pt;
@@ -48,6 +50,7 @@ void RuntimeConfig::LoadConfig(const std::string& config_path) {
     // clang-format on
   } catch (const std::exception& e) {
     std::cerr << "Error reading ini file: " << e.what() << std::endl;
+    return;
   }
 
   switch (use_jpg_or_png) {

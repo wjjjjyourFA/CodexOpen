@@ -17,7 +17,9 @@ bool Ros1Convert::Init(std::shared_ptr<jojo::tools::RuntimeConfig> rparam,
 
   data_loader = std::make_shared<DataLoader>();
   // data_loader = std::make_shared<DataLoaderRealtime>();
-  data_loader->Init(rparam_, iparam_);
+  if (!data_loader->Init(rparam_, iparam_)) {
+    return false;
+  }
   data_loader->Start();
 
   dc_camera.resize(iparam_->b_camera);
@@ -31,6 +33,10 @@ bool Ros1Convert::Init(std::shared_ptr<jojo::tools::RuntimeConfig> rparam,
 }
 
 void Ros1Convert::InitRos1() {
+  if (iparam_->b_camera || iparam_->b_infra || iparam_->b_star) {
+    it = std::make_shared<image_transport::ImageTransport>(node);
+  }
+
   if (iparam_->b_lidar) {
     dc_lidar.pub =
         node.advertise<sensor_msgs::PointCloud2>(iparam_->topic_lidar_pub, 1);
@@ -51,7 +57,6 @@ void Ros1Convert::InitRos1() {
   }
 
   if (iparam_->b_camera) {
-    it = std::make_shared<image_transport::ImageTransport>(node);
     for (int i = 0; i < iparam_->b_camera; i++) {
       dc_camera.at(i).pub = it->advertise(iparam_->topic_camera_pub.at(i), 1);
 
@@ -597,6 +602,11 @@ void Ros1Convert::PublishRadar(const ros::TimerEvent&) {
               tmp->cur_time);
 
       FILE* fp = fopen(file, "r");
+      if (!fp) {
+        std::cerr << "[ERROR] Failed to open radar file: " << file << std::endl;
+        tmp->next();
+        return;
+      }
       int tmp_id;
       float tmp_x, tmp_y;
       float tmp_range, tmp_angle;
@@ -655,6 +665,11 @@ bool Ros1Convert::PubRadar4DBase(DataContainerRos1<uint64_t>& data_c, int id) {
 
       // std::cout << "radar4d : " << file << std::endl;
       FILE* fp = fopen(file, "r");
+      if (!fp) {
+        std::cerr << "[ERROR] Failed to open radar4d file: " << file
+                  << std::endl;
+        return false;
+      }
       float tmp_x, tmp_y, tmp_z, tmp_v, tmp_stdv;
       while (fscanf(fp, "%f %f %f %f %f", &tmp_x, &tmp_y, &tmp_z, &tmp_v,
                     &tmp_stdv) == 5) {
@@ -693,6 +708,11 @@ bool Ros1Convert::PubRadar4DBase(DataContainerRos1<uint64_t>& data_c, int id) {
               tmp->cur_time);
 
       FILE* fp = fopen(file, "r");
+      if (!fp) {
+        std::cerr << "[ERROR] Failed to open radar4d file: " << file
+                  << std::endl;
+        return false;
+      }
       float tmp_x, tmp_y, tmp_z;
       float tmp_range, tmp_azimuth, tmp_elevation;
       float tmp_doppler, tmp_rcs;

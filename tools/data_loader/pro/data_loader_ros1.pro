@@ -50,7 +50,10 @@ SOURCES += \
   $$SELF_PATH/ros1_convert.cpp
 
 SOURCES -= \
-  $$PREFIX/tools/pcl/pcl_viewer_test.cpp
+  $$PREFIX/tools/pcl/pcl_viewer_test.cpp \
+  $$PREFIX/common/config/config_core_test.cpp \
+  $$PREFIX/common/camera/params/camera_params_core_test.cpp \
+  $$PREFIX/common/lidar/convert/lidar_convert_core_test.cpp
 
 HEADERS += \
   $$CODEX_PATH/cyber/binary.h \

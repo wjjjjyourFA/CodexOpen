@@ -25,7 +25,8 @@
 
 // CODEXOPEN
 #include "modules/common/math/math_utils_extra.h"
-#include "tools/data_loader/config/runtime_config_realtime.h"
+#include "tools/common/utils/rclcpp_utils.h"
+#include "tools/data_loader/config/runtime_config.h"
 #include "tools/data_loader/data_container_ros2.h"
 #include "tools/data_loader/data_loader.h"
 // #include "tools/data_loader/data_loader_realtime.h"
@@ -75,16 +76,17 @@ class Ros2Convert {
   std::vector<DataContainerRos2<sensor_msgs::msg::Image::SharedPtr>> dc_infra;
   std::vector<DataContainerRos2<sensor_msgs::msg::Image::SharedPtr>> dc_star;
 
+  // clang-format off
   // DataContainerRos2<sensor_msgs::msg::PointCloud> dc_radar;
   // std::vector<DataContainerRos2<sensor_msgs::msg::PointCloud2>> dc_radar4d;
   // DataContainerRos2<sensor_msgs::msg::PointCloud2> dc_lidar;
   DataContainerRos2<uint64_t /*sensor_msgs::PointCloud*/> dc_radar;
-  std::vector<DataContainerRos2<uint64_t /*sensor_msgs::PointCloud2*/>>
-      dc_radar4d;
+  std::vector<DataContainerRos2<uint64_t /*sensor_msgs::PointCloud2*/>> dc_radar4d;
   DataContainerRos2<uint64_t> dc_lidar;
+  // clang-format on
 
   // clang-format off
-  void Ros2PublishBase(DataContainerRos2Base *tmp);
+  void Ros2PublishBase(DataContainerBase *tmp);
   // void PublishGlobalPose();
   // void PublishLocalPose();
 

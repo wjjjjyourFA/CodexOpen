@@ -35,6 +35,7 @@ SOURCES += \
   $$CODEX_PATH/cyber/binary.cc \
   $$CODEX_PATH/cyber/common/file.cc \
   $$CODEX_PATH/modules/common/config/config_file_base.cpp \
+  $$CODEX_PATH/tools/common/utils/rclcpp_utils.cpp \
   $$PREFIX/common/base/camera.cc \
   $$PREFIX/common/base/distortion_model.cc \
   $$PREFIX/common/base/fisheye_model.cc \
@@ -58,6 +59,7 @@ HEADERS += \
   $$CODEX_PATH/cyber/common/file.h \
   $$CODEX_PATH/cyber/common/environment_conf.h \
   $$CODEX_PATH/modules/common/config/config_file_base.h \
+  $$CODEX_PATH/tools/common/utils/rclcpp_utils.h \
   $$PREFIX/common/base/camera.h \
   $$PREFIX/common/base/distortion_model.h \
   $$PREFIX/common/base/fisheye_model.h \
@@ -144,4 +146,3 @@ LIBS += \
   -lself_state__rosidl_typesupport_cpp \
   -lars548_interface__rosidl_typesupport_cpp \
 }
-
