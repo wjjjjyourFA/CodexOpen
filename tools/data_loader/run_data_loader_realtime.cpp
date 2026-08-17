@@ -41,7 +41,10 @@ int main(int argc, char** argv) {
   ros::NodeHandle private_nh("~");
 
   auto _pRos1Convert = std::make_shared<Ros1Convert>(nh, private_nh);
-  _pRos1Convert->Init(runtime_config, interface_config);
+  if (!_pRos1Convert->Init(runtime_config, interface_config)) {
+    ROS_ERROR("Failed to initialize ROS1 DataLoader");
+    return 1;
+  }
 
   _pRos1Convert->Run();
 
@@ -55,7 +58,11 @@ int main(int argc, char** argv) {
   auto nh = std::make_shared<rclcpp::Node>(name);
 
   auto _pRos2Convert = std::make_shared<Ros2Convert>(nh);
-  _pRos2Convert->Init(runtime_config, interface_config);
+  if (!_pRos2Convert->Init(runtime_config, interface_config)) {
+    RCLCPP_ERROR(nh->get_logger(), "Failed to initialize ROS2 DataLoader");
+    rclcpp::shutdown();
+    return 1;
+  }
 
   _pRos2Convert->Run();
 

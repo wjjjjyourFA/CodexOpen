@@ -41,6 +41,14 @@ void InterfaceConfig::LoadConfig(const std::string& config_path) {
     topic_radar_pub = pt.get<std::string>("topics.topic_radar_pub", "");
     topic_radar4d_pub = ReadStringArray(pt, "topics.topic_radar4d_pub_", b_radar4d);
 
+    if (topic_camera_pub.size() != static_cast<size_t>(b_camera) ||
+        topic_infra_pub.size() != static_cast<size_t>(b_infra) ||
+        topic_star_pub.size() != static_cast<size_t>(b_star) ||
+        topic_radar4d_pub.size() != static_cast<size_t>(b_radar4d)) {
+      throw std::invalid_argument(
+          "enabled sensor count does not match configured topic count");
+    }
+
     // 打印其他参数...
     // clang-format on
   } catch (const std::exception& e) {

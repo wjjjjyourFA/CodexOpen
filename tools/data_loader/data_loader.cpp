@@ -12,11 +12,40 @@ DataLoader::~DataLoader() {}
 
 bool DataLoader::Init(std::shared_ptr<jojo::tools::RuntimeConfig> rparam,
                       std::shared_ptr<jojo::tools::InterfaceConfig> iparam) {
+  if (!rparam || !iparam) {
+    std::cerr << "[ERROR] DataLoader requires non-null configuration"
+              << std::endl;
+    return false;
+  }
+
   rparam_ = rparam;
   iparam_ = iparam;
 
+  if (iparam_->b_camera < 0 || iparam_->b_infra < 0 ||
+      iparam_->b_star < 0 || iparam_->b_radar < 0 ||
+      iparam_->b_radar4d < 0) {
+    std::cerr << "[ERROR] sensor counts must not be negative" << std::endl;
+    return false;
+  }
+  if (rparam_->start_time < 0 || rparam_->end_time < 0 ||
+      (rparam_->end_time != 0 && rparam_->start_time > rparam_->end_time)) {
+    std::cerr << "[ERROR] invalid playback time range" << std::endl;
+    return false;
+  }
+
   if (rparam_->b_do_undistort) {
     if (iparam_->b_camera || iparam_->b_infra || iparam_->b_star) {
+      if (rparam_->camera_name.size() <
+              static_cast<std::size_t>(iparam_->b_camera) ||
+          rparam_->infra_name.size() <
+              static_cast<std::size_t>(iparam_->b_infra) ||
+          rparam_->star_name.size() <
+              static_cast<std::size_t>(iparam_->b_star)) {
+        std::cerr << "[ERROR] undistortion device-name count does not match "
+                     "sensor count"
+                  << std::endl;
+        return false;
+      }
       // 数据回放时，直接加载已经矫正后的图像
       InitUndistortion();
     }
@@ -63,8 +92,6 @@ void DataLoader::InitUndistortion() {
 }
 
 void DataLoader::Start() {
-  sleep(1);
-
   // std::cout << "DataLoader Start" << std::endl;
   this->LoadDataFolder();
 }
@@ -136,27 +163,36 @@ void DataLoader::LoadDataFolder() {
 bool DataLoader::LoadTimeStamp(const std::string& path,
                                const std::string& ts_file /*TimeStampFile*/,
                                DataContainerBase& data_container) {
-  uint64_t frame_time;
-
-  char file[300];
-  sprintf(file, "%s/%s.txt", path.c_str(), ts_file.c_str());
+  const std::string file = path + "/" + ts_file + ".txt";
   if (!common::FileExists(file)) {
     std::cerr << "[ERROR] Failed to load timestamp file: " << file << std::endl;
     return false;
   }
 
-  FILE* _fp = fopen(file, "r");
-  if (_fp != NULL) {
-    while (!feof(_fp)) {
-      fscanf(_fp, "%lu\n", &frame_time);
-      data_container.insert(frame_time, nullptr);
-    }
-    fclose(_fp);
-    std::cout << "[INFO] load timestamp file " << file << std::endl;
-    return true;
+  std::ifstream input(file);
+  if (!input.is_open()) {
+    std::cerr << "[ERROR] Failed to open timestamp file: " << file << std::endl;
+    return false;
   }
 
-  return false;
+  uint64_t frame_time = 0;
+  std::size_t count   = 0;
+  while (input >> frame_time) {
+    data_container.insert(frame_time, nullptr);
+    ++count;
+  }
+  if (!input.eof()) {
+    std::cerr << "[ERROR] Malformed timestamp file: " << file << std::endl;
+    return false;
+  }
+
+  if (count == 0 || data_container.empty()) {
+    std::cerr << "[ERROR] Empty timestamp file: " << file << std::endl;
+    return false;
+  }
+
+  std::cout << "[INFO] load timestamp file " << file << std::endl;
+  return true;
 }
 
 bool DataLoader::ExtractTimestamp(const std::string& path,
@@ -208,15 +244,14 @@ bool DataLoader::SaveTimeStamp(const std::string& path,
                                const DataContainerBase& data_container) {
   common::CreateDir(path + "/timestamp");
 
-  char file[300];
-  sprintf(file, "%s/%s.txt", path.c_str(), ts_file.c_str());
+  const std::string file = path + "/" + ts_file + ".txt";
   if (!common::CreateFile(file)) {
     std::cerr << "[ERROR] cannot create directory " << file << std::endl;
     return false;
   }
 
-  FILE* fp = fopen(file, "w");
-  if (!fp) {
+  std::ofstream output(file, std::ios::trunc);
+  if (!output.is_open()) {
     std::cerr << "[ERROR] cannot write " << file << std::endl;
     return false;
   }
@@ -224,10 +259,12 @@ bool DataLoader::SaveTimeStamp(const std::string& path,
   std::vector<uint64_t> timestamps;
   data_container.GetAllTimeStamp(timestamps);
   for (auto& ts : timestamps) {
-    fprintf(fp, "%lu\n", ts);
+    output << ts << '\n';
   }
-
-  fclose(fp);
+  if (!output) {
+    std::cerr << "[ERROR] failed while writing " << file << std::endl;
+    return false;
+  }
 
   std::cout << "[INFO] save timestamp file " << file << std::endl;
 

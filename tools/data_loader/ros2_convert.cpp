@@ -14,7 +14,9 @@ bool Ros2Convert::Init(std::shared_ptr<jojo::tools::RuntimeConfig> rparam,
 
   data_loader = std::make_shared<DataLoader>();
   // data_loader = std::make_shared<DataLoaderRealtime>();
-  data_loader->Init(rparam_, iparam_);
+  if (!data_loader->Init(rparam_, iparam_)) {
+    return false;
+  }
   data_loader->Start();
 
   dc_camera.resize(iparam_->b_camera);
@@ -28,6 +30,10 @@ bool Ros2Convert::Init(std::shared_ptr<jojo::tools::RuntimeConfig> rparam,
 }
 
 void Ros2Convert::InitRos2() {
+  if (iparam_->b_camera || iparam_->b_infra || iparam_->b_star) {
+    it = std::make_shared<image_transport::ImageTransport>(node);
+  }
+
   if (iparam_->b_lidar) {
     dc_lidar.pub = node->create_publisher<sensor_msgs::msg::PointCloud2>(
         iparam_->topic_lidar_pub, 1);
@@ -48,7 +54,6 @@ void Ros2Convert::InitRos2() {
   }
 
   if (iparam_->b_camera) {
-    it = std::make_shared<image_transport::ImageTransport>(node);
     for (int i = 0; i < iparam_->b_camera; i++) {
       dc_camera.at(i).pub = it->advertise(iparam_->topic_camera_pub.at(i), 1);
 
@@ -210,7 +215,7 @@ bool Ros2Convert::LoadGlobalPose(const std::string& file) {
   // 这里将外部数据转换为这个接口
   self_state::msg::GlobalPose globalPoseMsg;
 
-  if (!common::FileExists(file)) {
+  if (!apollo::cyber::common::FileExists(file)) {
     std::cerr << "[ERROR] Failed to load file: " << file << std::endl;
     return false;
   }
@@ -260,7 +265,7 @@ bool Ros2Convert::LoadLocalPose(const std::string& path,
 bool Ros2Convert::LoadLocalPose(const std::string& file) {
   self_state::msg::LocalPose localPoseMsg;
 
-  if (!common::FileExists(file)) {
+  if (!apollo::cyber::common::FileExists(file)) {
     std::cerr << "[ERROR] Failed to load file: " << file << std::endl;
     return false;
   }
@@ -381,7 +386,7 @@ bool Ros2Convert::PubLidarBase(
   if (!rparam_->use_bin_or_pcd) {
     // clang-format off
     sprintf(file, "%s/%.13ld.bin", data_loader->path_lidar.c_str(), tmp->cur_time);
-    if (!common::FileExists(file)) {
+    if (!apollo::cyber::common::FileExists(file)) {
       std::cerr << "[ERROR] Failed to load file: " << file << std::endl;
       return false;
     }
@@ -437,7 +442,7 @@ bool Ros2Convert::PubLidarBase(
       std::make_shared<sensor_msgs::msg::PointCloud2>();
   pcl::toROSMsg(*cur_cloud_ptr, *lidar_msg);
   lidar_msg->header.frame_id = tmp->name;
-  lidar_msg->header.stamp    = rclcpp::Time(tmp->cur_time / 1000.0);
+  lidar_msg->header.stamp    = fromMs(tmp->cur_time);
 
   // 动态转换后手动 publish
   static auto typed_pub = std::dynamic_pointer_cast<
@@ -474,6 +479,11 @@ void Ros2Convert::PublishRadar() {
               tmp->cur_time);
 
       FILE* fp = fopen(file, "r");
+      if (!fp) {
+        std::cerr << "[ERROR] Failed to open radar file: " << file << std::endl;
+        tmp->next();
+        return;
+      }
       int tmp_id;
       float tmp_x, tmp_y;
       float tmp_range, tmp_angle;
@@ -498,7 +508,7 @@ void Ros2Convert::PublishRadar() {
       fclose(fp);
     }
     radar_msg.header.frame_id = tmp->name;
-    radar_msg.header.stamp    = rclcpp::Time(tmp->cur_time / 1000.0);
+    radar_msg.header.stamp    = fromMs(tmp->cur_time);
 
     // 动态转换后手动 publish
     static auto typed_pub =
@@ -530,6 +540,11 @@ bool Ros2Convert::PubRadar4DBase(DataContainerRos2<uint64_t>& data_c, int id) {
 
       // std::cout << "radar4d : " << file << std::endl;
       FILE* fp = fopen(file, "r");
+      if (!fp) {
+        std::cerr << "[ERROR] Failed to open radar4d file: " << file
+                  << std::endl;
+        return false;
+      }
       float tmp_x, tmp_y, tmp_z, tmp_v, tmp_stdv;
       while (fscanf(fp, "%f %f %f %f %f", &tmp_x, &tmp_y, &tmp_z, &tmp_v,
                     &tmp_stdv) == 5) {
@@ -544,7 +559,7 @@ bool Ros2Convert::PubRadar4DBase(DataContainerRos2<uint64_t>& data_c, int id) {
         point.f_z              = tmp_z / 100.0;
         point.f_range_rate     = tmp_v / 100.0;
         point.f_range_rate_std = tmp_stdv / 100.0;
-        point.header.stamp     = rclcpp::Time(tmp->cur_time / 1000.0);
+        point.header.stamp     = fromMs(tmp->cur_time);
         // std::cout << "point.header.stamp : " << point.header.stamp << std::endl;
 
         // 假设 Radar4D_Cloud 是你的点云容器
@@ -569,6 +584,11 @@ bool Ros2Convert::PubRadar4DBase(DataContainerRos2<uint64_t>& data_c, int id) {
               tmp->cur_time);
 
       FILE* fp = fopen(file, "r");
+      if (!fp) {
+        std::cerr << "[ERROR] Failed to open radar4d file: " << file
+                  << std::endl;
+        return false;
+      }
       float tmp_x, tmp_y, tmp_z;
       float tmp_range, tmp_elevation, tmp_azimuth;
       float tmp_rcs, tmp_doppler;
@@ -596,7 +616,7 @@ bool Ros2Convert::PubRadar4DBase(DataContainerRos2<uint64_t>& data_c, int id) {
     sensor_msgs::msg::PointCloud2 radar_msg;
     pcl::toROSMsg(PointCloud.data, radar_msg);
     radar_msg.header.frame_id = tmp->name;
-    radar_msg.header.stamp    = rclcpp::Time(tmp->cur_time / 1000.0);
+    radar_msg.header.stamp    = fromMs(tmp->cur_time);
 
     static auto typed_pub = std::dynamic_pointer_cast<
         rclcpp::Publisher<sensor_msgs::msg::PointCloud2>>(tmp->pub);
@@ -673,7 +693,7 @@ bool Ros2Convert::PubImageBase(
                   .toImageMsg();
   // image_msg->header.seq++;
   image_msg->header.frame_id = tmp->name;
-  image_msg->header.stamp    = rclcpp::Time(tmp->cur_time / 1000.0);
+  image_msg->header.stamp    = fromMs(tmp->cur_time);
 
   // way 1 直接发布
   tmp->pub.publish(image_msg);
@@ -708,7 +728,7 @@ void Ros2Convert::PublishImage(int id, int mode) {
   }
 }
 
-void Ros2Convert::Ros2PublishBase(DataContainerRos2Base* tmp) {
+void Ros2Convert::Ros2PublishBase(DataContainerBase* tmp) {
   if (tmp->is_end()) {
     tmp->stop();
     return;
