@@ -1,41 +1,28 @@
-#include <math.h>
+#include "modules/planning/local_planner/local_planner.h"
+
+#include <algorithm>
+#include <cmath>
+#include <cstdio>
 #include <limits>
-#include <time.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <ros/ros.h>
+#include <stdexcept>
+#include <string>
+#include <utility>
+#include <vector>
 
-#include <message_filters/subscriber.h>
-#include <message_filters/synchronizer.h>
-#include <message_filters/sync_policies/approximate_time.h>
-
-#include <std_msgs/Bool.h>
-#include <std_msgs/Float32.h>
-#include <std_msgs/Int8.h>
-#include <nav_msgs/Path.h>
-#include <nav_msgs/Odometry.h>
-#include <geometry_msgs/PointStamped.h>
-#include <geometry_msgs/PolygonStamped.h>
-#include <geometry_msgs/PoseStamped.h>
-#include <geometry_msgs/Twist.h>
-#include <sensor_msgs/Imu.h>
-#include <sensor_msgs/PointCloud2.h>
-
-#include <tf/transform_datatypes.h>
-#include <tf/transform_broadcaster.h>
-
-#include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/filters/voxel_grid.h>
-#include <pcl/kdtree/kdtree_flann.h>
+
+namespace jojo {
+namespace planning {
 
 using namespace std;
 
-const double PI = 3.1415926;
+constexpr double PI = 3.1415926;
 
 #define PLOTPATHSET 1
 
+struct LocalPlanner::Impl {
 string pathFolder;
 double vehicleLength = 0.6;
 double vehicleWidth = 0.6;
@@ -61,7 +48,7 @@ double sideSwitchPenalty = 0.4;
 double largeSwitchAngleDeg = 50.0;
 double holdPathScoreRatio = 0.92;
 bool useCost = false;
-const int laserCloudStackNum = 1;
+static constexpr int laserCloudStackNum = 1;
 int laserCloudCount = 0;
 int pointPerPathThre = 2;
 double minRelZ = -0.5;
@@ -124,33 +111,45 @@ float selectedPathVehicleY = 0;
 float selectedPathVehicleYaw = 0;
 bool nearGoalControlMode = false;
 
-const int pathNum = 343;
-const int groupNum = 7;
+static constexpr int pathNum = 343;
+static constexpr int groupNum = 7;
 float gridVoxelSize = 0.02;
 float searchRadius = 0.45;
 float gridVoxelOffsetX = 3.2;
 float gridVoxelOffsetY = 4.5;
-const int gridVoxelNumX = 161;
-const int gridVoxelNumY = 451;
-const int gridVoxelNum = gridVoxelNumX * gridVoxelNumY;
+static constexpr int gridVoxelNumX = 161;
+static constexpr int gridVoxelNumY = 451;
+static constexpr int gridVoxelNum = gridVoxelNumX * gridVoxelNumY;
 
-pcl::PointCloud<pcl::PointXYZI>::Ptr laserCloud(new pcl::PointCloud<pcl::PointXYZI>());
-pcl::PointCloud<pcl::PointXYZI>::Ptr laserCloudCrop(new pcl::PointCloud<pcl::PointXYZI>());
-pcl::PointCloud<pcl::PointXYZI>::Ptr laserCloudDwz(new pcl::PointCloud<pcl::PointXYZI>());
-pcl::PointCloud<pcl::PointXYZI>::Ptr terrainCloud(new pcl::PointCloud<pcl::PointXYZI>());
-pcl::PointCloud<pcl::PointXYZI>::Ptr terrainCloudCrop(new pcl::PointCloud<pcl::PointXYZI>());
-pcl::PointCloud<pcl::PointXYZI>::Ptr terrainCloudDwz(new pcl::PointCloud<pcl::PointXYZI>());
+pcl::PointCloud<pcl::PointXYZI>::Ptr laserCloud{
+    new pcl::PointCloud<pcl::PointXYZI>()};
+pcl::PointCloud<pcl::PointXYZI>::Ptr laserCloudCrop{
+    new pcl::PointCloud<pcl::PointXYZI>()};
+pcl::PointCloud<pcl::PointXYZI>::Ptr laserCloudDwz{
+    new pcl::PointCloud<pcl::PointXYZI>()};
+pcl::PointCloud<pcl::PointXYZI>::Ptr terrainCloud{
+    new pcl::PointCloud<pcl::PointXYZI>()};
+pcl::PointCloud<pcl::PointXYZI>::Ptr terrainCloudCrop{
+    new pcl::PointCloud<pcl::PointXYZI>()};
+pcl::PointCloud<pcl::PointXYZI>::Ptr terrainCloudDwz{
+    new pcl::PointCloud<pcl::PointXYZI>()};
 pcl::PointCloud<pcl::PointXYZI>::Ptr laserCloudStack[laserCloudStackNum];
-pcl::PointCloud<pcl::PointXYZI>::Ptr plannerCloud(new pcl::PointCloud<pcl::PointXYZI>());
-pcl::PointCloud<pcl::PointXYZI>::Ptr plannerCloudCrop(new pcl::PointCloud<pcl::PointXYZI>());
-pcl::PointCloud<pcl::PointXYZI>::Ptr boundaryCloud(new pcl::PointCloud<pcl::PointXYZI>());
-pcl::PointCloud<pcl::PointXYZI>::Ptr addedObstacles(new pcl::PointCloud<pcl::PointXYZI>());
+pcl::PointCloud<pcl::PointXYZI>::Ptr plannerCloud{
+    new pcl::PointCloud<pcl::PointXYZI>()};
+pcl::PointCloud<pcl::PointXYZI>::Ptr plannerCloudCrop{
+    new pcl::PointCloud<pcl::PointXYZI>()};
+pcl::PointCloud<pcl::PointXYZI>::Ptr boundaryCloud{
+    new pcl::PointCloud<pcl::PointXYZI>()};
+pcl::PointCloud<pcl::PointXYZI>::Ptr addedObstacles{
+    new pcl::PointCloud<pcl::PointXYZI>()};
 pcl::PointCloud<pcl::PointXYZ>::Ptr startPaths[groupNum];
-nav_msgs::Path globalReferencePath;
+common_struct::Path globalReferencePath;
+common_struct::Path selectedPath;
 bool hasGlobalReferencePath = false;
 #if PLOTPATHSET == 1
 pcl::PointCloud<pcl::PointXYZI>::Ptr paths[pathNum];
-pcl::PointCloud<pcl::PointXYZI>::Ptr freePaths(new pcl::PointCloud<pcl::PointXYZI>());
+pcl::PointCloud<pcl::PointXYZI>::Ptr freePaths{
+    new pcl::PointCloud<pcl::PointXYZI>()};
 #endif
 
 int pathList[pathNum] = {0};
@@ -173,6 +172,116 @@ int lastSelectedPathGroup = -1;
 bool hasLastSelection = false;
 
 pcl::VoxelGrid<pcl::PointXYZI> laserDwzFilter, terrainDwzFilter;
+
+explicit Impl(const LocalPlannerConfig& config)
+{
+  pathFolder = config.path_folder;
+  vehicleLength = config.vehicle_length;
+  vehicleWidth = config.vehicle_width;
+  sensorOffsetX = config.sensor_offset_x;
+  sensorOffsetY = config.sensor_offset_y;
+  twoWayDrive = config.two_way_drive;
+  laserVoxelSize = config.laser_voxel_size;
+  terrainVoxelSize = config.terrain_voxel_size;
+  useTerrainAnalysis = config.use_terrain_analysis;
+  checkObstacle = config.check_obstacle;
+  checkRotObstacle = config.check_rotation_obstacle;
+  adjacentRange = config.adjacent_range;
+  obstacleHeightThre = config.obstacle_height_threshold;
+  groundHeightThre = config.ground_height_threshold;
+  costHeightThre = config.cost_height_threshold;
+  costScore = config.cost_score;
+  obstacleInflationRadius = config.obstacle_inflation_radius;
+  inflatedObstaclePenalty = config.inflated_obstacle_penalty;
+  centerPathBias = config.center_path_bias;
+  pathContinuityWeight = config.path_continuity_weight;
+  groupContinuityWeight = config.group_continuity_weight;
+  sideSwitchPenalty = config.side_switch_penalty;
+  largeSwitchAngleDeg = config.large_switch_angle_degrees;
+  holdPathScoreRatio = config.hold_path_score_ratio;
+  useCost = config.use_cost;
+  pointPerPathThre = config.point_per_path_threshold;
+  minRelZ = config.min_relative_z;
+  maxRelZ = config.max_relative_z;
+  maxSpeed = config.max_speed;
+  dirWeight = config.direction_weight;
+  dirThre = config.direction_threshold;
+  dirToVehicle = config.direction_to_vehicle;
+  pathScale = config.path_scale;
+  minPathScale = config.min_path_scale;
+  pathScaleStep = config.path_scale_step;
+  pathScaleBySpeed = config.path_scale_by_speed;
+  minPathRange = config.min_path_range;
+  pathRangeStep = config.path_range_step;
+  pathRangeBySpeed = config.path_range_by_speed;
+  pathCropByGoal = config.path_crop_by_goal;
+  autonomyMode = config.autonomy_mode;
+  autonomySpeed = config.autonomy_speed;
+  goalClearRange = config.goal_clear_range;
+  goalX = config.goal_x;
+  goalY = config.goal_y;
+  globalPathLookAhead = config.global_path_look_ahead;
+  globalPathGoalSwitchDis = config.global_path_goal_switch_distance;
+  controlLookAheadDis = config.control_look_ahead_distance;
+  forwardAlignAngle = config.forward_align_angle_degrees;
+  yawRateGain = config.yaw_rate_gain;
+  maxYawRate = config.max_yaw_rate_degrees;
+  maxAccel = config.max_acceleration;
+  maxYawAccel = config.max_yaw_acceleration_degrees;
+  goalStopDistance = config.goal_stop_distance;
+  goalSlowDistance = config.goal_slow_distance;
+  planTimeout = config.plan_timeout;
+  controlFrequency = config.control_frequency;
+  nearGoalEnterDistance = config.near_goal_enter_distance;
+  nearGoalExitDistance = config.near_goal_exit_distance;
+  nearGoalXYTolerance = config.near_goal_xy_tolerance;
+  nearGoalYawToleranceDeg = config.near_goal_yaw_tolerance_degrees;
+  nearGoalMinSpeed = config.near_goal_min_speed;
+  nearGoalMinYawRateDeg = config.near_goal_min_yaw_rate_degrees;
+  nearGoalPositionGain = config.near_goal_position_gain;
+  nearGoalYawGain = config.near_goal_yaw_gain;
+  nearGoalObstacleCheckRange = config.near_goal_obstacle_check_range;
+  nearGoalObstacleCheckMargin = config.near_goal_obstacle_check_margin;
+
+  goalStopDistance = std::max(0.2, goalStopDistance);
+  goalSlowDistance = std::max(goalStopDistance + 0.05, goalSlowDistance);
+  controlFrequency = std::max(10.0, controlFrequency);
+  nearGoalExitDistance = std::max(nearGoalEnterDistance,
+                                  nearGoalExitDistance);
+  nearGoalYawToleranceDeg = std::max(0.1, nearGoalYawToleranceDeg);
+  nearGoalMinSpeed = std::max(0.0, nearGoalMinSpeed);
+  nearGoalMinYawRateDeg = std::max(0.0, nearGoalMinYawRateDeg);
+  nearGoalObstacleCheckRange = std::max(0.0, nearGoalObstacleCheckRange);
+  nearGoalObstacleCheckMargin = std::max(0.0,
+                                         nearGoalObstacleCheckMargin);
+  if (pathFolder.empty()) {
+    throw std::invalid_argument("local planner path_folder is empty");
+  }
+  initializePathData();
+}
+
+static double yawFromQuaternion(const common_struct::Quaternion& quaternion)
+{
+  return atan2(2.0 * (quaternion.w * quaternion.z +
+                      quaternion.x * quaternion.y),
+               1.0 - 2.0 * (quaternion.y * quaternion.y +
+                            quaternion.z * quaternion.z));
+}
+
+static void quaternionToRpy(const common_struct::Quaternion& quaternion,
+                            double& roll, double& pitch, double& yaw)
+{
+  roll = atan2(2.0 * (quaternion.w * quaternion.x +
+                      quaternion.y * quaternion.z),
+               1.0 - 2.0 * (quaternion.x * quaternion.x +
+                            quaternion.y * quaternion.y));
+  const double sinPitch = 2.0 * (quaternion.w * quaternion.y -
+                                 quaternion.z * quaternion.x);
+  pitch = fabs(sinPitch) >= 1.0
+              ? copysign(PI / 2.0, sinPitch)
+              : asin(sinPitch);
+  yaw = yawFromQuaternion(quaternion);
+}
 
 struct PathSelectionDecision
 {
@@ -212,27 +321,26 @@ bool isReverseRotation(int rotDir)
 
 
 
-void odometryHandler(const nav_msgs::Odometry::ConstPtr& odom)
+void SetOdometry(double timestampSeconds, const common_struct::Pose& pose)
 {
-  odomTime = odom->header.stamp.toSec();
+  odomTime = timestampSeconds;
 
   double roll, pitch, yaw;
-  geometry_msgs::Quaternion geoQuat = odom->pose.pose.orientation;
-  tf::Matrix3x3(tf::Quaternion(geoQuat.x, geoQuat.y, geoQuat.z, geoQuat.w)).getRPY(roll, pitch, yaw);
+  quaternionToRpy(pose.orientation, roll, pitch, yaw);
 
   vehicleRoll = roll;
   vehiclePitch = pitch;
   vehicleYaw = yaw;
-  vehicleX = odom->pose.pose.position.x - cos(yaw) * sensorOffsetX + sin(yaw) * sensorOffsetY;
-  vehicleY = odom->pose.pose.position.y - sin(yaw) * sensorOffsetX - cos(yaw) * sensorOffsetY;
-  vehicleZ = odom->pose.pose.position.z;
+  vehicleX = pose.position.x - cos(yaw) * sensorOffsetX + sin(yaw) * sensorOffsetY;
+  vehicleY = pose.position.y - sin(yaw) * sensorOffsetX - cos(yaw) * sensorOffsetY;
+  vehicleZ = pose.position.z;
 }
 
-void laserCloudHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloud2)
+void SetRegisteredScan(
+    const pcl::PointCloud<pcl::PointXYZI>& registeredScan)
 {
   if (!useTerrainAnalysis) {
-    laserCloud->clear();
-    pcl::fromROSMsg(*laserCloud2, *laserCloud);
+    *laserCloud = registeredScan;
 
     pcl::PointXYZI point;
     laserCloudCrop->clear();
@@ -261,11 +369,10 @@ void laserCloudHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloud2)
   }
 }
 
-void terrainCloudHandler(const sensor_msgs::PointCloud2ConstPtr& terrainCloud2)
+void SetTerrain(const pcl::PointCloud<pcl::PointXYZI>& terrain)
 {
   if (useTerrainAnalysis) {
-    terrainCloud->clear();
-    pcl::fromROSMsg(*terrainCloud2, *terrainCloud);
+    *terrainCloud = terrain;
 
     pcl::PointXYZI point;
     terrainCloudCrop->clear();
@@ -294,48 +401,45 @@ void terrainCloudHandler(const sensor_msgs::PointCloud2ConstPtr& terrainCloud2)
   }
 }
 
-void goalHandler(const geometry_msgs::PoseStamped::ConstPtr& goal)
+void SetGoal(const common_struct::Pose& goal)
 {
-  goalX = goal->pose.position.x;
-  goalY = goal->pose.position.y;
-  double roll, pitch, yaw;
-  geometry_msgs::Quaternion geoQuat = goal->pose.orientation;
-  tf::Matrix3x3(tf::Quaternion(geoQuat.x, geoQuat.y, geoQuat.z, geoQuat.w)).getRPY(roll, pitch, yaw);
-  goalYaw = yaw;
+  goalX = goal.position.x;
+  goalY = goal.position.y;
+  goalYaw = yawFromQuaternion(goal.orientation);
   goalReceived = true;
 }
 
-void globalPathHandler(const nav_msgs::Path::ConstPtr& pathIn)
+void SetGlobalPath(const common_struct::Path& pathIn)
 {
-  globalReferencePath = *pathIn;
+  globalReferencePath = pathIn;
   hasGlobalReferencePath = !globalReferencePath.poses.empty();
 }
 
-void speedHandler(const std_msgs::Float32::ConstPtr& speed)
+void SetSpeed(double speed)
 {
-  speedRatio = speed->data / maxSpeed;
+  speedRatio = speed / maxSpeed;
   if (speedRatio < 0) speedRatio = 0;
   else if (speedRatio > 1.0) speedRatio = 1.0;
 }
 
-void boundaryHandler(const geometry_msgs::PolygonStamped::ConstPtr& boundary)
+void SetBoundary(const common_struct::PolygonStamped& boundary)
 {
   boundaryCloud->clear();
   pcl::PointXYZI point, point1, point2;
-  int boundarySize = boundary->polygon.points.size();
+  int boundarySize = boundary.points.size();
 
   if (boundarySize >= 1) {
-    point2.x = boundary->polygon.points[0].x;
-    point2.y = boundary->polygon.points[0].y;
-    point2.z = boundary->polygon.points[0].z;
+    point2.x = boundary.points[0].x;
+    point2.y = boundary.points[0].y;
+    point2.z = boundary.points[0].z;
   }
 
   for (int i = 0; i < boundarySize; i++) {
     point1 = point2;
 
-    point2.x = boundary->polygon.points[i].x;
-    point2.y = boundary->polygon.points[i].y;
-    point2.z = boundary->polygon.points[i].z;
+    point2.x = boundary.points[i].x;
+    point2.y = boundary.points[i].y;
+    point2.z = boundary.points[i].z;
 
     if (point1.z == point2.z) {
       float disX = point1.x - point2.x;
@@ -357,10 +461,10 @@ void boundaryHandler(const geometry_msgs::PolygonStamped::ConstPtr& boundary)
   }
 }
 
-void addedObstaclesHandler(const sensor_msgs::PointCloud2ConstPtr& addedObstacles2)
+void SetAddedObstacles(
+    const pcl::PointCloud<pcl::PointXYZI>& obstacleCloud)
 {
-  addedObstacles->clear();
-  pcl::fromROSMsg(*addedObstacles2, *addedObstacles);
+  *addedObstacles = obstacleCloud;
 
   int addedObstaclesSize = addedObstacles->points.size();
   for (int i = 0; i < addedObstaclesSize; i++) {
@@ -368,30 +472,31 @@ void addedObstaclesHandler(const sensor_msgs::PointCloud2ConstPtr& addedObstacle
   }
 }
 
-void checkObstacleHandler(const std_msgs::Bool::ConstPtr& checkObs)
+void SetObstacleChecking(bool enabled)
 {
-  checkObstacle = checkObs->data;
+  checkObstacle = enabled;
 }
 
-void stopHandler(const std_msgs::Int8::ConstPtr& stop)
+void SetSafetyStop(std::int8_t stopMask)
 {
-  safetyStop = stop->data;
+  safetyStop = stopMask;
 }
 
-void goalValidHandler(const std_msgs::Bool::ConstPtr& valid)
+void SetGoalValid(bool valid)
 {
-  goalValid = valid->data;
+  goalValid = valid;
 }
 
-geometry_msgs::Twist stopCommand()
+common_struct::Twist stopCommand()
 {
   commandedSpeed = 0;
   commandedSideSpeed = 0;
   commandedYawRate = 0;
-  return geometry_msgs::Twist();
+  return common_struct::Twist();
 }
 
-geometry_msgs::Twist controlSelectedPath(const nav_msgs::Path& selectedPath)
+common_struct::Twist controlSelectedPath(
+    const common_struct::Path& selectedPath)
 {
   if (!selectedPathValid || !goalReceived || !goalValid || selectedPath.poses.size() <= 1) {
     return stopCommand();
@@ -462,7 +567,7 @@ geometry_msgs::Twist controlSelectedPath(const nav_msgs::Path& selectedPath)
     commandedYawRate = std::max<float>(targetYawRate, commandedYawRate - maxYawStep);
   }
 
-  geometry_msgs::Twist command;
+  common_struct::Twist command;
   command.linear.x = commandedSpeed;
   command.angular.z = commandedYawRate;
 
@@ -483,8 +588,7 @@ int readPlyHeader(FILE *filePtr)
   while (strCur != "end_header") {
     val = fscanf(filePtr, "%s", str);
     if (val != 1) {
-      printf ("\nError reading input files, exit.\n\n");
-      exit(1);
+      throw std::runtime_error("failed to read local planner PLY header");
     }
 
     strLast = strCur;
@@ -493,8 +597,7 @@ int readPlyHeader(FILE *filePtr)
     if (strCur == "vertex" && strLast == "element") {
       val = fscanf(filePtr, "%d", &pointNum);
       if (val != 1) {
-        printf ("\nError reading input files, exit.\n\n");
-        exit(1);
+        throw std::runtime_error("invalid local planner PLY vertex count");
       }
     }
   }
@@ -508,8 +611,8 @@ void readStartPaths()
 
   FILE *filePtr = fopen(fileName.c_str(), "r");
   if (filePtr == NULL) {
-    printf ("\nCannot read input files, exit.\n\n");
-    exit(1);
+    throw std::runtime_error("cannot read local planner path file: " +
+                             fileName);
   }
 
   int pointNum = readPlyHeader(filePtr);
@@ -523,8 +626,9 @@ void readStartPaths()
     val4 = fscanf(filePtr, "%d", &groupID);
 
     if (val1 != 1 || val2 != 1 || val3 != 1 || val4 != 1) {
-      printf ("\nError reading input files, exit.\n\n");
-        exit(1);
+      fclose(filePtr);
+      throw std::runtime_error("invalid local planner path file: " +
+                               fileName);
     }
 
     if (groupID >= 0 && groupID < groupNum) {
@@ -542,8 +646,8 @@ void readPaths()
 
   FILE *filePtr = fopen(fileName.c_str(), "r");
   if (filePtr == NULL) {
-    printf ("\nCannot read input files, exit.\n\n");
-    exit(1);
+    throw std::runtime_error("cannot read local planner path file: " +
+                             fileName);
   }
 
   int pointNum = readPlyHeader(filePtr);
@@ -560,8 +664,9 @@ void readPaths()
     val5 = fscanf(filePtr, "%f", &point.intensity);
 
     if (val1 != 1 || val2 != 1 || val3 != 1 || val4 != 1 || val5 != 1) {
-      printf ("\nError reading input files, exit.\n\n");
-        exit(1);
+      fclose(filePtr);
+      throw std::runtime_error("invalid local planner path file: " +
+                               fileName);
     }
 
     if (pathID >= 0 && pathID < pathNum) {
@@ -583,13 +688,14 @@ void readPathList()
 
   FILE *filePtr = fopen(fileName.c_str(), "r");
   if (filePtr == NULL) {
-    printf ("\nCannot read input files, exit.\n\n");
-    exit(1);
+    throw std::runtime_error("cannot read local planner path file: " +
+                             fileName);
   }
 
   if (pathNum != readPlyHeader(filePtr)) {
-    printf ("\nIncorrect path number, exit.\n\n");
-    exit(1);
+    fclose(filePtr);
+    throw std::runtime_error("incorrect local planner path count in: " +
+                             fileName);
   }
 
   int val1, val2, val3, val4, val5, pathID, groupID;
@@ -602,8 +708,9 @@ void readPathList()
     val5 = fscanf(filePtr, "%d", &groupID);
 
     if (val1 != 1 || val2 != 1 || val3 != 1 || val4 != 1 || val5 != 1) {
-      printf ("\nError reading input files, exit.\n\n");
-        exit(1);
+      fclose(filePtr);
+      throw std::runtime_error("invalid local planner path file: " +
+                               fileName);
     }
 
     if (pathID >= 0 && pathID < pathNum && groupID >= 0 && groupID < groupNum) {
@@ -621,23 +728,25 @@ void readCorrespondences()
 
   FILE *filePtr = fopen(fileName.c_str(), "r");
   if (filePtr == NULL) {
-    printf ("\nCannot read input files, exit.\n\n");
-    exit(1);
+    throw std::runtime_error("cannot read local planner correspondence file: " +
+                             fileName);
   }
 
   int val1, gridVoxelID, pathID;
   for (int i = 0; i < gridVoxelNum; i++) {
     val1 = fscanf(filePtr, "%d", &gridVoxelID);
     if (val1 != 1) {
-      printf ("\nError reading input files, exit.\n\n");
-        exit(1);
+      fclose(filePtr);
+      throw std::runtime_error(
+          "invalid local planner correspondence file: " + fileName);
     }
 
     while (1) {
       val1 = fscanf(filePtr, "%d", &pathID);
       if (val1 != 1) {
-        printf ("\nError reading input files, exit.\n\n");
-          exit(1);
+        fclose(filePtr);
+        throw std::runtime_error(
+            "invalid local planner correspondence file: " + fileName);
       }
 
       if (pathID != -1) {
@@ -653,25 +762,6 @@ void readCorrespondences()
   fclose(filePtr);
 }
 
-struct RosInterfaces
-{
-  ros::Subscriber subOdometry;
-  ros::Subscriber subLaserCloud;
-  ros::Subscriber subTerrainCloud;
-  ros::Subscriber subGoal;
-  ros::Subscriber subGlobalPath;
-  ros::Subscriber subSpeed;
-  ros::Subscriber subBoundary;
-  ros::Subscriber subAddedObstacles;
-  ros::Subscriber subStop;
-  ros::Subscriber subGoalValid;
-  ros::Publisher pubPath;
-  ros::Publisher pubSpeed;
-#if PLOTPATHSET == 1
-  ros::Publisher pubFreePaths;
-#endif
-};
-
 struct VehicleTrig
 {
   float sinYaw;
@@ -684,138 +774,8 @@ struct RotationObstacleLimits
   float minObsAngCCW;
 };
 
-void loadParameters(ros::NodeHandle& nhPrivate)
-{
-  nhPrivate.getParam("pathFolder", pathFolder);
-  nhPrivate.getParam("vehicleLength", vehicleLength);
-  nhPrivate.getParam("vehicleWidth", vehicleWidth);
-  nhPrivate.getParam("sensorOffsetX", sensorOffsetX);
-  nhPrivate.getParam("sensorOffsetY", sensorOffsetY);
-  nhPrivate.getParam("twoWayDrive", twoWayDrive);
-  nhPrivate.getParam("laserVoxelSize", laserVoxelSize);
-  nhPrivate.getParam("terrainVoxelSize", terrainVoxelSize);
-  nhPrivate.getParam("useTerrainAnalysis", useTerrainAnalysis);
-  nhPrivate.getParam("checkObstacle", checkObstacle);
-  nhPrivate.getParam("checkRotObstacle", checkRotObstacle);
-  nhPrivate.getParam("adjacentRange", adjacentRange);
-  nhPrivate.getParam("obstacleHeightThre", obstacleHeightThre);
-  nhPrivate.getParam("groundHeightThre", groundHeightThre);
-  nhPrivate.getParam("costHeightThre", costHeightThre);
-  nhPrivate.getParam("costScore", costScore);
-  nhPrivate.getParam("obstacleInflationRadius", obstacleInflationRadius);
-  nhPrivate.getParam("inflatedObstaclePenalty", inflatedObstaclePenalty);
-  nhPrivate.getParam("centerPathBias", centerPathBias);
-  nhPrivate.getParam("pathContinuityWeight", pathContinuityWeight);
-  nhPrivate.getParam("groupContinuityWeight", groupContinuityWeight);
-  nhPrivate.getParam("sideSwitchPenalty", sideSwitchPenalty);
-  nhPrivate.getParam("largeSwitchAngleDeg", largeSwitchAngleDeg);
-  nhPrivate.getParam("holdPathScoreRatio", holdPathScoreRatio);
-  nhPrivate.getParam("useCost", useCost);
-  nhPrivate.getParam("pointPerPathThre", pointPerPathThre);
-  nhPrivate.getParam("minRelZ", minRelZ);
-  nhPrivate.getParam("maxRelZ", maxRelZ);
-  nhPrivate.getParam("maxSpeed", maxSpeed);
-  nhPrivate.getParam("dirWeight", dirWeight);
-  nhPrivate.getParam("dirThre", dirThre);
-  nhPrivate.getParam("dirToVehicle", dirToVehicle);
-  nhPrivate.getParam("pathScale", pathScale);
-  nhPrivate.getParam("minPathScale", minPathScale);
-  nhPrivate.getParam("pathScaleStep", pathScaleStep);
-  nhPrivate.getParam("pathScaleBySpeed", pathScaleBySpeed);
-  nhPrivate.getParam("minPathRange", minPathRange);
-  nhPrivate.getParam("pathRangeStep", pathRangeStep);
-  nhPrivate.getParam("pathRangeBySpeed", pathRangeBySpeed);
-  nhPrivate.getParam("pathCropByGoal", pathCropByGoal);
-  nhPrivate.getParam("autonomyMode", autonomyMode);
-  nhPrivate.getParam("autonomySpeed", autonomySpeed);
-  nhPrivate.getParam("goalClearRange", goalClearRange);
-  nhPrivate.getParam("goalX", goalX);
-  nhPrivate.getParam("goalY", goalY);
-  nhPrivate.getParam("globalPathLookAhead", globalPathLookAhead);
-  nhPrivate.getParam("globalPathGoalSwitchDis", globalPathGoalSwitchDis);
-  nhPrivate.getParam("controlLookAheadDis", controlLookAheadDis);
-  nhPrivate.getParam("forwardAlignAngle", forwardAlignAngle);
-  nhPrivate.getParam("yawRateGain", yawRateGain);
-  nhPrivate.getParam("maxYawRate", maxYawRate);
-  nhPrivate.getParam("maxAccel", maxAccel);
-  nhPrivate.getParam("maxYawAccel", maxYawAccel);
-  nhPrivate.getParam("goalStopDistance", goalStopDistance);
-  nhPrivate.getParam("goalSlowDistance", goalSlowDistance);
-  nhPrivate.getParam("planTimeout", planTimeout);
-  nhPrivate.getParam("controlFrequency", controlFrequency);
-  nhPrivate.getParam("nearGoalEnterDistance", nearGoalEnterDistance);
-  nhPrivate.getParam("nearGoalExitDistance", nearGoalExitDistance);
-  nhPrivate.getParam("nearGoalXYTolerance", nearGoalXYTolerance);
-  nhPrivate.getParam("nearGoalYawToleranceDeg", nearGoalYawToleranceDeg);
-  nhPrivate.getParam("nearGoalMinSpeed", nearGoalMinSpeed);
-  nhPrivate.getParam("nearGoalMinYawRateDeg", nearGoalMinYawRateDeg);
-  nhPrivate.getParam("nearGoalPositionGain", nearGoalPositionGain);
-  nhPrivate.getParam("nearGoalYawGain", nearGoalYawGain);
-  nhPrivate.getParam("nearGoalObstacleCheckRange", nearGoalObstacleCheckRange);
-  nhPrivate.getParam("nearGoalObstacleCheckMargin", nearGoalObstacleCheckMargin);
-  goalStopDistance = std::max(0.2, goalStopDistance);
-  goalSlowDistance = std::max(goalStopDistance + 0.05, goalSlowDistance);
-  controlFrequency = std::max(10.0, controlFrequency);
-  nearGoalExitDistance = std::max(nearGoalEnterDistance, nearGoalExitDistance);
-  nearGoalYawToleranceDeg = std::max(0.1, nearGoalYawToleranceDeg);
-  nearGoalMinSpeed = std::max(0.0, nearGoalMinSpeed);
-  nearGoalMinYawRateDeg = std::max(0.0, nearGoalMinYawRateDeg);
-  nearGoalObstacleCheckRange = std::max(0.0, nearGoalObstacleCheckRange);
-  nearGoalObstacleCheckMargin = std::max(0.0, nearGoalObstacleCheckMargin);
-}
-
-RosInterfaces setupRosInterfaces(ros::NodeHandle& nh,
-                                 ros::NodeHandle& nhPrivate)
-{
-  RosInterfaces io;
-  std::string odometryTopic = "/state_estimation";
-  std::string registeredScanTopic = "/registered_scan";
-  std::string terrainTopic = "/terrain_map";
-  std::string goalTopic = "/way_point";
-  std::string globalPathTopic = "/global_reference_path";
-  std::string speedTopic = "/speed";
-  std::string boundaryTopic = "/navigation_boundary";
-  std::string addedObstaclesTopic = "/added_obstacles";
-  std::string stopTopic = "/stop";
-  std::string goalValidTopic = "/isgoal_vaild";
-  std::string pathTopic = "/path";
-  std::string commandTopic = "/cmd_vel_corrected";
-  std::string freePathsTopic = "/free_paths";
-  nhPrivate.getParam("odometry_topic", odometryTopic);
-  nhPrivate.getParam("registered_scan_topic", registeredScanTopic);
-  nhPrivate.getParam("terrain_topic", terrainTopic);
-  nhPrivate.getParam("goal_topic", goalTopic);
-  nhPrivate.getParam("global_path_topic", globalPathTopic);
-  nhPrivate.getParam("speed_topic", speedTopic);
-  nhPrivate.getParam("boundary_topic", boundaryTopic);
-  nhPrivate.getParam("added_obstacles_topic", addedObstaclesTopic);
-  nhPrivate.getParam("stop_topic", stopTopic);
-  nhPrivate.getParam("goal_valid_topic", goalValidTopic);
-  nhPrivate.getParam("path_topic", pathTopic);
-  nhPrivate.getParam("command_topic", commandTopic);
-  nhPrivate.getParam("free_paths_topic", freePathsTopic);
-  io.subOdometry = nh.subscribe<nav_msgs::Odometry>(odometryTopic, 5, odometryHandler);
-  io.subLaserCloud = nh.subscribe<sensor_msgs::PointCloud2>(registeredScanTopic, 5, laserCloudHandler);
-  io.subTerrainCloud = nh.subscribe<sensor_msgs::PointCloud2>(terrainTopic, 5, terrainCloudHandler);
-  io.subGoal = nh.subscribe<geometry_msgs::PoseStamped>(goalTopic, 5, goalHandler);
-  io.subGlobalPath = nh.subscribe<nav_msgs::Path>(globalPathTopic, 5, globalPathHandler);
-  io.subSpeed = nh.subscribe<std_msgs::Float32>(speedTopic, 5, speedHandler);
-  io.subBoundary = nh.subscribe<geometry_msgs::PolygonStamped>(boundaryTopic, 5, boundaryHandler);
-  io.subAddedObstacles = nh.subscribe<sensor_msgs::PointCloud2>(addedObstaclesTopic, 5, addedObstaclesHandler);
-  io.subStop = nh.subscribe<std_msgs::Int8>(stopTopic, 5, stopHandler);
-  io.subGoalValid = nh.subscribe<std_msgs::Bool>(goalValidTopic, 5, goalValidHandler);
-  io.pubPath = nh.advertise<nav_msgs::Path>(pathTopic, 5);
-  io.pubSpeed = nh.advertise<geometry_msgs::Twist>(commandTopic, 5);
-#if PLOTPATHSET == 1
-  io.pubFreePaths = nh.advertise<sensor_msgs::PointCloud2>(freePathsTopic, 2);
-#endif
-  return io;
-}
-
 void initializePathData()
 {
-  printf ("\nReading path files.\n");
-
   if (autonomyMode) {
     speedRatio = autonomySpeed / maxSpeed;
     if (speedRatio < 0) speedRatio = 0;
@@ -847,7 +807,6 @@ void initializePathData()
   readPathList();
   readCorrespondences();
 
-  printf ("\nInitialization complete.\n\n");
 }
 
 VehicleTrig makeVehicleTrig()
@@ -1202,7 +1161,9 @@ PathSelectionDecision selectBestGroup(const RotationObstacleLimits& limits)
   return decision;
 }
 
-void fillSelectedPath(int rotDir, int selectedGroupID, float pathRange, float relativeGoalDis, nav_msgs::Path& path)
+void fillSelectedPath(int rotDir, int selectedGroupID, float pathRange,
+                      float relativeGoalDis, double nowSeconds,
+                      common_struct::Path& path)
 {
   const float rotAng = (10.0 * rotDir - 180.0) * PI / 180;
   const int selectedPathLength = startPaths[selectedGroupID]->points.size();
@@ -1220,26 +1181,24 @@ void fillSelectedPath(int rotDir, int selectedGroupID, float pathRange, float re
       path.poses[i].pose.position.z = pathScale * z;
     } else {
       path.poses.resize(i);
-      std::cout<<" i, dis : " <<i << " "<< dis <<std::endl;
       break;
     }
   }
 
-  path.header.stamp = ros::Time().fromSec(odomTime);
-  path.header.frame_id = "vehicle";
+  path.header.timestamp = static_cast<std::uint64_t>(
+      std::max(0.0, odomTime) * 1.0e9);
   selectedPathValid = path.poses.size() > 1;
   selectedPathReverseMode = isReverseRotation(rotDir);
-  selectedPathTime = ros::Time::now().toSec();
+  selectedPathTime = nowSeconds;
   selectedPathVehicleX = vehicleX;
   selectedPathVehicleY = vehicleY;
   selectedPathVehicleYaw = vehicleYaw;
 }
 
 #if PLOTPATHSET == 1
-void publishFreePaths(const ros::Publisher& pubFreePaths,
-                      const RotationObstacleLimits& limits,
-                      float pathRange,
-                      float relativeGoalDis)
+void buildFreePaths(const RotationObstacleLimits& limits,
+                    float pathRange,
+                    float relativeGoalDis)
 {
   freePaths->clear();
   pcl::PointXYZI point;
@@ -1269,26 +1228,16 @@ void publishFreePaths(const ros::Publisher& pubFreePaths,
       }
     }
   }
-
-  sensor_msgs::PointCloud2 freePaths2;
-  pcl::toROSMsg(*freePaths, freePaths2);
-  freePaths2.header.stamp = ros::Time().fromSec(odomTime);
-  freePaths2.header.frame_id = "vehicle";
-  pubFreePaths.publish(freePaths2);
 }
 
-void publishEmptyFreePaths(const ros::Publisher& pubFreePaths)
+void clearFreePaths()
 {
   freePaths->clear();
-  sensor_msgs::PointCloud2 freePaths2;
-  pcl::toROSMsg(*freePaths, freePaths2);
-  freePaths2.header.stamp = ros::Time().fromSec(odomTime);
-  freePaths2.header.frame_id = "vehicle";
-  pubFreePaths.publish(freePaths2);
 }
 #endif
 
-void publishNoPath(const RosInterfaces& io, nav_msgs::Path& path)
+void buildNoPath(LocalPlannerOutput& output, double nowSeconds,
+                 common_struct::Path& path)
 {
   hasLastSelection = false;
   lastSelectedRotDir = -1;
@@ -1297,18 +1246,23 @@ void publishNoPath(const RosInterfaces& io, nav_msgs::Path& path)
   path.poses[0].pose.position.x = 0;
   path.poses[0].pose.position.y = 0;
   path.poses[0].pose.position.z = 0;
-  path.header.stamp = ros::Time().fromSec(odomTime);
-  path.header.frame_id = "vehicle";
+  path.header.timestamp = static_cast<std::uint64_t>(
+      std::max(0.0, odomTime) * 1.0e9);
   selectedPathValid = false;
   selectedPathReverseMode = false;
-  selectedPathTime = ros::Time::now().toSec();
-  io.pubPath.publish(path);
+  selectedPathTime = nowSeconds;
+  output.path_updated = true;
+  output.path = path;
 #if PLOTPATHSET == 1
-  publishEmptyFreePaths(io.pubFreePaths);
+  clearFreePaths();
+  output.free_paths_updated = true;
+  output.free_paths = *freePaths;
 #endif
 }
 
-bool evaluateAndPublishPath(const RosInterfaces& io, nav_msgs::Path& path, float pathRange, float relativeGoalDis)
+bool evaluateAndBuildPath(LocalPlannerOutput& output, double nowSeconds,
+                          common_struct::Path& path, float pathRange,
+                          float relativeGoalDis)
 {
   const float defPathScale = pathScale;
   if (pathScaleBySpeed) pathScale = defPathScale * speedRatio;
@@ -1331,11 +1285,15 @@ bool evaluateAndPublishPath(const RosInterfaces& io, nav_msgs::Path& path, float
       lastSelectedPathGroup = selectedGroupID;
       hasLastSelection = true;
 
-      fillSelectedPath(rotDir, selectedGroupID, pathRange, relativeGoalDis, path);
+      fillSelectedPath(rotDir, selectedGroupID, pathRange, relativeGoalDis,
+                       nowSeconds, path);
       selectedPathReverseMode = selection.reverseMode;
-      io.pubPath.publish(path);
+      output.path_updated = true;
+      output.path = path;
 #if PLOTPATHSET == 1
-      publishFreePaths(io.pubFreePaths, limits, pathRange, relativeGoalDis);
+      buildFreePaths(limits, pathRange, relativeGoalDis);
+      output.free_paths_updated = true;
+      output.free_paths = *freePaths;
 #endif
       pathFound = true;
       break;
@@ -1353,7 +1311,8 @@ bool evaluateAndPublishPath(const RosInterfaces& io, nav_msgs::Path& path, float
   return pathFound;
 }
 
-void processNewPlanningData(const RosInterfaces& io, nav_msgs::Path& path)
+void processNewPlanningData(LocalPlannerOutput& output, double nowSeconds,
+                            common_struct::Path& path)
 {
   updatePlannerCloud();
 
@@ -1364,8 +1323,9 @@ void processNewPlanningData(const RosInterfaces& io, nav_msgs::Path& path)
   float relativeGoalDis = adjacentRange;
   updateAutonomyTarget(trig, relativeGoalDis);
 
-  if (!evaluateAndPublishPath(io, path, pathRange, relativeGoalDis)) {
-    publishNoPath(io, path);
+  if (!evaluateAndBuildPath(output, nowSeconds, path, pathRange,
+                            relativeGoalDis)) {
+    buildNoPath(output, nowSeconds, path);
   }
 }
 
@@ -1404,7 +1364,9 @@ double applyMinCommand(double command, double error, double tolerance, double mi
   return command;
 }
 
-void limitNearGoalCommandByPoint(const pcl::PointXYZI& point, bool filterHeight, geometry_msgs::Twist& command)
+void limitNearGoalCommandByPoint(const pcl::PointXYZI& point,
+                                 bool filterHeight,
+                                 common_struct::Twist& command)
 {
   if (useTerrainAnalysis && point.intensity <= obstacleHeightThre) {
     return;
@@ -1447,7 +1409,7 @@ void limitNearGoalCommandByPoint(const pcl::PointXYZI& point, bool filterHeight,
 
 void limitNearGoalCommandByCloud(const pcl::PointCloud<pcl::PointXYZI>& cloud,
                                  bool filterHeight,
-                                 geometry_msgs::Twist& command)
+                                 common_struct::Twist& command)
 {
   const int cloudSize = cloud.points.size();
   for (int i = 0; i < cloudSize; ++i) {
@@ -1458,7 +1420,7 @@ void limitNearGoalCommandByCloud(const pcl::PointCloud<pcl::PointXYZI>& cloud,
   }
 }
 
-void applyNearGoalObstacleLimits(geometry_msgs::Twist& command)
+void applyNearGoalObstacleLimits(common_struct::Twist& command)
 {
   if (!checkObstacle || nearGoalObstacleCheckRange <= 0) {
     return;
@@ -1473,7 +1435,7 @@ void applyNearGoalObstacleLimits(geometry_msgs::Twist& command)
   limitNearGoalCommandByCloud(*addedObstacles, false, command);
 }
 
-geometry_msgs::Twist controlNearGoalDirect()
+common_struct::Twist controlNearGoalDirect()
 {
   if (!goalReceived || !goalValid) {
     return stopCommand();
@@ -1489,7 +1451,7 @@ geometry_msgs::Twist controlNearGoalDirect()
   const double yawTolerance = nearGoalYawToleranceDeg * PI / 180.0;
   const double minYawRate = nearGoalMinYawRateDeg * PI / 180.0;
 
-  geometry_msgs::Twist command;
+  common_struct::Twist command;
   command.linear.x = nearGoalPositionGain * goalXRel;
   command.linear.y = nearGoalPositionGain * goalYRel;
   command.angular.z = nearGoalYawGain * yawError;
@@ -1530,52 +1492,97 @@ geometry_msgs::Twist controlNearGoalDirect()
   return command;
 }
 
-void publishControlCommand(const ros::Publisher& pubSpeed, const nav_msgs::Path& path)
+common_struct::Twist buildControlCommand(
+    double nowSeconds, const common_struct::Path& path)
 {
-  geometry_msgs::Twist command;
-  const double now = ros::Time::now().toSec();
+  common_struct::Twist command;
   if (shouldUseNearGoalControl()) {
     command = controlNearGoalDirect();
-  } else if (selectedPathValid && now - selectedPathTime <= planTimeout) {
+  } else if (selectedPathValid &&
+             nowSeconds - selectedPathTime <= planTimeout) {
     command = controlSelectedPath(path);
   } else {
     command = stopCommand();
   }
-  pubSpeed.publish(command);
+  return command;
 }
 
-int RunRobotPlanLocalPlanner(ros::NodeHandle& nh,
-                             ros::NodeHandle& nhPrivate)
+LocalPlannerOutput Step(double nowSeconds)
 {
-  loadParameters(nhPrivate);
-  RosInterfaces io = setupRosInterfaces(nh, nhPrivate);
-  nav_msgs::Path path;
-  initializePathData();
-
-  ros::Rate rate(controlFrequency);
-  bool status = ros::ok();
-  while (status) {
-    ros::spinOnce();
-
-    if ((newLaserCloud || newTerrainCloud) && !shouldUseNearGoalControl()) {
-      processNewPlanningData(io, path);
-    }
-    publishControlCommand(io.pubSpeed, path);
-
-    status = ros::ok();
-    rate.sleep();
+  LocalPlannerOutput output;
+  if ((newLaserCloud || newTerrainCloud) && !shouldUseNearGoalControl()) {
+    processNewPlanningData(output, nowSeconds, selectedPath);
   }
-
-  return 0;
+  output.command = buildControlCommand(nowSeconds, selectedPath);
+  return output;
 }
 
-#ifndef ROBOT_PLAN_EXPV2_NO_MAIN
-int main(int argc, char** argv)
-{
-  ros::init(argc, argv, "local_path");
-  ros::NodeHandle nh;
-  ros::NodeHandle nhPrivate("~");
-  return RunRobotPlanLocalPlanner(nh, nhPrivate);
+};  // struct LocalPlanner::Impl
+
+LocalPlanner::LocalPlanner(const LocalPlannerConfig& config)
+    : impl_(new Impl(config)) {}
+
+LocalPlanner::~LocalPlanner() = default;
+LocalPlanner::LocalPlanner(LocalPlanner&&) noexcept = default;
+LocalPlanner& LocalPlanner::operator=(LocalPlanner&&) noexcept = default;
+
+void LocalPlanner::SetOdometry(double timestamp_seconds,
+                               const common_struct::Pose& pose) {
+  impl_->SetOdometry(timestamp_seconds, pose);
 }
-#endif
+
+void LocalPlanner::SetRegisteredScan(
+    const pcl::PointCloud<pcl::PointXYZI>& registered_scan) {
+  impl_->SetRegisteredScan(registered_scan);
+}
+
+void LocalPlanner::SetTerrain(
+    const pcl::PointCloud<pcl::PointXYZI>& terrain) {
+  impl_->SetTerrain(terrain);
+}
+
+void LocalPlanner::SetGoal(const common_struct::Pose& goal) {
+  impl_->SetGoal(goal);
+}
+
+void LocalPlanner::SetGlobalPath(const common_struct::Path& path) {
+  impl_->SetGlobalPath(path);
+}
+
+void LocalPlanner::SetSpeed(double speed) {
+  impl_->SetSpeed(speed);
+}
+
+void LocalPlanner::SetBoundary(
+    const common_struct::PolygonStamped& boundary) {
+  impl_->SetBoundary(boundary);
+}
+
+void LocalPlanner::SetAddedObstacles(
+    const pcl::PointCloud<pcl::PointXYZI>& obstacles) {
+  impl_->SetAddedObstacles(obstacles);
+}
+
+void LocalPlanner::SetObstacleChecking(bool enabled) {
+  impl_->SetObstacleChecking(enabled);
+}
+
+void LocalPlanner::SetSafetyStop(std::int8_t stop_mask) {
+  impl_->SetSafetyStop(stop_mask);
+}
+
+void LocalPlanner::SetGoalValid(bool valid) {
+  impl_->SetGoalValid(valid);
+}
+
+LocalPlannerOutput LocalPlanner::Step(double now_seconds) {
+  return impl_->Step(now_seconds);
+}
+
+double LocalPlanner::control_frequency() const {
+  return impl_->controlFrequency;
+}
+
+}  // namespace planning
+}  // namespace jojo
 

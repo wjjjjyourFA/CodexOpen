@@ -17,6 +17,7 @@ find_package(yaml-cpp REQUIRED)
 find_package(Glog REQUIRED)
 
 add_library(${PROJECT_NAME} STATIC
+  fast_lio_pipeline.cpp
   lidar_odometry.cpp
   src/imu_processing.cpp
   config/runtime_config.cpp

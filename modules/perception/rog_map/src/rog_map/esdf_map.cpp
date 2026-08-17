@@ -245,8 +245,10 @@ namespace rog_map {
 #endif
     }
 
-    void ESDFMap::getESDFOccPC2(const rog_map::Vec3f &box_min_d, const rog_map::Vec3f &box_max_d,
-                                sensor_msgs::PointCloud2 &pc2) {
+    void ESDFMap::getESDFOccCloud(
+            const rog_map::Vec3f &box_min_d,
+            const rog_map::Vec3f &box_max_d,
+            pcl::PointCloud<pcl::PointXYZI> &cloud) {
         std::lock_guard<std::mutex> lck(update_esdf_mtx);
         pcl_pc.clear();
         Vec3i box_min_i, box_max_i;
@@ -276,16 +278,18 @@ namespace rog_map {
         pcl_pc.width = pcl_pc.points.size();
         pcl_pc.height = 1;
         pcl_pc.is_dense = true;
-        pcl::toROSMsg(pcl_pc, pc2);
-        pc2.header.frame_id = "world";
+        cloud = pcl_pc;
     }
 
     void ESDFMap::resetOneCell(const int &hash_id) {
     }
 
 
-    void ESDFMap::getPositiveESDFPC2(const rog_map::Vec3f &box_min_d, const rog_map::Vec3f &box_max_d,
-                                     const double &visualize_z, sensor_msgs::PointCloud2 &pc2) {
+    void ESDFMap::getPositiveESDFCloud(
+            const rog_map::Vec3f &box_min_d,
+            const rog_map::Vec3f &box_max_d,
+            const double &visualize_z,
+            pcl::PointCloud<pcl::PointXYZI> &cloud) {
         std::lock_guard<std::mutex> lck(update_esdf_mtx);
         pcl_pc.clear();
         Vec3i box_min_i, box_max_i;
@@ -314,13 +318,15 @@ namespace rog_map {
         pcl_pc.width = pcl_pc.points.size();
         pcl_pc.height = 1;
         pcl_pc.is_dense = true;
-        pcl::toROSMsg(pcl_pc, pc2);
-        pc2.header.frame_id = "world";
+        cloud = pcl_pc;
     }
 
 
-    void ESDFMap::getNegativeESDFPC2(const rog_map::Vec3f &box_min_d, const rog_map::Vec3f &box_max_d,
-                                     const double &visualize_z, sensor_msgs::PointCloud2 &pc2) {
+    void ESDFMap::getNegativeESDFCloud(
+            const rog_map::Vec3f &box_min_d,
+            const rog_map::Vec3f &box_max_d,
+            const double &visualize_z,
+            pcl::PointCloud<pcl::PointXYZI> &cloud) {
         std::lock_guard<std::mutex> lck(update_esdf_mtx);
         pcl_pc.clear();
         Vec3i box_min_i, box_max_i;
@@ -349,8 +355,7 @@ namespace rog_map {
         pcl_pc.width = pcl_pc.points.size();
         pcl_pc.height = 1;
         pcl_pc.is_dense = true;
-        pcl::toROSMsg(pcl_pc, pc2);
-        pc2.header.frame_id = "world";
+        cloud = pcl_pc;
     }
 
     template<typename F_get_val, typename F_set_val>
@@ -551,4 +556,3 @@ namespace rog_map {
 
 
 }
-

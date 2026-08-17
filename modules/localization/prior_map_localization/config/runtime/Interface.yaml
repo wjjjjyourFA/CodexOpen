@@ -5,7 +5,6 @@ prior_map_localization:
     lidar_standard: /rslidar_points/main
     imu_standard: SensorMsgsIMU
     global_pose: /self_state/GlobalPose_ugv
-    local_pose: /self_state/LocalPose
     lidar_global_pose: /self_state/LidarGlobalPose
     initial_pose: /initialpose
     map: /world_state/cloud_map
@@ -18,15 +17,22 @@ prior_map_localization:
     map: map
     world: world
     sensor: sensor
-    body: body
   queues:
     lidar: 5
     imu: 200000
     initial_pose: 1
+    global_pose: 20
     map: 10
     path: 5
     odometry: 100
     lio_path: 1
     registered_scan: 10
   transport:
-    map_latched: false
+    map_latched: true
+    processing_frequency: 5000.0
+    path_min_distance: 0.1
+  conversion:
+    standard_lidar_time_offset: -0.1
+    standard_imu_gyro_scale: 10.0
+    standard_imu_swap_xy: true
+    standard_imu_invert_y: true

@@ -1,7 +1,6 @@
 #ifndef CLOUDDS_UTILS_HPP
 #define CLOUDDS_UTILS_HPP
 
-#include <pcl_conversions/pcl_conversions.h>
 #include <pcl/io/io.h>
 #include <pcl/filters/voxel_grid.h>
 #include <unordered_map>
@@ -237,4 +236,3 @@ inline void VoxelGridLargeScaleRGB(pcl::PointCloud<pcl::PointXYZRGB>::Ptr src, p
 } // namespace std
 
 #endif // CLOUDDS_UTILS_HPP
-

@@ -6,3 +6,17 @@ terrain_waypoint_explorer:
   waypoint_topic: /way_point
   goal_valid_topic: /isgoal_vaild
   finished_topic: /exploration_finished
+  debug_map_topic: debug_map
+  debug_frontiers_topic: debug_frontiers
+  debug_candidates_topic: debug_candidates
+  debug_goal_topic: debug_goal
+  queues:
+    odometry: 20
+    scan: 2
+    terrain: 2
+    waypoint: 2
+    goal_valid: 5
+    debug: 1
+    finished: 1
+  transport:
+    output_latched: true

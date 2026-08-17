@@ -32,17 +32,16 @@ fi
 
 CODEXOPEN_LOG_DIR="${ROBOT_DOG_LOCALIZATION_LOG_DIR:-${CODEXOPEN_INSTALL_ROOT}/log/robot_dog_localization/$(date '+%Y%m%d_%H%M%S')}"
 export CODEXOPEN_LOG_DIR
-export PRIOR_MAP_LOCALIZATION_LOG_DIR="${CODEXOPEN_LOG_DIR}/algorithm"
 codexopen_prepare_runtime
-mkdir -p "${PRIOR_MAP_LOCALIZATION_LOG_DIR}"
 trap codexopen_cleanup EXIT INT TERM
 
 if ! codexopen_start_master; then
     exit 1
 fi
 
-# The map is published once by the legacy localization node. Start RViz first
-# so its map display is subscribed before the localization process publishes.
+# The localization adapter publishes the prior map with a latched publisher.
+# Starting RViz first preserves the familiar initialization workflow, but a
+# later subscriber can still receive the most recently published map.
 # RViz is optional: runtime_common does not treat its exit as a flow failure.
 if [[ "${RVIZ_ENABLED}" == "true" ]]; then
     codexopen_start_optional_process localization_rviz \

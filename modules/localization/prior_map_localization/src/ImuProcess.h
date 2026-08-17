@@ -23,22 +23,14 @@
 #include <thread>
 #include <fstream>
 #include <csignal>
-#include <ros/ros.h>
 #include <so3_math.h>
 #include <Eigen/Eigen>
 #include <pcl/common/io.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <condition_variable>
-#include <nav_msgs/Odometry.h>
 #include <pcl/common/transforms.h>
 #include <pcl/kdtree/kdtree_flann.h>
-#include <tf/transform_broadcaster.h>
-#include <eigen_conversions/eigen_msg.h>
-#include <pcl_conversions/pcl_conversions.h>
-#include <sensor_msgs/Imu.h>
-#include <sensor_msgs/PointCloud2.h>
-#include <geometry_msgs/Vector3.h>
 #include "use-ikfom.hpp"
 
 
@@ -56,7 +48,6 @@ public:
     ~ImuProcess();
 
     void Reset();
-    void Reset(double start_timestamp, const sensor_msgs::ImuConstPtr &lastimu);
     void set_extrinsic(const V3D &transl, const M3D &rot);
     void set_extrinsic(const V3D &transl);
     void set_extrinsic(const MD(4,4) &T);
@@ -65,7 +56,9 @@ public:
     void set_gyr_bias_cov(const V3D &b_g);
     void set_acc_bias_cov(const V3D &b_a);
     Eigen::Matrix<double, 12, 12> Q;
-    void Process(const MeasureGroup &meas,  esekfom::esekf<state_ikfom, 12, input_ikfom> &kf_state, PointCloudXYZI::Ptr pcl_un_);
+    bool Process(const MeasureGroup &meas,
+                 esekfom::esekf<state_ikfom, 12, input_ikfom> &kf_state,
+                 PointCloudXYZI::Ptr pcl_un_);
 
     ofstream fout_imu;
     V3D cov_acc;
@@ -86,8 +79,8 @@ private:
     void UndistortPcl(const MeasureGroup &meas, esekfom::esekf<state_ikfom, 12, input_ikfom> &kf_state, PointCloudXYZI &pcl_in_out);
 
     PointCloudXYZI::Ptr cur_pcl_un_;
-    sensor_msgs::ImuConstPtr last_imu_;
-    deque<sensor_msgs::ImuConstPtr> v_imu_;
+    ImuDataConstPtr last_imu_;
+    deque<ImuDataConstPtr> v_imu_;
     vector<Pose6D> IMUpose;
     vector<M3D>    v_rot_pcl_;
 

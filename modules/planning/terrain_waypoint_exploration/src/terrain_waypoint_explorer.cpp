@@ -6,9 +6,6 @@
 #include <queue>
 #include <utility>
 
-#include <pcl_conversions/pcl_conversions.h>
-#include <tf/transform_datatypes.h>
-
 namespace terrain_waypoint_exploration {
 namespace {
 
@@ -24,133 +21,70 @@ double normalizeAngle(double angle) {
   return angle;
 }
 
+double yawFromQuaternion(const jojo::common_struct::Quaternion& quaternion) {
+  const double sin_yaw =
+      2.0 * (quaternion.w * quaternion.z +
+             quaternion.x * quaternion.y);
+  const double cos_yaw =
+      1.0 - 2.0 * (quaternion.y * quaternion.y +
+                   quaternion.z * quaternion.z);
+  return std::atan2(sin_yaw, cos_yaw);
+}
+
 }  // namespace
 
 TerrainWaypointExplorer::TerrainWaypointExplorer(
-    const ros::NodeHandle& nh, const ros::NodeHandle& pnh)
-    : nh_(nh), pnh_(pnh) {
-  loadParameters();
+    const TerrainWaypointExplorerConfig& config)
+    : grid_resolution_(config.grid_resolution),
+      height_layer_resolution_(config.height_layer_resolution),
+      occupied_min_layers_(config.occupied_min_layers),
+      ground_max_layers_(config.ground_max_layers),
+      ground_below_sensor_(config.ground_below_sensor),
+      scan_point_stride_(config.scan_point_stride),
+      scan_max_range_(config.scan_max_range),
+      planning_frequency_(config.planning_frequency),
+      min_goal_distance_(config.min_goal_distance),
+      reachable_search_radius_(config.reachable_search_radius),
+      waypoint_lookahead_distance_(config.waypoint_lookahead_distance),
+      goal_reached_distance_(config.goal_reached_distance),
+      goal_timeout_(config.goal_timeout),
+      goal_publish_frequency_(config.goal_publish_frequency),
+      obstacle_clearance_(config.obstacle_clearance),
+      frontier_cluster_radius_(config.frontier_cluster_radius),
+      min_frontier_cluster_cells_(config.min_frontier_cluster_cells),
+      information_radius_(config.information_radius),
+      gain_weight_(config.gain_weight),
+      distance_weight_(config.distance_weight),
+      heading_weight_(config.heading_weight),
+      continuation_angle_deg_(config.continuation_angle_deg),
+      continuation_bonus_(config.continuation_bonus),
+      continuation_target_radius_(config.continuation_target_radius),
+      saved_branch_match_radius_(config.saved_branch_match_radius),
+      saved_branch_merge_radius_(config.saved_branch_merge_radius),
+      blacklist_radius_(config.blacklist_radius),
+      blacklist_duration_(config.blacklist_duration),
+      finish_no_frontier_cycles_(config.finish_no_frontier_cycles) {}
 
-  odometry_sub_ = nh_.subscribe(
-      odometry_topic_, 20, &TerrainWaypointExplorer::odometryCallback, this);
-  scan_sub_ = nh_.subscribe(
-      registered_scan_topic_, 2, &TerrainWaypointExplorer::scanCallback, this);
-  terrain_sub_ = nh_.subscribe(
-      terrain_topic_, 2, &TerrainWaypointExplorer::terrainCallback, this);
-
-  waypoint_pub_ =
-      nh_.advertise<geometry_msgs::PoseStamped>(waypoint_topic_, 2, true);
-  goal_valid_pub_ =
-      nh_.advertise<std_msgs::Bool>(goal_valid_topic_, 5, true);
-  map_pub_ =
-      pnh_.advertise<sensor_msgs::PointCloud2>("debug_map", 1, true);
-  frontier_pub_ =
-      pnh_.advertise<sensor_msgs::PointCloud2>("debug_frontiers", 1, true);
-  candidate_pub_ =
-      pnh_.advertise<sensor_msgs::PointCloud2>("debug_candidates", 1, true);
-  goal_marker_pub_ =
-      pnh_.advertise<visualization_msgs::Marker>("debug_goal", 1, true);
-  finished_pub_ = nh_.advertise<std_msgs::Bool>(finished_topic_, 1, true);
-
-  planning_timer_ = nh_.createTimer(
-      ros::Duration(1.0 / std::max(0.1, planning_frequency_)),
-      &TerrainWaypointExplorer::planningTimerCallback, this);
-
-  // Latching the initial invalid state prevents a downstream planner from
-  // treating a stale waypoint from an earlier node instance as active.
-  publishGoalValidity(false);
-
-  ROS_INFO_STREAM("terrain_waypoint_exploration started. Inputs: "
-                  << odometry_topic_ << ", " << registered_scan_topic_ << ", "
-                  << terrain_topic_ << "; output: " << waypoint_topic_);
-}
-
-void TerrainWaypointExplorer::loadParameters() {
-  pnh_.param("world_frame", world_frame_, std::string("map"));
-  pnh_.param("odometry_topic", odometry_topic_,
-             std::string("/state_estimation"));
-  pnh_.param("registered_scan_topic", registered_scan_topic_,
-             std::string("/registered_scan"));
-  pnh_.param("terrain_topic", terrain_topic_,
-             std::string("/terrain_map"));
-  pnh_.param("waypoint_topic", waypoint_topic_,
-             std::string("/way_point"));
-  pnh_.param("goal_valid_topic", goal_valid_topic_,
-             std::string("/isgoal_vaild"));
-  pnh_.param("finished_topic", finished_topic_,
-             std::string("/exploration_finished"));
-
-  pnh_.param("grid_resolution", grid_resolution_, grid_resolution_);
-  pnh_.param("height_layer_resolution", height_layer_resolution_,
-             height_layer_resolution_);
-  pnh_.param("occupied_min_layers", occupied_min_layers_,
-             occupied_min_layers_);
-  pnh_.param("ground_max_layers", ground_max_layers_, ground_max_layers_);
-  pnh_.param("ground_below_sensor", ground_below_sensor_,
-             ground_below_sensor_);
-  pnh_.param("scan_point_stride", scan_point_stride_, scan_point_stride_);
-  pnh_.param("scan_max_range", scan_max_range_, scan_max_range_);
-
-  pnh_.param("planning_frequency", planning_frequency_, planning_frequency_);
-  pnh_.param("min_goal_distance", min_goal_distance_, min_goal_distance_);
-  pnh_.param("reachable_search_radius", reachable_search_radius_,
-             reachable_search_radius_);
-  pnh_.param("waypoint_lookahead_distance", waypoint_lookahead_distance_,
-             waypoint_lookahead_distance_);
-  pnh_.param("goal_reached_distance", goal_reached_distance_,
-             goal_reached_distance_);
-  pnh_.param("goal_timeout", goal_timeout_, goal_timeout_);
-  pnh_.param("goal_publish_frequency", goal_publish_frequency_,
-             goal_publish_frequency_);
-  pnh_.param("obstacle_clearance", obstacle_clearance_, obstacle_clearance_);
-  pnh_.param("frontier_cluster_radius", frontier_cluster_radius_,
-             frontier_cluster_radius_);
-  pnh_.param("min_frontier_cluster_cells", min_frontier_cluster_cells_,
-             min_frontier_cluster_cells_);
-  pnh_.param("information_radius", information_radius_, information_radius_);
-  pnh_.param("gain_weight", gain_weight_, gain_weight_);
-  pnh_.param("distance_weight", distance_weight_, distance_weight_);
-  pnh_.param("heading_weight", heading_weight_, heading_weight_);
-  pnh_.param("continuation_angle_deg", continuation_angle_deg_,
-             continuation_angle_deg_);
-  pnh_.param("continuation_bonus", continuation_bonus_,
-             continuation_bonus_);
-  pnh_.param("continuation_target_radius", continuation_target_radius_,
-             continuation_target_radius_);
-  pnh_.param("saved_branch_match_radius", saved_branch_match_radius_,
-             saved_branch_match_radius_);
-  pnh_.param("saved_branch_merge_radius", saved_branch_merge_radius_,
-             saved_branch_merge_radius_);
-  pnh_.param("blacklist_radius", blacklist_radius_, blacklist_radius_);
-  pnh_.param("blacklist_duration", blacklist_duration_, blacklist_duration_);
-  pnh_.param("finish_no_frontier_cycles", finish_no_frontier_cycles_,
-             finish_no_frontier_cycles_);
-}
-
-void TerrainWaypointExplorer::odometryCallback(
-    const nav_msgs::OdometryConstPtr& msg) {
-  std::lock_guard<std::mutex> lock(mutex_);
-  robot_x_ = msg->pose.pose.position.x;
-  robot_y_ = msg->pose.pose.position.y;
-  robot_z_ = msg->pose.pose.position.z;
-  robot_yaw_ = tf::getYaw(msg->pose.pose.orientation);
+void TerrainWaypointExplorer::SetOdometry(
+    const jojo::common_struct::Pose& pose) {
+  robot_x_ = pose.position.x;
+  robot_y_ = pose.position.y;
+  robot_z_ = pose.position.z;
+  robot_yaw_ = yawFromQuaternion(pose.orientation);
   has_odometry_ = true;
 }
 
-void TerrainWaypointExplorer::scanCallback(
-    const sensor_msgs::PointCloud2ConstPtr& msg) {
-  pcl::PointCloud<pcl::PointXYZ> cloud;
-  pcl::fromROSMsg(*msg, cloud);
-
-  std::lock_guard<std::mutex> lock(mutex_);
+void TerrainWaypointExplorer::AddRegisteredScan(
+    double timestamp_seconds,
+    const pcl::PointCloud<pcl::PointXYZ>& registered_scan) {
   if (!has_odometry_) {
     return;
   }
 
   const GridIndex start = worldToGrid(robot_x_, robot_y_);
   const int stride = std::max(1, scan_point_stride_);
-  for (std::size_t i = 0; i < cloud.size(); i += stride) {
-    const pcl::PointXYZ& point = cloud.points[i];
+  for (std::size_t i = 0; i < registered_scan.size(); i += stride) {
+    const pcl::PointXYZ& point = registered_scan.points[i];
     if (!std::isfinite(point.x) || !std::isfinite(point.y) ||
         !std::isfinite(point.z)) {
       continue;
@@ -162,23 +96,20 @@ void TerrainWaypointExplorer::scanCallback(
     if (range < grid_resolution_ || range > scan_max_range_) {
       continue;
     }
-    raycastFree(start, worldToGrid(point.x, point.y), msg->header.stamp);
+    raycastFree(start, worldToGrid(point.x, point.y), timestamp_seconds);
   }
   has_scan_ = true;
 }
 
-void TerrainWaypointExplorer::terrainCallback(
-    const sensor_msgs::PointCloud2ConstPtr& msg) {
-  pcl::PointCloud<pcl::PointXYZ> cloud;
-  pcl::fromROSMsg(*msg, cloud);
-
-  std::lock_guard<std::mutex> lock(mutex_);
+void TerrainWaypointExplorer::AddTerrain(
+    double timestamp_seconds,
+    const pcl::PointCloud<pcl::PointXYZ>& terrain) {
   if (!has_odometry_) {
     return;
   }
 
   std::unordered_map<GridIndex, HeightObservation, GridIndexHash> observations;
-  for (const pcl::PointXYZ& point : cloud.points) {
+  for (const pcl::PointXYZ& point : terrain.points) {
     if (!std::isfinite(point.x) || !std::isfinite(point.y) ||
         !std::isfinite(point.z)) {
       continue;
@@ -213,11 +144,11 @@ void TerrainWaypointExplorer::terrainCallback(
       cell.ground_z =
           observation.z_sum / std::max(1, observation.point_count);
       ++cell.ground_observations;
-      cell.last_update = msg->header.stamp;
+      cell.last_update_seconds = timestamp_seconds;
     } else if (occupied) {
       cell.state = CellState::OCCUPIED;
       ++cell.occupied_observations;
-      cell.last_update = msg->header.stamp;
+      cell.last_update_seconds = timestamp_seconds;
     }
   }
   has_terrain_ = true;
@@ -254,7 +185,8 @@ double TerrainWaypointExplorer::groundHeightAt(
 }
 
 void TerrainWaypointExplorer::raycastFree(
-    const GridIndex& start, const GridIndex& end, const ros::Time& stamp) {
+    const GridIndex& start, const GridIndex& end,
+    double timestamp_seconds) {
   int x0 = start.x;
   int y0 = start.y;
   const int x1 = end.x;
@@ -275,12 +207,12 @@ void TerrainWaypointExplorer::raycastFree(
     }
     Cell& cell = map_[index];
     // Ray tracing expands observed free space but never clears a terrain
-    // obstacle. Only the explicit low-ground rule in terrainCallback can do
+    // obstacle. Only the explicit low-ground rule in AddTerrain can do
     // that.
     if (cell.state == CellState::UNKNOWN) {
       cell.state = CellState::FREE;
       cell.ground_z = robot_z_ - ground_below_sensor_;
-      cell.last_update = stamp;
+      cell.last_update_seconds = timestamp_seconds;
     }
     const int twice_error = 2 * error;
     if (twice_error >= dy) {
@@ -336,11 +268,10 @@ bool TerrainWaypointExplorer::isFrontier(
 
 bool TerrainWaypointExplorer::isBlacklisted(
     const GridIndex& index) const {
-  const ros::Time now = ros::Time::now();
   const int radius =
       static_cast<int>(std::ceil(blacklist_radius_ / grid_resolution_));
   for (const auto& entry : blacklist_) {
-    if ((now - entry.second).toSec() > blacklist_duration_) {
+    if (current_time_seconds_ - entry.second > blacklist_duration_) {
       continue;
     }
     const int dx = entry.first.x - index.x;
@@ -688,12 +619,12 @@ void TerrainWaypointExplorer::rememberDeferredBranches(
       SavedBranch& branch = saved_branches_[existing_key];
       branch.information_gain = std::max(branch.information_gain,
                                          cluster.information_gain);
-      branch.last_seen = ros::Time::now();
+      branch.last_seen_seconds = current_time_seconds_;
     } else {
       SavedBranch branch;
       branch.anchor = cluster.representative;
       branch.information_gain = cluster.information_gain;
-      branch.last_seen = ros::Time::now();
+      branch.last_seen_seconds = current_time_seconds_;
       saved_branches_[branch.anchor] = branch;
     }
   }
@@ -790,16 +721,16 @@ void TerrainWaypointExplorer::updateTrackingGoal(
 
   const bool waypoint_changed =
       !has_goal_ || !(current_goal_index_ == waypoint);
-  current_goal_.header.frame_id = world_frame_;
-  current_goal_.header.stamp = ros::Time::now();
-  current_goal_.pose.position.x = waypoint_x;
-  current_goal_.pose.position.y = waypoint_y;
-  current_goal_.pose.position.z =
+  current_goal_.position.x = waypoint_x;
+  current_goal_.position.y = waypoint_y;
+  current_goal_.position.z =
       groundHeightAt(waypoint, robot_z_ - ground_below_sensor_);
   const double yaw = std::atan2(waypoint_y - robot_y_,
                                 waypoint_x - robot_x_);
-  current_goal_.pose.orientation =
-      tf::createQuaternionMsgFromYaw(yaw);
+  current_goal_.orientation.x = 0.0;
+  current_goal_.orientation.y = 0.0;
+  current_goal_.orientation.z = std::sin(yaw * 0.5);
+  current_goal_.orientation.w = std::cos(yaw * 0.5);
   current_goal_index_ = waypoint;
   active_target_index_ = exploration_target;
   active_direction_x_ =
@@ -808,37 +739,17 @@ void TerrainWaypointExplorer::updateTrackingGoal(
       (exploration_target.y + 0.5) * grid_resolution_ - robot_y_;
   has_active_direction_ = true;
   if (waypoint_changed) {
-    goal_created_time_ = ros::Time::now();
+    goal_created_time_seconds_ = current_time_seconds_;
   }
   has_goal_ = true;
 }
 
-void TerrainWaypointExplorer::publishGoal() {
-  if (!has_goal_) {
-    return;
-  }
-  const ros::Time now = ros::Time::now();
-  if (!last_goal_publish_time_.isZero() &&
-      (now - last_goal_publish_time_).toSec() <
-          1.0 / std::max(0.1, goal_publish_frequency_)) {
-    return;
-  }
-  current_goal_.header.stamp = now;
-  waypoint_pub_.publish(current_goal_);
-  last_goal_publish_time_ = now;
-}
-
-void TerrainWaypointExplorer::publishGoalValidity(bool valid) {
-  std_msgs::Bool message;
-  message.data = valid;
-  goal_valid_pub_.publish(message);
-}
-
-void TerrainWaypointExplorer::publishDebug(
+void TerrainWaypointExplorer::BuildDebug(
     const std::vector<GridIndex>& frontiers,
-    const std::vector<FrontierCluster>& clusters) {
-  pcl::PointCloud<pcl::PointXYZI> map_cloud;
-  map_cloud.reserve(map_.size());
+    const std::vector<FrontierCluster>& clusters,
+    TerrainWaypointExplorerOutput* output) const {
+  output->debug_map.clear();
+  output->debug_map.reserve(map_.size());
   for (const auto& entry : map_) {
     if (entry.second.state == CellState::UNKNOWN) {
       continue;
@@ -853,11 +764,11 @@ void TerrainWaypointExplorer::publishDebug(
         groundHeightAt(entry.first, robot_z_ - ground_below_sensor_));
     point.intensity =
         entry.second.state == CellState::FREE ? 1.0F : 100.0F;
-    map_cloud.push_back(point);
+    output->debug_map.push_back(point);
   }
 
-  pcl::PointCloud<pcl::PointXYZ> frontier_cloud;
-  frontier_cloud.reserve(frontiers.size());
+  output->debug_frontiers.clear();
+  output->debug_frontiers.reserve(frontiers.size());
   for (const GridIndex& index : frontiers) {
     pcl::PointXYZ point;
     double x = 0.0;
@@ -867,73 +778,36 @@ void TerrainWaypointExplorer::publishDebug(
     point.y = static_cast<float>(y);
     point.z = static_cast<float>(
         groundHeightAt(index, robot_z_ - ground_below_sensor_));
-    frontier_cloud.push_back(point);
+    output->debug_frontiers.push_back(point);
   }
 
-  pcl::PointCloud<pcl::PointXYZI> candidate_cloud;
-  candidate_cloud.reserve(clusters.size());
+  output->debug_candidates.clear();
+  output->debug_candidates.reserve(clusters.size());
   for (const FrontierCluster& cluster : clusters) {
     pcl::PointXYZI point;
     point.x = static_cast<float>(cluster.x);
     point.y = static_cast<float>(cluster.y);
     point.z = static_cast<float>(cluster.z);
     point.intensity = static_cast<float>(cluster.information_gain);
-    candidate_cloud.push_back(point);
+    output->debug_candidates.push_back(point);
   }
-
-  sensor_msgs::PointCloud2 map_msg;
-  pcl::toROSMsg(map_cloud, map_msg);
-  map_msg.header.frame_id = world_frame_;
-  map_msg.header.stamp = ros::Time::now();
-  map_pub_.publish(map_msg);
-
-  sensor_msgs::PointCloud2 frontier_msg;
-  pcl::toROSMsg(frontier_cloud, frontier_msg);
-  frontier_msg.header = map_msg.header;
-  frontier_pub_.publish(frontier_msg);
-
-  sensor_msgs::PointCloud2 candidate_msg;
-  pcl::toROSMsg(candidate_cloud, candidate_msg);
-  candidate_msg.header = map_msg.header;
-  candidate_pub_.publish(candidate_msg);
-
-  visualization_msgs::Marker marker;
-  marker.header = map_msg.header;
-  marker.ns = "terrain_waypoint_exploration";
-  marker.id = 0;
-  marker.type = visualization_msgs::Marker::SPHERE;
-  marker.action = has_goal_ ? visualization_msgs::Marker::ADD
-                            : visualization_msgs::Marker::DELETE;
-  marker.pose.orientation.w = 1.0;
-  marker.pose.position = current_goal_.pose.position;
-  marker.scale.x = 0.5;
-  marker.scale.y = 0.5;
-  marker.scale.z = 0.5;
-  marker.color.r = 1.0;
-  marker.color.g = 0.2;
-  marker.color.b = 0.1;
-  marker.color.a = 1.0;
-  goal_marker_pub_.publish(marker);
 }
 
-void TerrainWaypointExplorer::planningTimerCallback(
-    const ros::TimerEvent&) {
-  std::lock_guard<std::mutex> lock(mutex_);
+TerrainWaypointExplorerOutput TerrainWaypointExplorer::Plan(
+    double now_seconds) {
+  current_time_seconds_ = now_seconds;
+  TerrainWaypointExplorerOutput output;
   if (!has_odometry_ || !has_scan_ || !has_terrain_) {
     has_goal_ = false;
-    publishGoalValidity(false);
-    ROS_WARN_THROTTLE(
-        5.0, "Waiting for odometry, registered scan, and terrain map.");
-    return;
+    output.status = ExplorerStatus::kWaitingForInputs;
+    return output;
   }
 
   GridIndex start;
   if (!findTraversableStart(&start)) {
     has_goal_ = false;
-    publishGoalValidity(false);
-    ROS_WARN_THROTTLE(
-        2.0, "No traversable cell found around the current odometry.");
-    return;
+    output.status = ExplorerStatus::kNoTraversableStart;
+    return output;
   }
 
   std::unordered_set<GridIndex, GridIndexHash> reachable;
@@ -994,26 +868,17 @@ void TerrainWaypointExplorer::planningTimerCallback(
         has_goal_ && current_goal_index_ == tracking_waypoint;
     const bool timed_out =
         same_waypoint &&
-        (ros::Time::now() - goal_created_time_).toSec() >= goal_timeout_;
+        current_time_seconds_ - goal_created_time_seconds_ >= goal_timeout_;
 
     if (timed_out) {
-      blacklist_[selected.representative] = ros::Time::now();
+      blacklist_[selected.representative] = current_time_seconds_;
       has_goal_ = false;
       has_active_direction_ = false;
-      ROS_WARN_STREAM("Tracking waypoint timed out. Frontier temporarily "
-                      "blacklisted at [" << selected.x << ", "
-                      << selected.y << "].");
+      output.status = ExplorerStatus::kWaypointTimedOut;
     } else {
       updateTrackingGoal(tracking_waypoint, selected.representative);
       no_frontier_cycles_ = 0;
-      ROS_INFO_STREAM_THROTTLE(
-          1.0, "Reachable frontier target=[" << selected.x << ", "
-          << selected.y << "], path_distance=" << selected.distance
-          << (returning_to_saved_branch ? ", returning_to_saved_branch" : "")
-          << ", deferred_branches=" << saved_branches_.size()
-          << ", tracking waypoint=["
-          << current_goal_.pose.position.x << ", "
-          << current_goal_.pose.position.y << "]");
+      output.status = ExplorerStatus::kActive;
     }
   } else {
     ++no_frontier_cycles_;
@@ -1024,36 +889,39 @@ void TerrainWaypointExplorer::planningTimerCallback(
     has_active_direction_ = false;
     if (saved_branches_.empty() &&
         no_frontier_cycles_ >= finish_no_frontier_cycles_) {
-      std_msgs::Bool finished;
-      finished.data = true;
-      finished_pub_.publish(finished);
-      ROS_INFO_THROTTLE(5.0, "No reachable frontier. Exploration finished.");
+      output.exploration_finished = true;
+      output.status = ExplorerStatus::kFinished;
+    } else {
+      output.status = ExplorerStatus::kNoFrontier;
     }
   }
 
-  publishGoal();
-  publishGoalValidity(has_goal_);
-  publishDebug(frontiers, clusters);
+  output.goal_valid = has_goal_;
+  output.goal = current_goal_;
+  output.returning_to_saved_branch = returning_to_saved_branch;
+  output.deferred_branch_count = saved_branches_.size();
+  if (waypoint_found) {
+    output.selected_x = selected.x;
+    output.selected_y = selected.y;
+    output.selected_path_distance = selected.distance;
+  }
+  if (has_goal_ &&
+      (last_goal_publish_time_seconds_ == 0.0 ||
+       current_time_seconds_ - last_goal_publish_time_seconds_ >=
+           1.0 / std::max(0.1, goal_publish_frequency_))) {
+    output.publish_goal = true;
+    last_goal_publish_time_seconds_ = current_time_seconds_;
+  }
+  BuildDebug(frontiers, clusters, &output);
 
-  const ros::Time now = ros::Time::now();
   for (auto it = blacklist_.begin(); it != blacklist_.end();) {
-    if ((now - it->second).toSec() > blacklist_duration_) {
+    if (current_time_seconds_ - it->second > blacklist_duration_) {
       it = blacklist_.erase(it);
     } else {
       ++it;
     }
   }
+  return output;
 }
 
 }  // namespace terrain_waypoint_exploration
-
-#ifndef ROBOT_PLAN_EXPV2_NO_MAIN
-int main(int argc, char** argv) {
-  ros::init(argc, argv, "terrain_waypoint_explorer");
-  ros::NodeHandle nh;
-  ros::NodeHandle pnh("~");
-  terrain_waypoint_exploration::TerrainWaypointExplorer explorer(nh, pnh);
-  ros::spin();
-  return 0;
-}
-#endif

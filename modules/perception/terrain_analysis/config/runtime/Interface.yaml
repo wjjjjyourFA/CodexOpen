@@ -3,3 +3,11 @@ terrain_analysis:
   odometryTopic: /state_estimation
   clearingTopic: /map_clearing
   terrainMapTopic: /terrain_map
+  worldFrame: map
+  queues:
+    odometry: 5
+    scan: 5
+    clearing: 5
+    output: 2
+  transport:
+    processing_frequency: 100.0

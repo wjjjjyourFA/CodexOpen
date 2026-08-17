@@ -1,12 +1,10 @@
 #include <ros/ros.h>
 
 #include "codexopen_ros1/yaml_param_loader.h"
-
-int RunRobotPlanTerrainAnalysis(ros::NodeHandle& node,
-                                ros::NodeHandle& private_node);
+#include "terrain_analysis_ros1/ros1_convert.h"
 
 int main(int argc, char** argv) {
-  ros::init(argc, argv, "terrainAnalysisv2");
+  ros::init(argc, argv, "terrain_analysis");
   ros::NodeHandle node;
   ros::NodeHandle private_node("~");
   const std::string runtime = argc > 1
@@ -20,5 +18,11 @@ int main(int argc, char** argv) {
           interface, "terrain_analysis", private_node)) {
     return 1;
   }
-  return RunRobotPlanTerrainAnalysis(node, private_node);
+  jojo::perception::ros1::TerrainAnalysisRos1Convert adapter(node,
+                                                              private_node);
+  if (!adapter.Init()) {
+    return 1;
+  }
+  adapter.Run();
+  return 0;
 }

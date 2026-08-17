@@ -23,10 +23,8 @@
 
 #pragma once
 
-#include <ros/ros.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include <pcl_conversions/pcl_conversions.h>
 #include <algorithm>
 #include <cstring>
 #include <fstream>
@@ -215,4 +213,3 @@ namespace rog_map {
         return false;
     }
 }
-

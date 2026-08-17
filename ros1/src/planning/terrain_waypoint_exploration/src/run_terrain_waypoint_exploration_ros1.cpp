@@ -1,7 +1,7 @@
 #include <ros/ros.h>
 
 #include "codexopen_ros1/yaml_param_loader.h"
-#include "terrain_waypoint_exploration/terrain_waypoint_explorer.h"
+#include "terrain_waypoint_exploration_ros1/ros1_convert.h"
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "terrain_waypoint_explorer");
@@ -18,8 +18,11 @@ int main(int argc, char** argv) {
           interface, "terrain_waypoint_explorer", private_node)) {
     return 1;
   }
-  terrain_waypoint_exploration::TerrainWaypointExplorer explorer(
-      node, private_node);
-  ros::spin();
+  terrain_waypoint_exploration::ros1::TerrainWaypointExplorerRos1Convert
+      adapter(node, private_node);
+  if (!adapter.Init()) {
+    return 1;
+  }
+  adapter.Run();
   return 0;
 }

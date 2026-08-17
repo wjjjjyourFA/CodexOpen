@@ -1,6 +1,17 @@
 world_planner:
+  world_frame: map
   terrain_topic: /terrain_map
   odometry_topic: /state_estimation
   goal_topic: /way_point
   path_topic: /global_reference_path
   obstacle_grid_topic: /global_obstacle_grid
+  queues:
+    terrain: 2
+    odometry: 5
+    goal: 5
+    path: 2
+    obstacle_grid: 1
+  transport:
+    planning_frequency: 5.0
+    path_latched: true
+    obstacle_grid_latched: true

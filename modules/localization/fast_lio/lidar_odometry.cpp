@@ -1,10 +1,10 @@
 #include "modules/localization/fast_lio/lidar_odometry.h"
 
 #include <algorithm>
+#include <filesystem>
 #include <stdexcept>
 
 namespace fastlio {
-namespace common = apollo::cyber::common;
 
 LidarOdometry::LidarOdometry() {
   feats_undistort.reset(new PointCloudXYZI());
@@ -675,15 +675,20 @@ void LidarOdometry::SetDataFolder() {
   // std::cout << "data_file : " << this->prefix << std::endl;
 
   this->postfix = this->prefix + "-O";
-  common::CreateDir(this->postfix + "/sensor_data");
-
   path_lidar = this->postfix + "/sensor_data/" + "lidar_pcd";
-  common::CreateDir(path_lidar);
+  std::error_code directory_error;
+  std::filesystem::create_directories(path_lidar, directory_error);
+  if (directory_error) {
+    throw std::runtime_error(
+        "cannot create Fast-LIO output directory '" + path_lidar +
+        "': " + directory_error.message());
+  }
 
   path_pose = this->postfix + "/sensor_data/" + "pose" + ".txt";
   ofs_pose.open(path_pose, std::ios::out);
   if (!ofs_pose.is_open()) {
-    std::cerr << "[save_result] Cannot clear " << path_pose << std::endl;
+    throw std::runtime_error(
+        "cannot open Fast-LIO pose output '" + path_pose + "'");
   }
 
   if (rparam_->b_only_times) {
@@ -691,7 +696,8 @@ void LidarOdometry::SetDataFolder() {
     // 以追加方式打开（不存在会自动创建）
     ofs_runtime.open(path_runtime, std::ios::app);
     if (!ofs_runtime.is_open()) {
-      std::cerr << "❌ Failed to open file: " << path_runtime << std::endl;
+      throw std::runtime_error(
+          "cannot open Fast-LIO runtime output '" + path_runtime + "'");
     }
   }
 }

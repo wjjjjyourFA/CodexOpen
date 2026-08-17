@@ -12,6 +12,12 @@ local_planner:
   path_topic: /path
   command_topic: /cmd_vel_corrected
   free_paths_topic: /free_paths
+  vehicle_frame: vehicle
+  queues:
+    input: 5
+    path: 5
+    command: 5
+    free_paths: 2
 
 static_tf:
   parent_frame: sensor

@@ -9,6 +9,10 @@ if(BUILD_ROS1)
     DESTINATION bin/modules/monitor/robot_status_monitor
     RENAME robot_status_monitor_ros1
   )
+  install(FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/robot_status_monitor_core.py
+    DESTINATION bin/modules/monitor/robot_status_monitor
+  )
   install(DIRECTORY config/
     DESTINATION bin/config/RobotStatusMonitor
   )

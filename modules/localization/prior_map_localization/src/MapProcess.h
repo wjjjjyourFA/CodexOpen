@@ -8,9 +8,6 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#include "self_state/GlobalPose.h"
-#include "self_state/LidarLocalPose.h"
-
 #include <csignal>
 #include <unistd.h>
 
@@ -33,15 +30,7 @@ public:
     void SetMap(string map_path);
 
     bool InitConfig(const std::string &config_yaml);
-    bool InitROS(ros::NodeHandle nh);
     void SetPcdDir(std::string path_pcd);
-    void standard_pcl_cbk(const sensor_msgs::PointCloud2::ConstPtr &msg);
-    void livox_pcl_cbk(const livox_ros_driver2::CustomMsg::ConstPtr &msg);
-    void standard_imu_cbk(const sensor_msgs::Imu::ConstPtr &msg_in);
-    void livox_imu_cbk(const sensor_msgs::Imu::ConstPtr &msg_in);
-    void imu_cbk(const sensor_msgs::Imu::ConstPtr &msg_in);
-    void globalPose_cbk(const self_state::GlobalPose::ConstPtr &msg_in);
-    void imuRawToRos(sensor_msgs::Imu::Ptr msg_in);
 
 
 //    void GenetateMesureGroup();
@@ -99,15 +88,6 @@ public:
 
 
 
-
-
-
-
-    // ros
-
-
-    ros::Subscriber sub_pcl;
-    ros::Subscriber sub_imu ;
 
 
 
@@ -194,16 +174,6 @@ public:
     esekfom::esekf<state_ikfom, 12, input_ikfom> kf;    // eskf滤波器
     state_ikfom state_point;                            // imu坐标状态（位置，姿态，外参，速度，偏置，重力）
     vect3 pos_lid;                                      // lidar位置
-
-    nav_msgs::Path path;                                // ros发布的path，一个vector
-    nav_msgs::Odometry odomAftMapped;                   // ros发布的odom
-    geometry_msgs::PoseStamped msg_body_pose;           // path中的一个点
-
-    self_state::GlobalPose cur_globalPose;
-    self_state::LidarLocalPose lidarLocalPose;
-
-
-
 
     Eigen::Matrix4f transform_mat;          // 变换矩阵，Tr_rfu_flu
 

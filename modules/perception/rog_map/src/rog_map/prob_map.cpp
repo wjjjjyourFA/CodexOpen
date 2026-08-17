@@ -61,6 +61,7 @@ void ProbMap::initProbMap() {
     posToGlobalIndex(cfg_.visualization_range, sc_.visualization_range_i);
     posToGlobalIndex(cfg_.virtual_ceil_height, sc_.virtual_ceil_height_id_g);
     posToGlobalIndex(cfg_.virtual_ground_height, sc_.virtual_ground_height_id_g);
+    posToGlobalIndex(cfg_.safe_margin, sc_.safe_margin_i);
 
     cfg_.virtual_ceil_height = sc_.virtual_ceil_height_id_g * cfg_.resolution;
     cfg_.virtual_ground_height = sc_.virtual_ground_height_id_g * cfg_.resolution;

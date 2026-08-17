@@ -45,6 +45,7 @@ class Ros1Convert {
 
   std::string odometry_topic_ = "/state_estimation";
   std::string cloud_topic_ = "/registered_scan";
+  std::string finalize_service_name_ = "finalize";
   int sync_queue_size_ = 100;
   double sync_slop_ = 0.05;
 };

@@ -18,21 +18,27 @@ bool Ros1Convert::Init() {
   SessionExporterConfig config;
   private_node_.param<std::string>("odom_topic", odometry_topic_, odometry_topic_);
   private_node_.param<std::string>("cloud_topic", cloud_topic_, cloud_topic_);
-  private_node_.param<std::string>("output_directory", config.output_directory,
+  private_node_.param<std::string>("io/output_directory",
+                                   config.output_directory,
                                    config.output_directory);
+  private_node_.param<std::string>("finalize_service",
+                                   finalize_service_name_,
+                                   finalize_service_name_);
   private_node_.param("keyframe_distance", config.keyframe_distance, 1.5);
   private_node_.param("keyframe_angle_deg", config.keyframe_angle_deg, 0.0);
   private_node_.param("min_keyframe_time", config.min_keyframe_time, 0.0);
   private_node_.param("sync_queue_size", sync_queue_size_, 100);
   private_node_.param("sync_slop", sync_slop_, 0.05);
-  private_node_.param("input_cloud_is_global", config.input_cloud_is_global, true);
+  private_node_.param("conversion/input_cloud_is_global",
+                      config.input_cloud_is_global, true);
   private_node_.param("voxel_leaf_size", config.voxel_leaf_size, 0.0);
   private_node_.param("translation_information",
                       config.translation_information, 1000.0);
   private_node_.param("rotation_information", config.rotation_information, 1000.0);
   private_node_.param("overwrite_existing", config.overwrite_existing, false);
 
-  if (sync_queue_size_ <= 0 || sync_slop_ <= 0.0) {
+  if (sync_queue_size_ <= 0 || sync_slop_ <= 0.0 ||
+      finalize_service_name_.empty()) {
     ROS_ERROR("sync_queue_size must be positive and sync_slop must be greater than zero");
     return false;
   }
@@ -52,7 +58,7 @@ bool Ros1Convert::Init() {
   synchronizer_->registerCallback(boost::bind(
       &Ros1Convert::SynchronizedCallback, this, _1, _2));
   finalize_service_ = private_node_.advertiseService(
-      "finalize", &Ros1Convert::FinalizeService, this);
+      finalize_service_name_, &Ros1Convert::FinalizeService, this);
 
   ROS_INFO_STREAM("Manual-loop exporter ready: odom=" << odometry_topic_
                   << ", cloud=" << cloud_topic_

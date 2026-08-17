@@ -23,7 +23,6 @@ ImuProcess::~ImuProcess() {}
 
 void ImuProcess::Reset() 
 { // 重置参数
-  // ROS_WARN("Reset ImuProcess");
   mean_acc          = V3D(0, 0, -1.0);
   mean_gyr          = V3D(0, 0, 0);
   angvel_last       = Zero3d;
@@ -353,7 +352,6 @@ void ImuProcess::Process(const MeasureGroup &meas, esekfom::esekf &kf_state, Poi
   // t1 = omp_get_wtime();
 
   if(meas.imu.empty()) {return;};
-  // ROS_ASSERT(meas.lidar != nullptr);
   assert(meas.lidar != nullptr);
 
   if (imu_need_init_)
@@ -374,8 +372,6 @@ void ImuProcess::Process(const MeasureGroup &meas, esekfom::esekf &kf_state, Poi
 
       cov_acc = cov_acc_scale;
       cov_gyr = cov_gyr_scale;
-      // ROS_INFO("IMU Initial Done");
-      // ROS_INFO("IMU Initial Done: Gravity: %.4f %.4f %.4f %.4f; state.bias_g: %.4f %.4f %.4f; acc covarience: %.8f %.8f %.8f; gry covarience: %.8f %.8f %.8f",\
       //          imu_state.grav[0], imu_state.grav[1], imu_state.grav[2], mean_acc.norm(), cov_bias_gyr[0], cov_bias_gyr[1], cov_bias_gyr[2], cov_acc[0], cov_acc[1], cov_acc[2], cov_gyr[0], cov_gyr[1], cov_gyr[2]);
       std::cout << "IMU Initial Done" << std::endl;
       // fout_imu.open(DEBUG_FILE_DIR("imu.txt"), ios::out);

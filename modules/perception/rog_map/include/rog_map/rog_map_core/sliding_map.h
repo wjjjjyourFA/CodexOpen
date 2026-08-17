@@ -78,7 +78,7 @@ namespace rog_map {
             int virtual_ground_height_id_g;
             int safe_margin_i;
             int map_vox_num;
-        } sc_;
+        } sc_{};
 
         Vec3f local_map_origin_d_, local_map_bound_min_d_, local_map_bound_max_d_;
         Vec3i local_map_origin_i_, local_map_bound_min_i_, local_map_bound_max_i_;

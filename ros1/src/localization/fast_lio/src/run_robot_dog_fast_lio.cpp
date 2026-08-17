@@ -10,17 +10,17 @@ int main(int argc, char** argv) {
   ros::NodeHandle node;
   ros::NodeHandle private_node("~");
 
-  if (argc > 1) {
-    const std::string runtime_config = argv[1];
-    const std::string interface_config = argc > 2
-        ? argv[2]
-        : "./../../../config/RobotDogFastLio/InterfaceRobotDog.yaml";
-    if (!codexopen_ros1::LoadYamlParameters(
-            runtime_config, "", private_node) ||
-        !codexopen_ros1::LoadYamlParameters(
-            interface_config, "fast_lio", private_node)) {
-      return 1;
-    }
+  const std::string runtime_config = argc > 1
+      ? argv[1]
+      : "./../../../config/RobotDogFastLio/RobotDogFastLio.yaml";
+  const std::string interface_config = argc > 2
+      ? argv[2]
+      : "./../../../config/RobotDogFastLio/Interface.yaml";
+  if (!codexopen_ros1::LoadYamlParameters(
+          runtime_config, "", private_node) ||
+      !codexopen_ros1::LoadYamlParameters(
+          interface_config, "fast_lio", private_node)) {
+    return 1;
   }
 
   auto adapter =

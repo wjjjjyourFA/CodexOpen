@@ -1,12 +1,10 @@
 #include <ros/ros.h>
 
 #include "codexopen_ros1/yaml_param_loader.h"
-
-int RunRobotPlanLocalPlanner(ros::NodeHandle& node,
-                             ros::NodeHandle& private_node);
+#include "local_planner_ros1/ros1_convert.h"
 
 int main(int argc, char** argv) {
-  ros::init(argc, argv, "local_path");
+  ros::init(argc, argv, "local_planner");
   ros::NodeHandle node;
   ros::NodeHandle private_node("~");
   const std::string runtime = argc > 1
@@ -24,5 +22,10 @@ int main(int argc, char** argv) {
     return 1;
   }
   private_node.setParam("pathFolder", paths);
-  return RunRobotPlanLocalPlanner(node, private_node);
+  jojo::planning::ros1::LocalPlannerRos1Convert adapter(node, private_node);
+  if (!adapter.Init()) {
+    return 1;
+  }
+  adapter.Run();
+  return 0;
 }

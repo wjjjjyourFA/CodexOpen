@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include <mutex>
 #include <queue>
 #include <rog_map/inf_map.h>
 #include <rog_map/free_cnt_map.h>

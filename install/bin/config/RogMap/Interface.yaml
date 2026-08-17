@@ -2,14 +2,34 @@ rog_map_interface:
   rog_map:
     ros_callback:
       enable: true
+      mode: 2
       cloud_topic: /registered_scan
       odom_topic: /state_estimation
       odom_timeout: 2.0
+      update_frequency: 1000.0
+      cloud_z_scale: 1.0
+      invert_odometry_z: true
+      broadcast_tf: false
+      map_frame: map
+      child_frame: sensor
+      point_cloud_topic: rog_map/pc
+      odometry_queue: 20
+      cloud_queue: 2
+      output_queue: 2
     visualization:
       enable: true
       use_dynamic_reconfigure: false
       time_rate: 10
       frame_rate: 0
       range: [20, 20, 6]
-      frame_id: body
+      frame_id: map
       pub_unknown_map_en: false
+      occupied_topic: rog_map/occ
+      unknown_topic: rog_map/unk
+      inflated_occupied_topic: rog_map/inf_occ
+      inflated_unknown_topic: rog_map/inf_unk
+      frontier_topic: rog_map/frontier
+      esdf_topic: rog_map/esdf
+      negative_esdf_topic: rog_map/esdf_neg
+      occupied_esdf_topic: rog_map/esdf_occ
+      bounds_topic: rog_map/map_bound

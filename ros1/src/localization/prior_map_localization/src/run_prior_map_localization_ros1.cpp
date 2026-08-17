@@ -5,7 +5,7 @@
 #include <ros/ros.h>
 
 #include "codexopen_ros1/yaml_param_loader.h"
-#include "localization_ros1.h"
+#include "prior_map_localization_ros1/ros1_convert.h"
 
 namespace {
 
@@ -45,10 +45,13 @@ int main(int argc, char** argv) {
     return 2;
   }
 
-  Localization localizer(private_node,
-                         runtime_config.string(),
-                         map_path.string(),
-                         (log_dir / "Log").string() + "/");
-  localizer.Run();
+  ros::NodeHandle node;
+  jojo::localization::ros1::PriorMapLocalizationRos1Convert adapter(
+      node, private_node, runtime_config.string(), map_path.string(),
+      (log_dir / "Log").string());
+  if (!adapter.Init()) {
+    return 2;
+  }
+  adapter.Run();
   return 0;
 }

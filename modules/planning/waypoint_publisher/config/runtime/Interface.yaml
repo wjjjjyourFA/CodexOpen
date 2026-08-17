@@ -8,3 +8,9 @@ waypoint_publisher:
   goal_valid_topic: /isgoal_vaild
   waypoint_frame: map
   boundary_frame: vehicle
+  queues:
+    odometry: 5
+    navigation_goal: 5
+    output: 5
+  transport:
+    processing_frequency: 100.0

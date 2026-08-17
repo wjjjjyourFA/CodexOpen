@@ -23,9 +23,9 @@
 
 #pragma once
 
+#include <mutex>
+
 #include <rog_map/rog_map_core/counter_map.h>
-#include <sensor_msgs/PointCloud2.h>
-#include <visualization_msgs/MarkerArray.h>
 
 //#define ESDF_MAP_DEBUG
 
@@ -67,25 +67,23 @@ namespace rog_map {
         void evaluateEDT(const Eigen::Vector3d& pos, double& dist);
         void evaluateFirstGrad(const Eigen::Vector3d& pos, Eigen::Vector3d& grad);
         void evaluateSecondGrad(const Eigen::Vector3d& pos, Eigen::Vector3d& grad);
-        void visEDTGrad(const Vec3f &box_min_d,
-                        const Vec3f &box_max_d,
-                        const double &visualize_z,
-                        visualization_msgs::MarkerArray &mk_arr);
+        /* Pure visualization queries; transport conversion is adapter-owned. */
+        void getESDFOccCloud(
+                const Vec3f &box_min_d,
+                const Vec3f &box_max_d,
+                pcl::PointCloud<pcl::PointXYZI> &cloud);
 
-        /*Only for visualize */
-        void getESDFOccPC2(const Vec3f &box_min_d,
-                           const Vec3f &box_max_d,
-                           sensor_msgs::PointCloud2 &pc2);
+        void getPositiveESDFCloud(
+                const Vec3f &box_min_d,
+                const Vec3f &box_max_d,
+                const double &visualize_z,
+                pcl::PointCloud<pcl::PointXYZI> &cloud);
 
-        void getPositiveESDFPC2(const Vec3f &box_min_d,
-                                const Vec3f &box_max_d,
-                                const double &visualize_z,
-                                sensor_msgs::PointCloud2 &pc2);
-
-        void getNegativeESDFPC2(const Vec3f &box_min_d,
-                                const Vec3f &box_max_d,
-                                const double &visualize_z,
-                                sensor_msgs::PointCloud2 &pc2) ;
+        void getNegativeESDFCloud(
+                const Vec3f &box_min_d,
+                const Vec3f &box_max_d,
+                const double &visualize_z,
+                pcl::PointCloud<pcl::PointXYZI> &cloud);
 
     private:
 
@@ -119,4 +117,3 @@ namespace rog_map {
     };
 
 }
-

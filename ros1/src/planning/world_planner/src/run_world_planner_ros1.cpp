@@ -1,12 +1,10 @@
 #include <ros/ros.h>
 
 #include "codexopen_ros1/yaml_param_loader.h"
-
-int RunRobotPlanWorldPlanner(ros::NodeHandle& node,
-                             ros::NodeHandle& private_node);
+#include "world_planner_ros1/ros1_convert.h"
 
 int main(int argc, char** argv) {
-  ros::init(argc, argv, "worldPlanner");
+  ros::init(argc, argv, "world_planner");
   ros::NodeHandle node;
   ros::NodeHandle private_node("~");
   const std::string runtime = argc > 1
@@ -24,5 +22,10 @@ int main(int argc, char** argv) {
     return 1;
   }
   private_node.setParam("waypoint_file_dir", waypoint);
-  return RunRobotPlanWorldPlanner(node, private_node);
+  jojo::planning::ros1::Ros1Convert adapter(node, private_node);
+  if (!adapter.Init()) {
+    return 1;
+  }
+  adapter.Run();
+  return 0;
 }

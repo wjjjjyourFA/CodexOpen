@@ -11,6 +11,13 @@ struct Vector2f {
   float y;
 };
 
+struct Vector2d {
+  Vector2d(double x_ = 0.0, double y_ = 0.0) : x(x_), y(y_) {}
+
+  double x;
+  double y;
+};
+
 // # This represents a vector in free space.
 // int32 x
 // int32 y
@@ -53,6 +60,17 @@ struct Vector3d {
   double x;
   double y;
   double z;
+};
+
+struct Vector4d {
+  Vector4d(double x_ = 0.0, double y_ = 0.0, double z_ = 0.0,
+           double w_ = 0.0)
+      : x(x_), y(y_), z(z_), w(w_) {}
+
+  double x;
+  double y;
+  double z;
+  double w;
 };
 
 }  // namespace common_struct

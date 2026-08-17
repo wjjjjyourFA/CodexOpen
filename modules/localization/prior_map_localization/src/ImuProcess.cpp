@@ -18,7 +18,7 @@ ImuProcess::ImuProcess()
     angvel_last     = Zero3d;
     Lidar_T_wrt_IMU = Zero3d;
     Lidar_R_wrt_IMU = Eye3d;
-    last_imu_.reset(new sensor_msgs::Imu());
+    last_imu_ = std::make_shared<ImuData>();
     extrinT.assign(3, 0.0);
     extrinR.assign(9, 0.0);
 }
@@ -27,7 +27,6 @@ ImuProcess::~ImuProcess() {}
 
 void ImuProcess::Reset()
 {
-    // ROS_WARN("Reset ImuProcess");
     mean_acc      = V3D(0, 0, -1.0);
     mean_gyr      = V3D(0, 0, 0);
     angvel_last       = Zero3d;
@@ -36,7 +35,7 @@ void ImuProcess::Reset()
     init_iter_num     = 1;
     v_imu_.clear();
     IMUpose.clear();
-    last_imu_.reset(new sensor_msgs::Imu());
+    last_imu_ = std::make_shared<ImuData>();
     cur_pcl_un_.reset(new PointCloudXYZI());
 }
 
@@ -148,8 +147,8 @@ void ImuProcess::UndistortPcl(const MeasureGroup &meas, esekfom::esekf<state_ikf
     /*** add the imu of the last frame-tail to the of current frame-head ***/
     auto v_imu = meas.imu;  // imu数据序列
     v_imu.push_front(last_imu_);    // 插入上一帧的最后一个imu数据
-    const double &imu_beg_time = v_imu.front()->header.stamp.toSec();   // imu序列起始时间
-    const double &imu_end_time = v_imu.back()->header.stamp.toSec();    // imu序列结束时间
+    const double &imu_beg_time = v_imu.front()->timestamp;   // imu序列起始时间
+    const double &imu_end_time = v_imu.back()->timestamp;    // imu序列结束时间
     const double &pcl_beg_time = meas.lidar_bag_time;       // 点云起始时间
     const double &pcl_end_time = meas.lidar_end_time;       // 点云结束时间
 
@@ -179,7 +178,7 @@ void ImuProcess::UndistortPcl(const MeasureGroup &meas, esekfom::esekf<state_ikf
         auto &&head = *(it_imu);
         auto &&tail = *(it_imu + 1);
 
-        if (tail->header.stamp.toSec() < last_lidar_end_time_)    continue;
+        if (tail->timestamp < last_lidar_end_time_)    continue;
 
         angvel_avr<<0.5 * (head->angular_velocity.x + tail->angular_velocity.x),
                     0.5 * (head->angular_velocity.y + tail->angular_velocity.y),
@@ -188,16 +187,14 @@ void ImuProcess::UndistortPcl(const MeasureGroup &meas, esekfom::esekf<state_ikf
                     0.5 * (head->linear_acceleration.y + tail->linear_acceleration.y),
                     0.5 * (head->linear_acceleration.z + tail->linear_acceleration.z);
 
-        // fout_imu << setw(10) << head->header.stamp.toSec() - first_lidar_time << " " << angvel_avr.transpose() << " " << acc_avr.transpose() << endl;
 
         acc_avr     = acc_avr * G_m_s2 / mean_acc.norm(); // - state_inout.ba;
 
-        if(head->header.stamp.toSec() < last_lidar_end_time_)  { // 两个imu时间分别在 ldiar_beg_time 一前一后
-            dt = tail->header.stamp.toSec() - last_lidar_end_time_;     // 这里是上一帧lidar结束时间
-//             dt = tail->header.stamp.toSec() - pcl_beg_time;            // 这里是当前帧lidar开始时间
+        if(head->timestamp < last_lidar_end_time_)  { // 两个imu时间分别在 ldiar_beg_time 一前一后
+            dt = tail->timestamp - last_lidar_end_time_;     // 这里是上一帧lidar结束时间
         }
         else     {    // 两个imu时间都在 lidar_beg_time 后面
-            dt = tail->header.stamp.toSec() - head->header.stamp.toSec();
+            dt = tail->timestamp - head->timestamp;
         }
 
 //        观测数据， 观测的协方差矩阵
@@ -222,7 +219,7 @@ void ImuProcess::UndistortPcl(const MeasureGroup &meas, esekfom::esekf<state_ikf
             acc_s_last[i] += imu_state.grav[i];
         }
 
-        double &&offs_t = tail->header.stamp.toSec() - pcl_beg_time;
+        double &&offs_t = tail->timestamp - pcl_beg_time;
         IMUpose.push_back(set_pose6d(offs_t, acc_s_last, angvel_last, imu_state.vel, imu_state.pos, imu_state.rot.toRotationMatrix()));
     }
 
@@ -275,13 +272,18 @@ void ImuProcess::UndistortPcl(const MeasureGroup &meas, esekfom::esekf<state_ikf
     }
 }
 
-void ImuProcess::Process(const MeasureGroup &meas,  esekfom::esekf<state_ikfom, 12, input_ikfom> &kf_state, PointCloudXYZI::Ptr cur_pcl_un_)
+bool ImuProcess::Process(
+    const MeasureGroup &meas,
+    esekfom::esekf<state_ikfom, 12, input_ikfom> &kf_state,
+    PointCloudXYZI::Ptr cur_pcl_un_)
 {
     double t1,t2;
     t1 = omp_get_wtime();
 
-    if(meas.imu.empty()) {return;};
-    ROS_ASSERT(meas.lidar != nullptr);
+    if(meas.imu.empty()) {return false;};
+    if (meas.lidar == nullptr) {
+        throw std::invalid_argument("IMU process requires a lidar cloud");
+    }
 
     // 首先进行imu初始化，初始化完成前不进行去畸变操作
     if (imu_need_init_)
@@ -301,11 +303,11 @@ void ImuProcess::Process(const MeasureGroup &meas,  esekfom::esekf<state_ikfom, 
 
             cov_acc = cov_acc_scale;
             cov_gyr = cov_gyr_scale;
-            ROS_INFO("IMU Initial Done");
+            LOG(INFO) << "IMU Initial Done";
             fout_imu.open(DEBUG_FILE_DIR("imu.txt"),ios::out);
         }
 
-        return;
+        return false;
     }
 
     UndistortPcl(meas, kf_state, *cur_pcl_un_);
@@ -313,4 +315,5 @@ void ImuProcess::Process(const MeasureGroup &meas,  esekfom::esekf<state_ikfom, 
     t2 = omp_get_wtime();
 
     LOG(INFO) << "imu process cost time : " << (t2-t1)*1000 ;
+    return true;
 }

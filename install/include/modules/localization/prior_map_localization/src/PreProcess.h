@@ -10,12 +10,15 @@ class PreProcess
 public:
     PreProcess();
     ~PreProcess();
-    void Process(const livox_ros_driver2::CustomMsg::ConstPtr &msg, PointCloudXYZI::Ptr &pcl_out);
-    void Process(const sensor_msgs::PointCloud2::ConstPtr &msg, PointCloudXYZI::Ptr &pcl_out);
+    void Process(const LivoxPointCloud &cloud, PointCloudXYZI::Ptr &pcl_out);
+    void Process(const pcl::PointCloud<velodyne_lidar::Point> &cloud,
+                 PointCloudXYZI::Ptr &pcl_out);
+    void Process(const pcl::PointCloud<rs_lidar::Point> &cloud,
+                 PointCloudXYZI::Ptr &pcl_out);
 
-    void Velodyne_handler(const sensor_msgs::PointCloud2::ConstPtr &msg);
-    void Rs128_handler(const sensor_msgs::PointCloud2::ConstPtr &msg);
-    void avia_handler(const livox_ros_driver2::CustomMsg::ConstPtr &msg);// 用于对Livox激光雷达数据进行处理
+    void Velodyne_handler(const pcl::PointCloud<velodyne_lidar::Point> &cloud);
+    void Rs128_handler(const pcl::PointCloud<rs_lidar::Point> &cloud);
+    void avia_handler(const LivoxPointCloud &cloud);
     void SetValidRegion(double x_min, double x_max,
                         double y_min, double y_max,
                         double z_min, double z_max,
@@ -36,6 +39,7 @@ public:
     PointCloudXYZI pl_full, pl_corn, pl_surf;
 
 private:
+    void UpdateTimeUnitScale();
     bool ValidPoint(double x, double y, double z) const;
 
     double box_x_min_ = -0.7;

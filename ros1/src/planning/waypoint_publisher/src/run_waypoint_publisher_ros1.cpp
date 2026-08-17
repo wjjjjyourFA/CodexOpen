@@ -1,12 +1,10 @@
 #include <ros/ros.h>
 
 #include "codexopen_ros1/yaml_param_loader.h"
-
-int RunWaypointPublisher(ros::NodeHandle& node,
-                         ros::NodeHandle& private_node);
+#include "waypoint_publisher_ros1/ros1_convert.h"
 
 int main(int argc, char** argv) {
-  ros::init(argc, argv, "waypointExample");
+  ros::init(argc, argv, "waypoint_publisher");
   ros::NodeHandle node;
   ros::NodeHandle private_node("~");
 
@@ -30,5 +28,11 @@ int main(int argc, char** argv) {
   }
   private_node.setParam("waypoint_file_dir", waypoint);
   private_node.setParam("boundary_file_dir", boundary);
-  return RunWaypointPublisher(node, private_node);
+  jojo::planning::ros1::WaypointPublisherRos1Convert adapter(
+      node, private_node);
+  if (!adapter.Init()) {
+    return 1;
+  }
+  adapter.Run();
+  return 0;
 }

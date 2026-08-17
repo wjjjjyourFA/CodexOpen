@@ -174,8 +174,7 @@ void MapProcess::SetMap(string map_path)
 
     double load_start = omp_get_wtime();
     if (pcl::io::loadPCDFile<pcl::PointXYZI>(map_path, *temp_cloud) == -1) {
-        LOG(ERROR) <<"Couldn't read map file from " << map_path;
-        abort();
+        throw std::runtime_error("Couldn't read map file from " + map_path);
     }
     double load_end = omp_get_wtime();
 
@@ -205,15 +204,18 @@ void MapProcess::SetMap(string map_path)
 
     }
     else {
-        LOG(ERROR) <<"map points size is too small : " << cloud_map->size();
-        abort();
+        throw std::runtime_error(
+            "map points size is too small: " +
+            std::to_string(cloud_map->size()));
     }
     double build_end = omp_get_wtime();
 
     LOG(INFO) << "load map cost : " << (load_end-load_start)*1000 << "ms, build map cost : " << (build_end-build_start)*1000 ;
 
 
-    assert(ikdtree.Root_Node != nullptr);
+    if (ikdtree.Root_Node == nullptr) {
+        throw std::runtime_error("failed to build prior-map KD tree");
+    }
 
 }
 void MapProcess::lasermap_fov_segment()
@@ -821,7 +823,7 @@ bool MapProcess::Process(PointCloudXYZI::Ptr cloud_frame)
     feats_undistort = cloud_frame;
     if (feats_undistort->empty() || (feats_undistort == NULL))
     {
-        ROS_WARN("No point, skip this scan!\n");
+        LOG(WARNING) << "No point, skip this scan!";
         return false;
     }
 
@@ -838,7 +840,7 @@ bool MapProcess::Process(PointCloudXYZI::Ptr cloud_frame)
 
     if (feats_down_size < 5)    //        如果点云个数太少，跳过该帧
     {
-        ROS_WARN("No point, skip this scan!\n");
+        LOG(WARNING) << "No point, skip this scan!";
         return false;
     }
 

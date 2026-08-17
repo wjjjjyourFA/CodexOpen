@@ -47,15 +47,15 @@ bool PreProcess::ValidPoint(double x, double y, double z) const
     return !inside_robot_body;
 }
 
-void PreProcess::Process(const livox_ros_driver2::CustomMsg::ConstPtr &msg, PointCloudXYZI::Ptr &pcl_out)
+void PreProcess::Process(const LivoxPointCloud &cloud,
+                         PointCloudXYZI::Ptr &pcl_out)
 {
-    avia_handler(msg);
+    avia_handler(cloud);
     *pcl_out = pl_surf;
 }
 
-void PreProcess::Process(const sensor_msgs::PointCloud2::ConstPtr &msg, PointCloudXYZI::Ptr &pcl_out)
+void PreProcess::UpdateTimeUnitScale()
 {
-
     switch (time_unit)
     {
     case SEC:
@@ -74,35 +74,31 @@ void PreProcess::Process(const sensor_msgs::PointCloud2::ConstPtr &msg, PointClo
         time_unit_scale = 1.f;
         break;
     }
+}
 
-
-
-    switch (lidar_type)
-    {
-    case VELO16:
-        Velodyne_handler(msg);
-        break;
-
-    case RS128:
-        Rs128_handler(msg);
-        break;
-
-
-
-    default:
-        LOG(ERROR) << " Error LiDAR Type : "<< lidar_type;
-        break;
-    }
+void PreProcess::Process(const pcl::PointCloud<velodyne_lidar::Point> &cloud,
+                         PointCloudXYZI::Ptr &pcl_out)
+{
+    UpdateTimeUnitScale();
+    Velodyne_handler(cloud);
     *pcl_out = pl_surf;
 }
 
-void PreProcess::avia_handler(const livox_ros_driver2::CustomMsg::ConstPtr &msg)
+void PreProcess::Process(const pcl::PointCloud<rs_lidar::Point> &cloud,
+                         PointCloudXYZI::Ptr &pcl_out)
+{
+    UpdateTimeUnitScale();
+    Rs128_handler(cloud);
+    *pcl_out = pl_surf;
+}
+
+void PreProcess::avia_handler(const LivoxPointCloud &cloud)
 {
     pl_surf.clear();
     pl_corn.clear();
     pl_full.clear();
     double t1 = omp_get_wtime();
-    int plsize = msg->point_num;
+    const std::size_t plsize = cloud.size();
 
 
 
@@ -113,17 +109,17 @@ void PreProcess::avia_handler(const livox_ros_driver2::CustomMsg::ConstPtr &msg)
     uint valid_num = 0;
 
 
-    for(uint i=1; i<plsize; i++)
+    for(std::size_t i=1; i<plsize; i++)
     {
-        if((msg->points[i].line < N_SCANS) && ((msg->points[i].tag & 0x30) == 0x10 || (msg->points[i].tag & 0x30) == 0x00))
+        if((cloud[i].line < N_SCANS) && ((cloud[i].tag & 0x30) == 0x10 || (cloud[i].tag & 0x30) == 0x00))
         {
             valid_num ++;
             {
-                pl_full[i].x = msg->points[i].x;
-                pl_full[i].y = msg->points[i].y;
-                pl_full[i].z = msg->points[i].z;
-                pl_full[i].intensity = msg->points[i].reflectivity;
-                pl_full[i].curvature = msg->points[i].offset_time / float(1000000); // use curvature as time of each laser points, curvature unit: ms
+                pl_full[i].x = cloud[i].x;
+                pl_full[i].y = cloud[i].y;
+                pl_full[i].z = cloud[i].z;
+                pl_full[i].intensity = cloud[i].reflectivity;
+                pl_full[i].curvature = cloud[i].offset_time / float(1000000); // use curvature as time of each laser points, curvature unit: ms
 
                 if(((abs(pl_full[i].x - pl_full[i-1].x) > 1e-7)
                         || (abs(pl_full[i].y - pl_full[i-1].y) > 1e-7)
@@ -142,13 +138,12 @@ void PreProcess::avia_handler(const livox_ros_driver2::CustomMsg::ConstPtr &msg)
 
 }
 
-void PreProcess::Velodyne_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
+void PreProcess::Velodyne_handler(
+    const pcl::PointCloud<velodyne_lidar::Point> &pl_orig)
 {
     pl_surf.clear();
     pl_full.clear();
 
-    pcl::PointCloud<velodyne_ros::Point> pl_orig;
-    pcl::fromROSMsg(*msg, pl_orig);
     int plsize = pl_orig.points.size();
     if (plsize == 0) return;
     pl_surf.reserve(plsize);
@@ -200,6 +195,9 @@ void PreProcess::Velodyne_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
         if (!given_offset_time)
         {
             int layer = pl_orig.points[i].ring;
+            if (layer < 0 || layer >= N_SCANS) {
+                continue;
+            }
             double yaw_angle = atan2(added_pt.y, added_pt.x) * 57.2957;
 
             if (is_first[layer])
@@ -241,15 +239,11 @@ void PreProcess::Velodyne_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
 
 }
 
-void PreProcess::Rs128_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
+void PreProcess::Rs128_handler(
+    const pcl::PointCloud<rs_lidar::Point> &pl_orig)
 {
     pl_surf.clear();
     pl_full.clear();
-
-    // double time_scan =  msg->header.stamp.toSec();
-
-    pcl::PointCloud<rs_ros::Point> pl_orig;
-    pcl::fromROSMsg(*msg, pl_orig);
 
     int plsize = pl_orig.points.size();
     if (plsize == 0) return;
@@ -287,7 +281,7 @@ void PreProcess::Rs128_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
     }
     else
     {
-        ROS_WARN("rs128 : timestamp field is invalid .");
+        LOG(WARNING) << "rs128 : timestamp field is invalid .";
         given_offset_time = false;
         double yaw_first = atan2(pl_orig.points[0].y, pl_orig.points[0].x) * 57.29578;
         double yaw_end  = yaw_first;
@@ -317,11 +311,17 @@ void PreProcess::Rs128_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
         added_pt.z = pl_orig.points[i].z;
         added_pt.intensity = pl_orig.points[i].intensity;
         // added_pt.curvature = (pl_orig.points[i].timestamp - time_scan)  * time_unit_scale;  // curvature unit: ms // cout<<added_pt.curvature<<endl;
-        added_pt.curvature = (pl_orig.points[i].timestamp - time_start)/time_diff*100 ; // units: ms
+        added_pt.curvature = time_diff > 0.0
+                                 ? (pl_orig.points[i].timestamp - time_start) /
+                                       time_diff * 100.0
+                                 : 0.0; // units: ms
 
         if (!given_offset_time)
         {
             int layer = pl_orig.points[i].ring;
+            if (layer < 0 || layer >= N_SCANS) {
+                continue;
+            }
             double yaw_angle = atan2(added_pt.y, added_pt.x) * 57.2957;
 
             if (is_first[layer])

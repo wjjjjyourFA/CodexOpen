@@ -6,6 +6,7 @@
 #include "modules/perception/tools/pcl/point_types.h"
 
 #include <Eigen/Eigen>
+#include <deque>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 
@@ -88,7 +89,6 @@ struct MeasureGroup
     double lidar_beg_time;
     double lidar_end_time;
     PointCloudXYZI::Ptr lidar;
-    // std::deque<sensor_msgs::Imu::ConstPtr> imu;
     std::deque<ImuData> imu;
 };
 

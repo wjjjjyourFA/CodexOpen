@@ -5,12 +5,11 @@
 #include <Eigen/Eigen>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
-#include "fast_lio/Pose6D.h"
-#include <sensor_msgs/Imu.h>
-#include <nav_msgs/Odometry.h>
-#include <tf/transform_broadcaster.h>
-#include <eigen_conversions/eigen_msg.h>
-#include <cstdlib>
+#include <deque>
+#include <memory>
+#include <vector>
+
+#include "localization_types.h"
 
 using namespace std;
 using namespace Eigen;
@@ -32,17 +31,23 @@ using namespace Eigen;
 #define CONSTRAIN(v,min,max)     ((v>min)?((v<max)?v:max):min)
 #define ARRAY_FROM_EIGEN(mat)    mat.data(), mat.data() + mat.rows() * mat.cols()
 #define STD_VEC_FROM_EIGEN(mat)  vector<decltype(mat)::Scalar> (mat.data(), mat.data() + mat.rows() * mat.cols())
+inline string& LocalizationDebugDirectory()
+{
+    static string directory = string(ROOT_DIR) + "Log";
+    return directory;
+}
+inline void SetLocalizationDebugDirectory(const string& directory)
+{
+    if (!directory.empty())
+        LocalizationDebugDirectory() = directory;
+}
 inline string LocalizationDebugFile(const string& name)
 {
-    const char* runtime_log_dir = std::getenv("PRIOR_MAP_LOCALIZATION_LOG_DIR");
-    if (runtime_log_dir != nullptr && runtime_log_dir[0] != '\0')
-        return string(runtime_log_dir) + "/" + name;
-    return string(ROOT_DIR) + "Log/" + name;
+    return LocalizationDebugDirectory() + "/" + name;
 }
 
 #define DEBUG_FILE_DIR(name)     LocalizationDebugFile(name)
 
-typedef fast_lio::Pose6D Pose6D;
 typedef pcl::PointXYZINormal PointType;
 typedef pcl::PointCloud<PointType> PointCloudXYZI;
 typedef vector<PointType, Eigen::aligned_allocator<PointType>>  PointVector;
@@ -94,7 +99,7 @@ struct MeasureGroup     // Lidar data and imu dates for the curent process
     double lidar_bag_time;
     double lidar_end_time;
     PointCloudXYZI::Ptr lidar;
-    deque<sensor_msgs::Imu::ConstPtr> imu;
+    deque<ImuDataConstPtr> imu;
 };
 
 struct StatesGroup

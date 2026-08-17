@@ -7,10 +7,15 @@
 #include <sys/ioctl.h>
 #include <termios.h>
 #include <unistd.h>
+#include <algorithm>
+#include <dirent.h>
+#include <fstream>
 #include <iostream>
-//#include <opencv2/opencv.hpp>
+#include <map>
+#include <stdexcept>
 #include <string>
 #include <time.h>
+#include <vector>
 
 // Eigen
 #include <Eigen/Eigen>
@@ -21,21 +26,14 @@
 //#include <pangolin/pangolin.h>
 
 
-// ros
-#include <ros/ros.h>
-#include <rosbag/bag.h>
-#include <rosbag/view.h>
-#include <sensor_msgs/PointCloud2.h>
-#include <sensor_msgs/Imu.h>
-#include <nav_msgs/Path.h>
-
 // yaml-cpp
 #include <yaml-cpp/yaml.h>
 
 // pcl
-#include <pcl_conversions/pcl_conversions.h>
+#include <pcl/common/transforms.h>
 #include <pcl/filters/approximate_voxel_grid.h>
 #include <pcl/filters/voxel_grid.h>
+#include <pcl/io/pcd_io.h>
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/registration/icp.h>
 
@@ -50,13 +48,6 @@
 #include <gflags/gflags.h>
 
 
-
-// custom msgs
-#include "self_state/GlobalPose.h"
-#include "self_state/LidarLocalPose.h"
-#include "fast_lio/Pose6D.h"
-#include "livox_ros_driver2/CustomMsg.h"
-#include "livox_ros_driver2/CustomPoint.h"
 
 #include "common_lib.h"
 #include "use-ikfom.hpp"
@@ -143,7 +134,7 @@ static bool is_exists(const std::string &name) {
 }
 
 
-namespace rs_ros {
+namespace rs_lidar {
   struct EIGEN_ALIGN16 Point {
     PCL_ADD_POINT4D;
     uint8_t intensity;
@@ -152,7 +143,7 @@ namespace rs_ros {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   };
 }
-POINT_CLOUD_REGISTER_POINT_STRUCT(rs_ros::Point,
+POINT_CLOUD_REGISTER_POINT_STRUCT(rs_lidar::Point,
                                     (float, x, x)
                                     (float, y, y)
                                     (float, z, z)
@@ -161,7 +152,7 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(rs_ros::Point,
                                     (double, timestamp, timestamp)
 )
 
-namespace velodyne_ros {
+namespace velodyne_lidar {
   struct EIGEN_ALIGN16 Point {
       PCL_ADD_POINT4D;
       float intensity;
@@ -169,8 +160,8 @@ namespace velodyne_ros {
       uint16_t ring;
       EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   };
-}  // namespace velodyne_ros
-POINT_CLOUD_REGISTER_POINT_STRUCT(velodyne_ros::Point,
+}  // namespace velodyne_lidar
+POINT_CLOUD_REGISTER_POINT_STRUCT(velodyne_lidar::Point,
                                     (float, x, x)
                                     (float, y, y)
                                     (float, z, z)

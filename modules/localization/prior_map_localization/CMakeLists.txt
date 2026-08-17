@@ -2,11 +2,6 @@ cmake_minimum_required(VERSION 3.16)
 
 project(prior_map_localization)
 
-if(NOT BUILD_ROS1)
-  message(STATUS "prior_map_localization requires BUILD_ROS1=ON")
-  return()
-endif()
-
 get_filename_component(CODEXOPEN_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../.." ABSOLUTE)
 set(ROS1_ADAPTER_ROOT
   "${CODEXOPEN_ROOT}/ros1/src/localization/prior_map_localization")
@@ -22,21 +17,8 @@ find_package(OpenMP REQUIRED)
 find_package(PCL REQUIRED COMPONENTS
   common filters io kdtree registration visualization)
 find_package(yaml-cpp REQUIRED)
-find_package(catkin REQUIRED COMPONENTS
-  eigen_conversions
-  geometry_msgs
-  nav_msgs
-  pcl_conversions
-  pcl_ros
-  rosbag
-  roscpp
-  sensor_msgs
-  std_msgs
-  tf
-  tf2_geometry_msgs
-)
-
 add_library(prior_map_localization_core STATIC
+  prior_map_localization.cpp
   src/ImuProcess.cpp
   src/MapProcess.cpp
   src/PreProcess.cpp
@@ -71,16 +53,12 @@ target_include_directories(prior_map_localization_core
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/include/IKFoM_toolkit
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/msg
-    ${ROS1_ADAPTER_ROOT}/include
-    ${catkin_INCLUDE_DIRS}
     ${EIGEN3_INCLUDE_DIRS}
     ${PCL_INCLUDE_DIRS}
     ${OpenCV_INCLUDE_DIRS}
 )
 target_link_libraries(prior_map_localization_core
   PUBLIC
-    ${catkin_LIBRARIES}
     ${PCL_LIBRARIES}
     ${OpenCV_LIBRARIES}
     ${Boost_LIBRARIES}
@@ -89,38 +67,52 @@ target_link_libraries(prior_map_localization_core
     OpenMP::OpenMP_CXX
 )
 
-add_executable(localization_robot_ros1
-  ${ROS1_ADAPTER_ROOT}/src/localization_ros1.cpp
-  ${ROS1_ADAPTER_ROOT}/src/run_prior_map_localization_ros1.cpp
-)
-target_compile_features(localization_robot_ros1 PRIVATE cxx_std_17)
-target_compile_options(localization_robot_ros1 PRIVATE -O3 -w)
-target_include_directories(localization_robot_ros1 PRIVATE
-  ${CMAKE_CURRENT_SOURCE_DIR}
-  ${CMAKE_CURRENT_SOURCE_DIR}/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/IKFoM_toolkit
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/msg
-  ${ROS1_ADAPTER_ROOT}/include
-  ${CODEXOPEN_ROOT}/ros1/src/common/include
-  ${catkin_INCLUDE_DIRS}
-  ${EIGEN3_INCLUDE_DIRS}
-  ${PCL_INCLUDE_DIRS}
-  ${OpenCV_INCLUDE_DIRS}
-)
-target_link_libraries(localization_robot_ros1 PRIVATE
-  prior_map_localization_core
-  codexopen_ros1_yaml_param_loader
-)
-
 install_module(prior_map_localization_core
-  modules/localization/prior_map_localization)
-install_module(localization_robot_ros1
   modules/localization/prior_map_localization)
 install(DIRECTORY config/runtime/
   DESTINATION bin/config/PriorMapLocalization
 )
-install(DIRECTORY
-  ${ROS1_ADAPTER_ROOT}/include/self_state
-  ${ROS1_ADAPTER_ROOT}/include/sensor
-  DESTINATION include/modules/localization/prior_map_localization/include
-)
+
+if(BUILD_ROS1)
+  find_package(catkin REQUIRED COMPONENTS
+    geometry_msgs
+    nav_msgs
+    pcl_conversions
+    roscpp
+    sensor_msgs
+    std_msgs
+    tf
+    tf2_geometry_msgs
+  )
+
+  add_executable(localization_robot_ros1
+    ${ROS1_ADAPTER_ROOT}/src/ros1_convert.cpp
+    ${ROS1_ADAPTER_ROOT}/src/run_prior_map_localization_ros1.cpp
+  )
+  target_compile_features(localization_robot_ros1 PRIVATE cxx_std_17)
+  target_compile_options(localization_robot_ros1 PRIVATE -O3 -w)
+  target_include_directories(localization_robot_ros1 PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/IKFoM_toolkit
+    ${ROS1_ADAPTER_ROOT}/include
+    ${CODEXOPEN_ROOT}/ros1/src/common/include
+    ${catkin_INCLUDE_DIRS}
+    ${EIGEN3_INCLUDE_DIRS}
+    ${PCL_INCLUDE_DIRS}
+    ${OpenCV_INCLUDE_DIRS}
+  )
+  target_link_libraries(localization_robot_ros1 PRIVATE
+    prior_map_localization_core
+    codexopen_ros1_yaml_param_loader
+    ${catkin_LIBRARIES}
+  )
+
+  install_module(localization_robot_ros1
+    modules/localization/prior_map_localization)
+  install(DIRECTORY
+    ${ROS1_ADAPTER_ROOT}/include/self_state
+    ${ROS1_ADAPTER_ROOT}/include/sensor
+    DESTINATION include/modules/localization/prior_map_localization/include
+  )
+endif()
