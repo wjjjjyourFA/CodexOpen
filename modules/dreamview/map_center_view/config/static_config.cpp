@@ -19,6 +19,11 @@ void StaticConfig::LoadConfig(const std::string& config_path) {
     b_display_roi  = yaml["init"]["b_display_roi"].as<bool>(false);
     b_display_body = yaml["init"]["b_display_body"].as<bool>(false);
 
+    map_display_voxel_size =
+        yaml["init"]["map_display_voxel_size"].as<float>(0.30f);
+    roi_radius = yaml["init"]["roi_radius"].as<float>(120.0f);
+    roi_update_dist = yaml["init"]["roi_update_dist"].as<float>(30.0f);
+
     // yaw_offset_euler = yaml["init"]["yaw_offset_euler"].as<double>(0);
 
   } catch (const std::exception& e) {

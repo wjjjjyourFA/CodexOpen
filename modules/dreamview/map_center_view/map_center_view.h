@@ -6,8 +6,10 @@
 #include <pcl/io/pcd_io.h>
 
 #define PCL_NO_PRECOMPILE
+#include <pcl/filters/approximate_voxel_grid.h>
 #include <pcl/filters/crop_box.h>
 #include <pcl/filters/extract_indices.h>
+#include <pcl/filters/filter.h>
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/visualization/pcl_visualizer.h>
@@ -28,6 +30,7 @@ class MapCenterView {
 
   void InitViewer();
   void InitKDTree();
+  void BuildDisplayMap();
 
   void LoadInitMap(const std::string& map_path);
 
@@ -60,7 +63,7 @@ class MapCenterView {
   // 动态中心裁剪
   pcl::PointCloud<pcl::PointXYZI>::Ptr map_roi;
   pcl::CropBox<pcl::PointXYZI> crop_box;
-  float roi_radius = 120.0f;
+  float roi_radius = 75.0f;
 
   // KD-tree（只建一次）
   pcl::KdTreeFLANN<pcl::PointXYZI> kdtree;
@@ -74,7 +77,9 @@ class MapCenterView {
  private:
   std::shared_ptr<jojo::dreamview::StaticConfig> sparam_;
 
-  pcl::PointCloud<pcl::PointXYZI>::Ptr map_ = nullptr;
+  // 原始地图保留完整精度；map_display_ 只用于可视化和 ROI 裁剪。
+  pcl::PointCloud<pcl::PointXYZI>::Ptr map_         = nullptr;
+  pcl::PointCloud<pcl::PointXYZI>::Ptr map_display_ = nullptr;
   Eigen::Vector3d map_center;
   int dyn_map_radius_ = 100;
 

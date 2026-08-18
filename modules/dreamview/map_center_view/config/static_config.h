@@ -31,6 +31,11 @@ class StaticConfig : public jojo::common::config::ConfigFileYaml {
   bool b_display_roi  = false;
   bool b_display_body = false;
 
+  // 仅影响显示，不改变原始地图。<= 0 表示不降采样。
+  float map_display_voxel_size = 0.80f;
+  float roi_radius             = 120.0f;
+  float roi_update_dist        = 30.0f;
+
  protected:
   void LoadJson(const std::string& config_path);
 

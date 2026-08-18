@@ -1,11 +1,15 @@
 #include "modules/dreamview/map_center_view/map_center_view.h"
 
+#include <algorithm>
+#include <cmath>
+#include <cstdint>
+#include <limits>
+
 namespace jojo {
 namespace dreamview {
 
 MapCenterView::MapCenterView() {
-  inv_dist        = 1.0 / this->roi_radius;
-  roi_update_dist = this->roi_radius * 0.3f;
+  inv_dist = 1.0 / this->roi_radius;
 
   if (!map_roi) {
     map_roi.reset(new pcl::PointCloud<pcl::PointXYZI>);
@@ -18,12 +22,64 @@ MapCenterView::MapCenterView() {
 void MapCenterView::Init(
     std::shared_ptr<jojo::dreamview::StaticConfig> sparam) {
   sparam_ = sparam;
+
+  if (sparam_) {
+    roi_radius      = std::max(1.0f, sparam_->roi_radius);
+    roi_update_dist = std::max(1.0f, sparam_->roi_update_dist);
+    inv_dist        = 1.0f / roi_radius;
+  }
+
   this->LoadInitMap(sparam_->map_file_path);
 }
 
+void MapCenterView::BuildDisplayMap() {
+  if (!map_ || map_->empty()) {
+    map_display_.reset(new pcl::PointCloud<pcl::PointXYZI>);
+    return;
+  }
+
+  const float leaf_size = sparam_ ? sparam_->map_display_voxel_size : 0.30f;
+  if (leaf_size <= 0.0f) {
+    map_display_ = map_;
+    std::cout << "[Map] Display voxel filter disabled, rendering "
+              << map_display_->size() << " points." << std::endl;
+    return;
+  }
+
+  // 大多数 PCD 是 dense 点云，直接复用原始地图，避免额外复制。
+  // 仅在包含无效点时创建临时清理结果，不修改 map_。
+  pcl::PointCloud<pcl::PointXYZI>::ConstPtr voxel_input = map_;
+  pcl::PointCloud<pcl::PointXYZI>::Ptr valid_map;
+  if (!map_->is_dense) {
+    valid_map.reset(new pcl::PointCloud<pcl::PointXYZI>);
+    std::vector<int> valid_indices;
+    pcl::removeNaNFromPointCloud(*map_, *valid_map, valid_indices);
+    voxel_input = valid_map;
+  }
+
+  map_display_.reset(new pcl::PointCloud<pcl::PointXYZI>);
+  // 标准 VoxelGrid 使用 int32 线性体素索引。超大范围地图即使实际
+  // 点数不密集，也可能因为理论网格数量过大而溢出并直接返回原点云。
+  // ApproximateVoxelGrid 使用哈希历史表，更适合这里只用于渲染的地图。
+  pcl::ApproximateVoxelGrid<pcl::PointXYZI> voxel_filter;
+  voxel_filter.setInputCloud(voxel_input);
+  voxel_filter.setLeafSize(leaf_size, leaf_size, leaf_size);
+
+  const double start = omp_get_wtime();
+  voxel_filter.filter(*map_display_);
+  const double end = omp_get_wtime();
+
+  const double keep_ratio = 100.0 * static_cast<double>(map_display_->size()) /
+                            static_cast<double>(map_->size());
+  std::cout << "[Map] Approximate display voxel size=" << leaf_size
+            << "m, points=" << map_->size() << " -> " << map_display_->size()
+            << " (" << keep_ratio << "%), cost=" << (end - start) * 1000.0
+            << "ms" << std::endl;
+}
+
 void MapCenterView::InitKDTree() {
-  if (!kdtree_built) {
-    kdtree.setInputCloud(map_);
+  if (!kdtree_built && map_display_ && !map_display_->empty()) {
+    kdtree.setInputCloud(map_display_);
     kdtree_built = true;
   }
 }
@@ -34,7 +90,7 @@ void MapCenterView::InitViewer() {
   vis_.reset(new pcl::visualization::PCLVisualizer("Map Viewer"));
   vis_->setBackgroundColor(0, 0, 0);
   vis_->initCameraParameters();
-  vis_->setCameraPosition(-50, -50, 200,  // 相机位置（原点上方）
+  vis_->setCameraPosition(-50, -50, 100,  // 相机位置（原点上方）
                           0, 0, 0,  // 看向原点
                           0, 1, 0  // up方向
   );
@@ -56,8 +112,9 @@ void MapCenterView::LoadInitMap(const std::string& map_path) {
   double load_end = omp_get_wtime();
 
   std::cout << "Loaded map " << raw_cloud->points.size()
-            << " points from " + map_path;
-  std::cout << "Load map cost: " << (load_end - load_start) * 1000 << "ms";
+            << " points from " + map_path << std::endl;
+  std::cout << "Load map cost: " << (load_end - load_start) * 1000 << "ms"
+            << std::endl;
 
   this->SetInitMap(raw_cloud);
 }
@@ -72,13 +129,17 @@ void MapCenterView::SetInitMap(
   this->map_ = map;
   std::cout << "map size: " << map->points.size() << std::endl;
 
+  // 原始地图保留完整精度；可视化使用一次性降采样地图，减少每帧绘制量。
+  this->BuildDisplayMap();
+
   // 全局 map
   // this->InitKDTree();
-  crop_box.setInputCloud(map_);
+  crop_box.setInputCloud(map_display_);
 
   this->InitViewer();
 
-  // ROI 模式只显示动态裁剪结果，避免同时上传和渲染完整地图。
+  // ROI 显示模式：完整地图仍保留在 CPU 内存中用于动态裁剪，
+  // 但不提交给可视化器；界面只渲染当前位置附近的局部地图。
   if (sparam_ && sparam_->b_display_roi) {
     if (vis_->contains("map")) {
       vis_->removePointCloud("map");
@@ -87,16 +148,16 @@ void MapCenterView::SetInitMap(
   }
 
   // clang-format off
-  pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZI> map_color(map_, 128, 128, 128);
+  pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZI> map_color(map_display_, 128, 128, 128);
   // pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZI> map_color(map_, 0, 255, 0);
   // clang-format on
 
   if (!vis_->contains("map")) {
-    vis_->addPointCloud(map_, map_color, "map");
+    vis_->addPointCloud(map_display_, map_color, "map");
     vis_->setPointCloudRenderingProperties(
         pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "map");
   } else {
-    vis_->updatePointCloud(map_, map_color, "map");
+    vis_->updatePointCloud(map_display_, map_color, "map");
   }
 }
 
@@ -209,37 +270,88 @@ void MapCenterView::ShowFrame(const pcl::PointCloud<pcl::PointXYZI>::Ptr& frame,
 }
 
 void MapCenterView::UpdateMapROI(const Eigen::Matrix4f& pose) {
+  if (!map_display_ || map_display_->empty()) {
+    std::cerr << "[ROI] Cannot update ROI: the display map is empty."
+              << std::endl;
+    return;
+  }
+
   Eigen::Vector3f center = pose.block<3, 1>(0, 3);
 
   if (!NeedUpdateROI(center)) {
     return;
   }
 
+  // ROI 只限制 XY 范围，Z 不裁剪；
+  // 避免地图海拔与 pose.z 不一致时，将有效底图全部过滤掉。
   Eigen::Vector4f min_pt(center.x() - roi_radius, center.y() - roi_radius,
-                         center.z() - roi_radius, 1.0f);
-
+                         std::numeric_limits<float>::lowest(), 1.0f);
   Eigen::Vector4f max_pt(center.x() + roi_radius, center.y() + roi_radius,
-                         center.z() + roi_radius, 1.0f);
-
-  // 不裁剪 Z 轴
-  min_pt[2] = -50.0f;
-  max_pt[2] = 50.0f;
+                         std::numeric_limits<float>::max(), 1.0f);
 
   crop_box.setMin(min_pt);
   crop_box.setMax(max_pt);
 
+  const double crop_start = omp_get_wtime();
+  // 1. CropBox 先快速取出圆形 ROI 的外接正方形
   crop_box.filter(*map_roi);
+  const std::size_t box_points = map_roi->size();
+
+  // 2. 再按 XY 距离原地压缩，
+  // 最终显示范围是半径 roi_radius 的圆（Z 方向不限制，即竖直圆柱）。
+  /*
+  const float radius_sq   = roi_radius * roi_radius;
+  std::size_t write_index = 0;
+  for (std::size_t i = 0; i < map_roi->points.size(); ++i) {
+    const auto& point = map_roi->points[i];
+    const float dx    = point.x - center.x();
+    const float dy    = point.y - center.y();
+    if (dx * dx + dy * dy <= radius_sq) {
+      if (write_index != i) {
+        map_roi->points[write_index] = point;
+      }
+      ++write_index;
+    }
+  }
+  map_roi->points.resize(write_index);
+  map_roi->width  = static_cast<std::uint32_t>(write_index);
+  map_roi->height = 1;
+  */
+  const double crop_end = omp_get_wtime();
+
+  std::cout << "[ROI] circle center=" << center.transpose()
+            << ", radius=" << roi_radius << "m, source=" << map_display_->size()
+            << ", crop_cost=" << (crop_end - crop_start) * 1000.0 << "ms"
+            << std::endl;
+
+  if (map_roi->empty()) {
+    // 防止之前成功显示的 ROI 在本次裁剪为空后仍残留在界面中。
+    if (vis_->contains("map_roi")) {
+      vis_->removePointCloud("map_roi");
+    }
+    std::cerr << "[ROI] No map points found around the current pose. Check "
+                 "whether map and pose use the same coordinate system, and "
+                 "whether b_use_pose_center is configured correctly."
+              << std::endl;
+    return;
+  }
 
   // clang-format off
   pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZI> map_color(map_roi, 150, 150, 150);
   // clang-format on
 
+  bool render_ok = false;
   if (!vis_->contains("map_roi")) {
-    vis_->addPointCloud(map_roi, map_color, "map_roi");
+    render_ok = vis_->addPointCloud(map_roi, map_color, "map_roi");
     vis_->setPointCloudRenderingProperties(
         pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "map_roi");
   } else {
-    vis_->updatePointCloud(map_roi, map_color, "map_roi");
+    render_ok = vis_->updatePointCloud(map_roi, map_color, "map_roi");
+  }
+
+  if (!render_ok) {
+    std::cerr << "[ROI] Failed to add/update map_roi in PCLVisualizer."
+              << std::endl;
   }
 }
 
@@ -271,7 +383,7 @@ void MapCenterView::UpdateMapROIKdTree(const Eigen::Matrix4f& pose) {
   }
   */
   for (size_t i = 0; i < indices.size(); ++i) {
-    map_roi->points[i] = map_->points[indices[i]];
+    map_roi->points[i] = map_display_->points[indices[i]];
   }
   /* way 2
   pcl::PointIndices::Ptr indices_ptr(new pcl::PointIndices);
@@ -310,8 +422,8 @@ void MapCenterView::ShowFrameROI(
   }
 
   // ---------- 1. 更新 ROI ----------
-  UpdateMapROI(pose);
   // UpdateMapROIKdTree(pose);
+  UpdateMapROI(pose);
 
   // ---------- 3. transform frame ----------
   if (!frame_world) {
@@ -368,7 +480,10 @@ bool MapCenterView::NeedUpdateROI(const Eigen::Vector3f& center) {
     return true;
   }
 
-  float dist = (center - last_center).norm();
+  // ROI 是 XY 平面上的圆，更新判定也只计算 XY 位移，避免高度变化触发重裁剪。
+  const float dx   = center.x() - last_center.x();
+  const float dy   = center.y() - last_center.y();
+  const float dist = std::sqrt(dx * dx + dy * dy);
 
   if (dist > roi_update_dist) {
     last_center = center;
@@ -391,9 +506,8 @@ void MapCenterView::UpdateTrajectory(const Eigen::Matrix4f& pose) {
   trajectory_->points.push_back(pt);
 
   if (trajectory_->points.size() > kMaxTrajectoryPoints) {
-    const auto erase_end =
-        trajectory_->points.begin() +
-        (trajectory_->points.size() - kMaxTrajectoryPoints);
+    const auto erase_end = trajectory_->points.begin() +
+                           (trajectory_->points.size() - kMaxTrajectoryPoints);
     trajectory_->points.erase(trajectory_->points.begin(), erase_end);
   }
   trajectory_->width  = trajectory_->points.size();
@@ -409,6 +523,9 @@ void MapCenterView::UpdateTrajectory(const Eigen::Matrix4f& pose) {
 }
 
 void MapCenterView::BridView(const Eigen::Matrix4f& pose) {
+  // false：平移跟随车体，保留用户鼠标调整的视角（相对观察角度与距离）
+  // true：自动设置相机视角为车体后上方视角（仅跟随 Yaw 旋转）
+
   // 位置跟随
   Eigen::Vector3f center = pose.block<3, 1>(0, 3);
   // camera view ≈ 100
@@ -419,16 +536,37 @@ void MapCenterView::BridView(const Eigen::Matrix4f& pose) {
   // last_cam_center = center;
 
   if (!sparam_->b_display_body) {
+    // 获取当前相机参数
+    std::vector<pcl::visualization::Camera> cameras;
+    vis_->getCameras(cameras);
+    if (cameras.empty()) {
+      return;
+    }
+
+    const auto& cam = cameras[0];
+
+    // 当前相机相对于焦点的偏移向量（保留用户鼠标旋转和缩放的相对姿态）
+    double dx = cam.pos[0] - cam.focal[0];
+    double dy = cam.pos[1] - cam.focal[1];
+    double dz = cam.pos[2] - cam.focal[2];
+
+    // 将焦点平移到车体中心，同时平移相机自身位置
+    vis_->setCameraPosition(
+        center.x() + dx, center.y() + dy, center.z() + dz,  // 相机新位置
+        center.x(), center.y(), center.z(),  // 焦点为车体位置
+        cam.view[0], cam.view[1], cam.view[2]  // 保留用户当前的 Up 向量
+    );
+  } else {
     // clang-format off
-    // /* 不带姿态旋转
+    /* 平移跟随车体，不带姿态旋转
     vis_->setCameraPosition(center.x() - 50, center.y() - 50, center.z() + 50,  // camera pos
                             center.x(), center.y(), center.z(),  // look at point
                             0, 0, 1);  // up
-    // */
+    */
     // clang-format on
-  } else {
+
     // clang-format off
-    /* 带姿态旋转，车体的抖动带动相机抖动
+    /* 跟随车体，带姿态旋转，车体的抖动带动相机抖动
     // 相机位置：后 + 左 + 上
     // 姿态跟随
     Eigen::Matrix3f R = pose.block<3, 3>(0, 0);

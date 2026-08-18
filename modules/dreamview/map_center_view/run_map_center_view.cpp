@@ -67,10 +67,10 @@ int main(int argc, char** argv) {
 
     auto frame_start = omp_get_wtime();
     if (static_config->b_display_roi) {
-      std::cout << "Display ROI" << std::endl;
+      // std::cout << "Display ROI" << std::endl;
       view->ShowFrameROI(frame, pose);
     } else {
-      std::cout << "Display MAP" << std::endl;
+      // std::cout << "Display MAP" << std::endl;
       view->ShowFrame(frame, pose);
     }
     auto frame_end = omp_get_wtime();

@@ -8,11 +8,20 @@ map_file_path: /workspaces/CodexOpenExtraData/data/2026-01-28/2026-01-28-09-31-3
 # map_file_path: /workspaces/CodexOpenExtraData/data/2026-04-21/16102220208346880_1420_000_1440_000-O/map_data/map3d/colored_map_top_5cams.pcd
 # map_file_path: /workspaces/CodexOpenExtraData/data/2026-04-21/16102220208346880_1420_000_1440_000-O/map_data/map3d/colorized_map_point_cloud.pcd
 # map_file_path: /workspaces/CodexOpenExtraData/data/2026-04-21/16102220208346880_1420_000_1440_000-O/map_data/map3d/map_point_cloud.pcd
+# map_file_path: /workspaces/CodexOpenExtraData/data/2026-01-28/2026-01-28-09-31-37-O/map_data/map3d/map_point_cloud.pcd
 # map_file_path: /workspaces/CodexOpenExtraData/data/2024-12-16/2024-12-16-11-19-11-O/map_data/map3d/colorized_map_point_cloud.pcd
 
 init:
-  # 先验地图：false ; 构建地图：true
+  # 先验地图/全局坐标系构建地图：false ; 局部坐标系构建地图：true
   b_use_pose_center: false
+  # b_use_pose_center: true
 
   b_display_roi: true
+
+  # 显示专用地图体素尺寸（米）。原始地图保持不变；0 表示关闭降采样。
+  map_display_voxel_size: 1.0
+  # ROI 半径和重新裁剪的移动阈值（米）。普通帧继续复用旧 ROI。
+  roi_radius: 120.0
+  roi_update_dist: 30.0
+
   b_display_body: true

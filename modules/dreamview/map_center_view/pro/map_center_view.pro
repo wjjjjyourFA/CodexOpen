@@ -5,7 +5,7 @@ unix{
 }
 
 TEMPLATE = app
-CONFIG += console c++14
+CONFIG += console c++17
 CONFIG -= app_bundle
 CONFIG -= qt
 CONFIG += object_parallel_to_source
@@ -49,11 +49,9 @@ SOURCES += \
   $$PREFIX/base/camera.cc \
   $$PREFIX/base/distortion_model.cc \
   $$PREFIX/base/fisheye_model.cc \
-  $$PREFIX/config/utils.cpp \
-  $$PREFIX/config/sensor_extrinsics.cpp \
-  $$PREFIX/config/vehicle_config.cpp \
   $$PREFIX/camera/common/undistortion_handler.cc \
-  $$PREFIX/camera/params/*.cpp \
+  $$files($$PREFIX/config/*.cpp) \
+  $$files($$PREFIX/camera/params/*.cpp) \
   $$CODEX_PATH/modules/perception/tools/opencv/colors.cpp \
   $$CODEX_PATH/modules/perception/tools/opencv/cv_colors.cpp \
   $$DATA_PROCESSOR_PATH/config/sensor_config.cc \
@@ -68,6 +66,10 @@ SOURCES += \
   $$SELF_PATH/map_center_view.cpp \
   $$SELF_PATH/run_map_center_view.cpp
 
+SOURCES -= \
+  $$PREFIX/config/config_core_test.cpp \
+  $$PREFIX/camera/params/camera_params_core_test.cpp \
+
 HEADERS += \
   $$CODEX_PATH/cyber/binary.h \
   $$CODEX_PATH/cyber/common/file.h \
@@ -79,11 +81,9 @@ HEADERS += \
   $$PREFIX/base/camera.h \
   $$PREFIX/base/distortion_model.h \
   $$PREFIX/base/fisheye_model.h \
-  $$PREFIX/config/utils.h \
-  $$PREFIX/config/sensor_extrinsics.h \
-  $$PREFIX/config/vehicle_config.h \
   $$PREFIX/camera/common/undistortion_handler.h \
-  $$PREFIX/camera/params/*.h \
+  $$files($$PREFIX/config/*.h) \
+  $$files($$PREFIX/camera/params/*.h) \
   $$CODEX_PATH/modules/perception/tools/pcl/point_types.h \
   $$CODEX_PATH/modules/perception/tools/opencv/colors.hpp \
   $$CODEX_PATH/modules/perception/tools/opencv/cv_colors.h \
