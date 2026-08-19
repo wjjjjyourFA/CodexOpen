@@ -11,7 +11,7 @@ CONFIG -= app_bundle
 CONFIG -= qt
 CONFIG += object_parallel_to_source
 TARGET = data_processor_ros1
-DEFINES += DATA_PROCESSOR_ROS1
+DEFINES += DATA_PROCESSOR_ROS1_RS_LEGACY
 
 CODEX_PATH = $$clean_path($$PWD/../../..)
 PREFIX = $$CODEX_PATH/modules/perception
@@ -57,6 +57,7 @@ SOURCES += \
   $$SELF_PATH/data_processor.cpp \
   $$SELF_PATH/ros1_convert.cpp \
   # $$SELF_PATH/ros1_convert_legacy.cpp \
+  $$SELF_PATH/ros1_convert_rs_legacy.cpp \
   $$files($$SELF_PATH/config/*.cpp) \
 
 SOURCES -= \
@@ -86,6 +87,7 @@ HEADERS += \
   $$SELF_PATH/config/sensor_config.h \
   $$SELF_PATH/data_processor.h \
   $$SELF_PATH/ros1_convert.h \
+  $$SELF_PATH/ros1_convert_rs_legacy.h \
   $$files($$SELF_PATH/config/*.h) \
 
 HEADERS -= \
