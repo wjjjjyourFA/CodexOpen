@@ -112,6 +112,7 @@ class GroupConvert {
  private:
   std::shared_ptr<MeasureGroup> group_ds = nullptr;
 
+ protected:
   DataContainer<jojo::common_struct::OdomData> dc_local_pose;
   DataContainer<jojo::common_struct::GnssData> dc_global_pose;
   DataContainer<jojo::common_struct::ImuData> dc_imu_data;

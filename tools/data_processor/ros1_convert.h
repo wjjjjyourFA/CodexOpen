@@ -33,8 +33,6 @@
 #include "ars548_msg/detections.h"
 #include "ars_40X/Cluster.h"
 #include "ars_40X/ClusterList.h"
-#include "rslidar_sdk-1.3.2/lidar_packet_ros.h"
-#include "rslidar_sdk-1.3.2/lidar_scan_ros.h"
 
 // #include <boost/foreach.hpp> // C++11 之前
 #include <math.h>  // for llround
@@ -100,10 +98,11 @@ class Ros1Convert {
   Ros1Convert(ros::NodeHandle& nh, ros::NodeHandle& private_nh);  // Constructor
   virtual ~Ros1Convert();
 
-  bool Init(std::shared_ptr<jojo::tools::RuntimeConfig> param,
-            std::shared_ptr<jojo::tools::InterfaceConfig> interface);
+  virtual bool Init(
+      std::shared_ptr<jojo::tools::RuntimeConfig> param,
+      std::shared_ptr<jojo::tools::InterfaceConfig> interface);
 
-  void Run();
+  virtual void Run();
 
   void Ros1bagParseBase(const rosbag::MessageInstance& m);
 
@@ -131,6 +130,24 @@ class Ros1Convert {
   void Radar4DHandler(const rosbag::MessageInstance& m, int idx);
   // clang-format on
 
+ protected:
+  // LiDAR packet handling hooks. Derived converters can either decode raw
+  // packets in-process or relay them through an external ROS driver.
+  virtual void InitRslidar();
+  virtual void SendLidarHandler(const rosbag::MessageInstance& m,
+                                const std::string& topic);
+  virtual void FinishLidar();
+
+  const std::shared_ptr<jojo::tools::RuntimeConfig>& runtime_config() const {
+    return rparam_;
+  }
+  const std::shared_ptr<jojo::tools::InterfaceConfig>& interface_config() const {
+    return iparam_;
+  }
+
+  void IncrementLidarSendCount() { ++num_lidar_send; }
+  void IncrementLidarRecvCount() { ++num_lidar_recv; }
+
  private:
   std::shared_ptr<jojo::tools::RuntimeConfig> rparam_;
   std::shared_ptr<jojo::tools::InterfaceConfig> iparam_;
@@ -156,23 +173,9 @@ class Ros1Convert {
   void PrintParserCount(const std::vector<DataStatistic<DataType>>& counts,
                         const std::string& name);
 
-  // RsLidarDifopWrapper
-  ros::Publisher pub_ori;
-  ros::Publisher pub_difop;
-  ros::Subscriber sub_cloud;
-
-  void InitRslidar();
-
-  void RecvLidarHandler(const sensor_msgs::PointCloud2& msg);
-  void SendLidarHandler(const rosbag::MessageInstance& m,
-                        const std::string& topic);
-
-  sem_t sem_a, sem_b;
-  bool b_first_pub_difop;
-
+ private:
   int num_lidar_send = 0;
   int num_lidar_recv = 0;
-  // RsLidarDifopWrapper
 };
 
 // 实现函数模板（通常放在头文件里）

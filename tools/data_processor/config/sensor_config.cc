@@ -20,6 +20,8 @@ SensorRegistry::SensorRegistry() {
 
   lidar_map_ = {{"m1p", LidarType::M1P},
                 {"rs128", LidarType::RS128},
+                {"e1", LidarType::RSE1},
+                {"emx", LidarType::RSEMX},
                 {"mid360", LidarType::MID360}};
 }
 
@@ -66,13 +68,17 @@ LidarType SensorRegistry::GetLidarType(const std::string& name) const {
 int SensorRegistry::GetDifopNum(LidarType type) const {
   switch (type) {
     case LidarType::M1P:
+      // 5 * 25 * 5
       return 16 * 35;
     case LidarType::RS128:
+      // 128 * 3 * 128
       return 2;  // wait check
     case LidarType::RSEMX:
-      return 2;  // wait check
+      // 1 * 192 * 1
+      return 16 * 780;  // wait check
     case LidarType::RSE1:
-      return 2;  // wait check
+      // 1 * 96 * 1
+      return 16 * 180;  // wait check
     default:
       return 0;
   }

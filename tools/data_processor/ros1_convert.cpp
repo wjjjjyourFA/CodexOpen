@@ -133,6 +133,7 @@ void Ros1Convert::Run() {
           break;
         }
       }
+      this->FinishLidar();
     }
   }
 
@@ -722,9 +723,16 @@ void Ros1Convert::LidarHandler(
     pcl::fromROSMsg(*msg_ptr, *vd_cloud);
     VdToPcl(vd_cloud, Cloud);
     std::cout << "vd_cloud_ptr convert suc " << std::endl;
-#else
+#elif defined(USE_RSLIDAR)
     pcl::fromROSMsg(*msg_ptr, *rs_cloud);
     RsToPcl(rs_cloud, Cloud);
+
+    // std::cout << "point_rs_->width: " << rs_cloud->width << std::endl;
+    // std::cout << "point_rs_->height: " << rs_cloud->height << std::endl;
+
+    // show_pointcloud_ring(*rs_cloud);
+    // show_pointcloud_strategy(*rs_cloud, ColorMode::RING);
+    // show_pointcloud_height(*rs_cloud);
 #endif
 
     // 去除 NaN 点
@@ -739,6 +747,20 @@ void Ros1Convert::LidarHandler(
                              GetTransMatrix(rparam_->b_lt_none_rt));
 
     if (rparam_->b_save_data) {
+      /*  // 按雷达线束存储
+      // for intensity can't use it
+      for (int j = 0; j < 1800; j++)
+        for (int i = 0; i < 128; i++)
+          cloud_tmp.points[j * 128 + laser_sort[i]] =
+              cloud.points[j * 128 + i];  // sort the lidar by increasing
+                                          // elevation angle
+
+      for (int j = 0; j < 1800; j++)
+        for (int i = 0; i < 128; i++)
+          cloud.points[i * 1800 + j] = cloud_tmp.points[j * 128 + i];  //
+      // transpose the lidar data from angle - by - angle to line - by - line
+      */
+
       data_processor->SaveLidarData(Cloud, msg_time);
     }
 
@@ -746,126 +768,12 @@ void Ros1Convert::LidarHandler(
   }
 }
 
-void Ros1Convert::InitRslidar() {
-  sem_init(&sem_a, 0, 1);
-  // sem_init(&sem_b, 0, 1);
-
-  sub_cloud = nh_.subscribe(iparam_->topic_lidar_sub, 10,
-                            &Ros1Convert::RecvLidarHandler, this);
-
-  pub_ori = nh_.advertise<rslidar_msgs::rslidarScan>(
-      iparam_->topic_lidar_ori_sub /*rslidar_packets*/, 10);
-
-  pub_difop = nh_.advertise<rslidar_msgs::rslidarPacket>(
-      iparam_->topic_lidar_difop_sub /*rslidar_packets_difop*/, 10);
-
-  b_first_pub_difop = true;
-}
+void Ros1Convert::InitRslidar() {}
 
 void Ros1Convert::SendLidarHandler(const rosbag::MessageInstance& m,
-                                   const std::string& topic) {
-  // std::cout << "topic: " << topic << std::endl;
-  if (b_first_pub_difop) {
-    /*rslidar_packets_difop*/
-    if (topic == std::string(iparam_->topic_lidar_difop_sub)) {
-      b_first_pub_difop = false;
-      rslidar_msgs::rslidarPacket::ConstPtr difop_ptr =
-          m.instantiate<rslidar_msgs::rslidarPacket>();
-      if (difop_ptr != NULL) {
-        pub_difop.publish(*difop_ptr);
-        //  ros::spinOnce();
-        std::cout << "pub difop first.\n";
-      }
-    }
-  } else {
-    /*rslidar_packets*/
-    if (topic == std::string(iparam_->topic_lidar_ori_sub)) {
-      rslidar_msgs::rslidarScan::ConstPtr scan_ptr =
-          m.instantiate<rslidar_msgs::rslidarScan>();
-      if (scan_ptr != NULL) {
-        pub_ori.publish(*scan_ptr);
-        // std::cout << "pub scan .\n";
+                                   const std::string& topic) {}
 
-        num_lidar_send++;
-
-        // 等待回调处理完成
-        sem_wait(&sem_a);
-      }
-    } else if (topic == std::string(iparam_->topic_lidar_difop_sub)) {
-      rslidar_msgs::rslidarPacket::ConstPtr difop_ptr =
-          m.instantiate<rslidar_msgs::rslidarPacket>();
-      if (difop_ptr != NULL) {
-        pub_difop.publish(*difop_ptr);
-        // std::cout << "pub difop .\n";
-      }
-    }
-  }
-}
-
-void Ros1Convert::RecvLidarHandler(const sensor_msgs::PointCloud2& msg) {
-  uint64_t msg_time = msg.header.stamp.toSec() * 1000;
-  // std::cout << "lidar msg_time: " << msg_time << std::endl;
-
-  sem_post(&sem_a);
-
-  if (!data_processor->PushSampledTime(msg_time)) return;
-
-  // clang-format off
-#if defined(RSLIDAR_OLD)
-  // ros1 for intensity int8
-  pcl::PointCloud<robosense_ros::PointII>::Ptr rs_cloud(new pcl::PointCloud<robosense_ros::PointII>);
-#elif defined(RSLIDAR_NEW)
-  pcl::PointCloud<robosense_ros::PointIF>::Ptr rs_cloud(new pcl::PointCloud<robosense_ros::PointIF>);
-#else
-  pcl::PointCloud<robosense_ros::Point>::Ptr rs_cloud(new pcl::PointCloud<robosense_ros::Point>);
-#endif
-  pcl::PointCloud<pcl::PointXYZI>::Ptr Cloud(new pcl::PointCloud<pcl::PointXYZI>);
-  // clang-format on
-
-#if defined(USE_RSLIDAR)
-  pcl::fromROSMsg(msg, *rs_cloud);
-  RsToPcl(rs_cloud, Cloud);
-
-  // std::cout << "point_rs_->width: " << rs_cloud->width << std::endl;
-  // std::cout << "point_rs_->height: " << rs_cloud->height << std::endl;
-
-  // show_pointcloud_ring(*rs_cloud);
-  // show_pointcloud_strategy(*rs_cloud, ColorMode::RING);
-  // show_pointcloud_height(*rs_cloud);
-#endif
-
-  // 去除 NaN 点
-  // std::cout << "Before filter: " << Cloud->size() << " points" << std::endl;
-  // pcl::PointCloud<pcl::PointXYZI>::Ptr FilteredCloud(
-  //     new pcl::PointCloud<pcl::PointXYZI>);
-  // std::vector<int> indices;  // 存储有效点的索引
-  // pcl::removeNaNFromPointCloud(*Cloud, *FilteredCloud, indices);
-  // std::cout << "After filter: " << FilteredCloud->size() << " points" << std::endl;
-
-  // warning
-  pcl::transformPointCloud(*Cloud, *Cloud,
-                           GetTransMatrix(rparam_->b_lt_none_rt));
-
-  if (rparam_->b_save_data) {
-    /*  // 按雷达线束存储
-    // for intensity can't use it
-    for (int j = 0; j < 1800; j++)
-      for (int i = 0; i < 128; i++)
-        cloud_tmp.points[j * 128 + laser_sort[i]] =
-            cloud.points[j * 128 + i];  // sort the lidar by increasing
-                                        // elevation angle
-
-    for (int j = 0; j < 1800; j++)
-      for (int i = 0; i < 128; i++)
-        cloud.points[i * 1800 + j] = cloud_tmp.points[j * 128 + i];  //
-    // transpose the lidar data from angle - by - angle to line - by - line
-    */
-
-    data_processor->SaveLidarData(Cloud, msg_time);
-  }
-
-  num_lidar_recv++;
-}
+void Ros1Convert::FinishLidar() {}
 
 }  // namespace tools
 }  // namespace jojo

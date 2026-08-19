@@ -11,11 +11,12 @@ CONFIG -= app_bundle
 CONFIG -= qt
 CONFIG += object_parallel_to_source
 TARGET = data_processor_ros1
-DEFINES += DATA_PROCESSOR_ROS1
+DEFINES += DATA_PROCESSOR_ROS1_RS
 
 CODEX_PATH = $$clean_path($$PWD/../../..)
 PREFIX = $$CODEX_PATH/modules/perception
 SELF_PATH = $$CODEX_PATH/tools/data_processor
+RS_SDK_PATH = $$SELF_PATH/rs_driver/ros1/src/rslidar_sdk-1.5.19
 
 # DESTDIR += $$PWD/bin
 DESTDIR = $$CODEX_PATH/install/bin/tools/data_processor
@@ -56,7 +57,8 @@ SOURCES += \
   $$SELF_PATH/run_data_processor.cpp \
   $$SELF_PATH/data_processor.cpp \
   $$SELF_PATH/ros1_convert.cpp \
-  # $$SELF_PATH/ros1_convert_legacy.cpp \
+  $$SELF_PATH/ros1_convert_rs.cpp \
+  # $$SELF_PATH/ros1_convert_legacy.cpp
   $$files($$SELF_PATH/config/*.cpp) \
 
 SOURCES -= \
@@ -86,6 +88,7 @@ HEADERS += \
   $$SELF_PATH/config/sensor_config.h \
   $$SELF_PATH/data_processor.h \
   $$SELF_PATH/ros1_convert.h \
+  $$SELF_PATH/ros1_convert_rs.h \
   $$files($$SELF_PATH/config/*.h) \
 
 HEADERS -= \
@@ -96,6 +99,7 @@ INCLUDEPATH += \
   $$SELF_PATH/ros1_message \
   $$SELF_PATH/ros1_message/version_1.0 \
   $$SELF_PATH/ros1_message/version_1.1 \
+  $$RS_SDK_PATH/src/rs_driver/src \
 
 INCLUDEPATH += \
   /usr/include/eigen3 \
