@@ -75,7 +75,7 @@ bool Ros1Convert::Init(std::shared_ptr<cdss::RuntimeConfig> rparam,
 void Ros1Convert::Run() {
   cv::Mat img;
 
-  bool first_flag = false;
+  bool first_flag = !rparam_->b_undistort;
 
   ros::Rate loop_rate(iparam_->rate);
 
@@ -94,12 +94,22 @@ void Ros1Convert::Run() {
     img = recvImg;
     mutex_.unlock();
 
+    if (img.empty()) {
+      loop_rate.sleep();
+      continue;
+    }
+
     if (!first_flag) {
       auto matrix = camera_params->GetMatrixVector();
+      if (matrix.empty() || !camera_undistort) {
+        ROS_ERROR("Invalid camera calibration or undistortion handler.");
+        return;
+      }
+
       Eigen::VectorXf params(17);
       params = cfg::IntrinsicParamsToVector(
-          matrix.at(0)->camera_matrix->intrinsic_matrix,
-          matrix.at(0)->camera_matrix->distortion_params);
+          matrix.front()->camera_matrix->intrinsic_matrix,
+          matrix.front()->camera_matrix->distortion_params);
 
       camera_undistort->InitModel(camera::CameraDistortionModel::Brown);
       camera_undistort->InitParams(img.cols, img.rows, params);
@@ -108,8 +118,13 @@ void Ros1Convert::Run() {
       first_flag = true;
     }
 
-    cv::Mat dst_img = img.clone();
-    camera_undistort->Handle(img, &dst_img);
+    cv::Mat dst_img;
+    if (rparam_->b_undistort) {
+      dst_img = img.clone();
+      camera_undistort->Handle(img, &dst_img);
+    } else {
+      dst_img = img;
+    }
 
     std::vector<jojo::perception::base::Object> detections;
     if (image_detector->isInited()) {

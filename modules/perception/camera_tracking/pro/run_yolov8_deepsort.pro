@@ -44,7 +44,7 @@ SOURCES += \
   $$PREFIX/common/base/distortion_model.cc \
   $$PREFIX/common/base/fisheye_model.cc \
   $$PREFIX/common/camera/common/undistortion_handler.cc \
-  $$PREFIX/common/config/utils.cpp \
+  $$files($$PREFIX/common/config/*.cpp) \
   $$files($$PREFIX/common/camera/params/*.cpp) \
   $$CODEX_PATH/tools/data_loader/data_loader.cpp \
   $$CODEX_PATH/tools/data_loader/config/runtime_config.cpp \
@@ -55,6 +55,13 @@ SOURCES += \
   $$SELF_PATH/camera_tracking.cpp \
   $$SELF_PATH/config/runtime_config.cpp \
   $$SELF_PATH/run_yolo_track.cpp \
+
+SOURCES -= \
+  $$PREFIX/tools/pcl/pcl_viewer_test.cpp \
+  $$SELF_PATH/config/runtime_config_legacy.cpp \
+  $$PREFIX/common/config/config_core_test.cpp \
+  $$PREFIX/common/camera/params/camera_params_core_test.cpp \
+  $$PREFIX/common/lidar/convert/lidar_convert_core_test.cpp
 
 HEADERS += \
   $$CODEX_PATH/cyber/binary.h \
@@ -69,7 +76,7 @@ HEADERS += \
   $$PREFIX/common/base/distortion_model.h \
   $$PREFIX/common/base/fisheye_model.h \
   $$PREFIX/common/camera/common/undistortion_handler.h \
-  $$PREFIX/common/config/utils.h \
+  $$files($$PREFIX/common/config/*.h) \
   $$files($$PREFIX/common/camera/params/*.h) \
   $$CODEX_PATH/tools/data_loader/data_loader.h \
   $$CODEX_PATH/tools/data_loader/config/runtime_config.h \

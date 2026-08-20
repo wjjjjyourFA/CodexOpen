@@ -42,13 +42,20 @@ SOURCES += \
   $$PREFIX/common/base/distortion_model.cc \
   $$PREFIX/common/base/fisheye_model.cc \
   $$PREFIX/common/camera/common/undistortion_handler.cc \
-  $$PREFIX/common/config/utils.cpp \
+  $$files($$PREFIX/common/config/*.cpp) \
   $$files($$PREFIX/common/camera/params/*.cpp) \
   $$SELF_PATH/detector/yolo_obstacle_detector.cpp \
   $$SELF_PATH/config/runtime_config.cpp \
   $$SELF_PATH/config/interface_config.cpp \
   $$SELF_PATH/run_camera_detection_single_stage.cpp \
   $$SELF_PATH/ros1_convert.cpp \
+
+SOURCES -= \
+  $$PREFIX/tools/pcl/pcl_viewer_test.cpp \
+  $$SELF_PATH/config/runtime_config_legacy.cpp \
+  $$PREFIX/common/config/config_core_test.cpp \
+  $$PREFIX/common/camera/params/camera_params_core_test.cpp \
+  $$PREFIX/common/lidar/convert/lidar_convert_core_test.cpp
 
 HEADERS += \
   $$CODEX_PATH/cyber/binary.h \
@@ -64,7 +71,7 @@ HEADERS += \
   $$PREFIX/common/base/distortion_model.h \
   $$PREFIX/common/base/fisheye_model.h \
   $$PREFIX/common/camera/common/undistortion_handler.h \
-  $$PREFIX/common/config/utils.h \
+  $$files($$PREFIX/common/config/*.h) \
   $$files($$PREFIX/common/camera/params/*.h) \
   $$SELF_PATH/detector/yolo_obstacle_detector.h \
   $$SELF_PATH/config/runtime_config.h \

@@ -20,6 +20,8 @@
 #include <vector>
 
 #include "Eigen/Core"
+// for pcl::make_shared 兼容 pcl 1.11 | pcl 1.12
+// #include <pcl/memory.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
@@ -45,8 +47,9 @@ struct Object {
   // @brief convex hull of the object, required
   // PointCloud<PointD> polygon;
   // 改成智能指针，object 的凸包，因此用的 PointXYZ
-  pcl::PointCloud<pcl::PointXYZ>::Ptr polygon =
-      std::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+  pcl::PointCloud<pcl::PointXYZ>::Ptr polygon;
+  // pcl::PointCloud<pcl::PointXYZ>::Ptr polygon = std::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+  // auto polygon = pcl::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
 
   // oriented boundingbox information
   // @brief main direction of the object, required
@@ -130,9 +133,9 @@ struct Object {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
-using ObjectPtr = std::shared_ptr<Object>;
+using ObjectPtr      = std::shared_ptr<Object>;
 using ObjectConstPtr = std::shared_ptr<const Object>;
 
 }  // namespace base
 }  // namespace perception
-}  // namespace apollo
+}  // namespace jojo

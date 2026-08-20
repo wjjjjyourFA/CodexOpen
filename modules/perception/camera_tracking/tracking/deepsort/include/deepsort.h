@@ -2,6 +2,7 @@
 #define DEEPSORT_H
 
 #include <iostream>
+#include <memory>
 #include <opencv2/opencv.hpp>
 #include "featuretensor.h"
 #include "tracker.h"
@@ -15,6 +16,9 @@ class DeepSort {
 public:    
     DeepSort(std::string modelPath, int batchSize, int featureDim, int gpuID, ILogger* gLogger);
     ~DeepSort();
+
+    DeepSort(const DeepSort&) = delete;
+    DeepSort& operator=(const DeepSort&) = delete;
 
 public:
     void sort(cv::Mat& frame, vector<DetectBox>& dets);
@@ -41,8 +45,8 @@ private:
 private:
     vector<RESULT_DATA> result;
     vector<std::pair<CLSCONF, DETECTBOX>> results;
-    tracker* objTracker;
-    FeatureTensor* featureExtractor;
+    std::unique_ptr<tracker> objTracker;
+    std::unique_ptr<FeatureTensor> featureExtractor;
     ILogger* gLogger;
     int gpuID;
 };

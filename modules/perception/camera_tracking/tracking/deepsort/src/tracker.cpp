@@ -13,22 +13,24 @@ tracker::tracker(               /*NearNeighborDisMetric *metric, */
     float max_cosine_distance, int nn_budget,
     float max_iou_distance, int max_age, int n_init)
 {
-    this->metric = new NearNeighborDisMetric(
+    this->metric = std::make_unique<NearNeighborDisMetric>(
         NearNeighborDisMetric::METRIC_TYPE::cosine, 
         max_cosine_distance, nn_budget);
     this->max_iou_distance = max_iou_distance;
     this->max_age = max_age;
     this->n_init = n_init;
 
-    this->kf = new KalmanFilter();
+    this->kf = std::make_unique<KalmanFilter>();
     this->tracks.clear();
     this->_next_idx = 1;
 }
 
+tracker::~tracker() = default;
+
 void tracker::predict()
 {
   for (Track & track:tracks) {
-        track.predit(kf);
+        track.predit(kf.get());
     }
 }
 
@@ -41,7 +43,7 @@ void tracker::update(const DETECTIONS & detections)
     for (MATCH_DATA & data:matches) {
         int track_idx = data.first;
         int detection_idx = data.second;
-        tracks[track_idx].update(this->kf, detections[detection_idx]);
+        tracks[track_idx].update(this->kf.get(), detections[detection_idx]);
     }
     vector < int >&unmatched_tracks = res.unmatched_tracks;
     for (int &track_idx:unmatched_tracks) {
@@ -79,7 +81,7 @@ void tracker::update(const DETECTIONSV2 & detectionsv2)
   for (MATCH_DATA & data:matches) {
         int track_idx = data.first;
         int detection_idx = data.second;
-        tracks[track_idx].update(this->kf, detections[detection_idx], clsConf[detection_idx]);
+        tracks[track_idx].update(this->kf.get(), detections[detection_idx], clsConf[detection_idx]);
     }
     vector < int >&unmatched_tracks = res.unmatched_tracks;
   for (int &track_idx:unmatched_tracks) {
@@ -197,7 +199,7 @@ DYNAMICM tracker::gated_matric(
     }
     DYNAMICM cost_matrix = this->metric->distance(features, targets);
     DYNAMICM res = linear_assignment::getInstance()->gate_cost_matrix(
-        this->kf, cost_matrix, tracks, dets, track_indices,
+        this->kf.get(), cost_matrix, tracks, dets, track_indices,
         detection_indices);
     return res;
 }

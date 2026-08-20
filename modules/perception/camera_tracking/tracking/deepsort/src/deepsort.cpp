@@ -1,6 +1,7 @@
 #include "deepsort.h"
 
-DeepSort::DeepSort(std::string modelPath, int batchSize, int featureDim, int gpuID, ILogger* gLogger) {
+DeepSort::DeepSort(std::string modelPath, int batchSize, int featureDim, int gpuID, ILogger* gLogger)
+    : objTracker(nullptr), featureExtractor(nullptr) {
     this->gpuID = gpuID;
     this->enginePath = modelPath;
     this->batchSize = batchSize;
@@ -13,8 +14,8 @@ DeepSort::DeepSort(std::string modelPath, int batchSize, int featureDim, int gpu
 }
 
 void DeepSort::init() {
-    objTracker = new tracker(maxCosineDist, maxBudget);
-    featureExtractor = new FeatureTensor(batchSize, imgShape, featureDim, gpuID, gLogger);
+    objTracker = std::make_unique<tracker>(maxCosineDist, maxBudget);
+    featureExtractor = std::make_unique<FeatureTensor>(batchSize, imgShape, featureDim, gpuID, gLogger);
     int ret = enginePath.find(".onnx");
     if (ret != -1)
         featureExtractor->loadOnnx(enginePath);
@@ -25,8 +26,8 @@ void DeepSort::init() {
 void DeepSort::init(float _maxCosineDist, int _maxBudget, float _maxIouDistance, int _maxAge, int _nInit) {
     this->maxBudget = _maxBudget;
     this->maxCosineDist = _maxCosineDist;
-    objTracker = new tracker(maxCosineDist, maxBudget, _maxIouDistance, _maxAge, _nInit);
-    featureExtractor = new FeatureTensor(batchSize, imgShape, featureDim, gpuID, gLogger);
+    objTracker = std::make_unique<tracker>(maxCosineDist, maxBudget, _maxIouDistance, _maxAge, _nInit);
+    featureExtractor = std::make_unique<FeatureTensor>(batchSize, imgShape, featureDim, gpuID, gLogger);
     int ret = enginePath.find(".onnx");
     if (ret != -1)
         featureExtractor->loadOnnx(enginePath);
@@ -34,10 +35,7 @@ void DeepSort::init(float _maxCosineDist, int _maxBudget, float _maxIouDistance,
         featureExtractor->loadEngine(enginePath);
 }
 
-DeepSort::~DeepSort() {
-    delete objTracker;
-    delete featureExtractor;
-}
+DeepSort::~DeepSort() = default;
 
 void DeepSort::sort(cv::Mat& frame, vector<DetectBox>& dets) {
     // preprocess Mat -> DETECTION

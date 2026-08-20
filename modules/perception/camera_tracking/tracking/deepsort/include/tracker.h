@@ -2,6 +2,7 @@
 #define TRACKER_H
 
 
+#include <memory>
 #include <vector>
 
 #include "kalmanfilter.h"
@@ -15,20 +16,23 @@ class NearNeighborDisMetric;
 class tracker
 {
 public:
-    NearNeighborDisMetric* metric;
+    std::unique_ptr<NearNeighborDisMetric> metric;
     float max_iou_distance;
     int max_age;
     int n_init;
 
-    KalmanFilter* kf;
+    std::unique_ptr<KalmanFilter> kf;
 
     int _next_idx;
 public:
     std::vector<Track> tracks;
     tracker(/*NearNeighborDisMetric* metric,*/
-    		float max_cosine_distance, int nn_budget,
+            float max_cosine_distance, int nn_budget,
             float max_iou_distance = 0.7,
             int max_age = 70, int n_init=3);
+    ~tracker();
+    tracker(const tracker&) = delete;
+    tracker& operator=(const tracker&) = delete;
     void predict();
     void update(const DETECTIONS& detections);
     void update(const DETECTIONSV2& detectionsv2);
