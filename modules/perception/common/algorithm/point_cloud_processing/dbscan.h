@@ -4,6 +4,7 @@
 #include <cmath>
 #include <iostream>
 #include <queue>
+#include <unordered_map>
 #include <vector>
 
 #pragma once
@@ -23,18 +24,29 @@ class DBSCAN {
   // DBSCAN() {};
   virtual ~DBSCAN() = default;
 
-  void set_params(double eps, int minPts) {
+  bool set_params(double eps, int minPts) {
+    if (!std::isfinite(eps) || eps <= 0.0 || minPts <= 0) {
+      return false;
+    }
     this->eps_    = eps;
     this->minPts_ = minPts;
-  };
+    RebuildSpatialIndex();
+    return true;
+  }
 
   virtual void SetInputCloud(const std::vector<DataType>& cloud) {
     this->points_ = cloud;
     this->size_   = cloud.size();
+    RebuildSpatialIndex();
   };
 
   // virtual void init() {};
-  void Run() {
+  bool Run() {
+    if (eps_ <= 0.0 || minPts_ <= 0 || points_.empty()) {
+      labels_.assign(size_, 0);
+      cluster_id_ = 0;
+      return false;
+    }
     // P1 —— P2 —— P3
     //      |
     //      P4
@@ -66,6 +78,7 @@ class DBSCAN {
         ExpandClusterBfs(labels_, i, cluster_id_, neighbors);
       }
     }
+    return true;
   };
 
   virtual bool OutputCluster(std::vector<std::vector<DataType>>& clusters) {
@@ -98,6 +111,10 @@ class DBSCAN {
   // 此处为未排序或排序点集，全局遍历搜索
   virtual void RegionQuery(int index, double eps, std::vector<int>& labels,
                            std::vector<int>& neighbors) {
+    if (index < 0 || static_cast<size_t>(index) >= size_ || eps <= 0.0) {
+      return;
+    }
+    /* way 1 原始 DBSCAN 简易写法
     for (size_t i = 0; i < this->size_; ++i) {
       // radius
       // 只跳过已分配到簇的点，允许未分类点和噪声点
@@ -106,6 +123,36 @@ class DBSCAN {
       }
       if (distance(this->points_[index], this->points_[i]) <= eps) {
         neighbors.push_back(i);
+      }
+    }
+    */
+
+    // way 2 ： 使用空间索引加速查询，27个邻域网格，网格大小为 eps
+    if (spatial_index_.empty() || indexed_eps_ != eps) {
+      RebuildSpatialIndex();
+    }
+
+    const CellKey center     = CellFor(points_[index], eps);
+    const double eps_squared = eps * eps;
+    for (int dx = -1; dx <= 1; ++dx) {
+      for (int dy = -1; dy <= 1; ++dy) {
+        for (int dz = -1; dz <= 1; ++dz) {
+          const CellKey key{center.x + dx, center.y + dy, center.z + dz};
+          const auto cell = spatial_index_.find(key);
+          if (cell == spatial_index_.end()) {
+            continue;
+          }
+          for (const int candidate : cell->second) {
+            if (labels[candidate] > 0) {
+              continue;
+            }
+            // 相邻 Cell 不代表两个点一定在 eps 半径内，需要进一步判断
+            if (SquaredDistance(points_[index], points_[candidate]) <=
+                eps_squared) {
+              neighbors.push_back(candidate);
+            }
+          }
+        }
       }
     }
   };
@@ -146,11 +193,13 @@ class DBSCAN {
 
     // 标记当前点的邻域内的点，并加入搜索队列
     for (int near_index : neighbors) {
+      // 注释原因，使得 前期的 noise 点，可以被重新吸收到 cluster 中
       /* RegionQuery 已经处理过，这里不需要再处理
-                            // 如果这个点已经分类（噪声点除外），就跳过
-                            if (labels[near_index] > 0) {
-                              continue;
-                            } */
+      // 如果这个点已经分类（噪声点除外），就跳过
+      if (labels[near_index] > 0) {
+        continue;
+      } 
+      */
       labels[near_index] = cluster_id;
       process_queue.push(near_index);
     }
@@ -165,10 +214,10 @@ class DBSCAN {
       if (new_neighbors.size() >= static_cast<size_t>(this->minPts_)) {
         for (int new_near_index : new_neighbors) {
           /* RegionQuery 已经处理过，这里不需要再处理
-                                // 如果这个点已经分类（噪声点除外），就跳过
-                                if (labels[new_near_index] > 0) {
-                                  continue;
-                                } */
+          // 如果这个点已经分类（噪声点除外），就跳过
+          if (labels[new_near_index] > 0) {
+            continue;
+          } */
           labels[new_near_index] = cluster_id;
           process_queue.push(new_near_index);
         }
@@ -183,14 +232,60 @@ class DBSCAN {
   std::vector<int> GetLabels() const { return labels_; }
 
  protected:
-  int minPts_;  //最小聚类数
-  double eps_;  //半径
+  int minPts_ = 0;  //最小聚类数
+  double eps_ = 0.0;  //半径
   std::vector<DataType> points_;
-  size_t size_;  // data_num
+  size_t size_ = 0;  // data_num
   std::vector<int> labels_;
 
  private:
-  int cluster_id_ = 0;  // 数值代表分出几类点云簇
+  struct CellKey {
+    int x;
+    int y;
+    int z;
+
+    bool operator==(const CellKey& other) const {
+      return x == other.x && y == other.y && z == other.z;
+    }
+  };
+
+  struct CellKeyHash {
+    size_t operator()(const CellKey& key) const {
+      size_t seed = std::hash<int>{}(key.x);
+      seed ^= std::hash<int>{}(key.y) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+      seed ^= std::hash<int>{}(key.z) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+      return seed;
+    }
+  };
+
+  CellKey CellFor(const DataType& point, double cell_size) const {
+    return {static_cast<int>(std::floor(point.x / cell_size)),
+            static_cast<int>(std::floor(point.y / cell_size)),
+            static_cast<int>(std::floor(point.z / cell_size))};
+  }
+
+  double SquaredDistance(const DataType& a, const DataType& b) const {
+    const double dx = static_cast<double>(a.x) - b.x;
+    const double dy = static_cast<double>(a.y) - b.y;
+    const double dz = static_cast<double>(a.z) - b.z;
+    return dx * dx + dy * dy + dz * dz;
+  }
+
+  void RebuildSpatialIndex() {
+    spatial_index_.clear();
+    indexed_eps_ = eps_;
+    if (eps_ <= 0.0) {
+      return;
+    }
+    spatial_index_.reserve(points_.size());
+    for (size_t i = 0; i < points_.size(); ++i) {
+      spatial_index_[CellFor(points_[i], eps_)].push_back(static_cast<int>(i));
+    }
+  }
+
+  int cluster_id_     = 0;  // 数值代表分出几类点云簇
+  double indexed_eps_ = 0.0;
+  std::unordered_map<CellKey, std::vector<int>, CellKeyHash> spatial_index_;
 
   // Dbscan 的复杂度一般是 O(n log n)（使用 KD-Tree 进行最近邻搜索），
   // 但如果直接用暴力搜索（两两计算距离），复杂度会是 O(n²)

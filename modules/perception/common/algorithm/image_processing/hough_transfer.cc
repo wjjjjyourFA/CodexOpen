@@ -42,6 +42,11 @@ HoughTransfer::HoughTransfer()
 // 标准 Hough 变换中，θ 的范围是 [0, π)，
 // 因为一条直线的方向与其反向是一样的（例如 0° 和 180° 表示同一条直线）。
 bool HoughTransfer::Init(int img_w, int img_h, float d_r, float d_theta) {
+  if (img_w <= 0 || img_h <= 0 || !std::isfinite(d_r) || d_r <= 0.0f ||
+      !std::isfinite(d_theta) || d_theta <= 0.0f || d_theta > 180.0f) {
+    ClearWithShrink();
+    return false;
+  }
   img_w_ = img_w;
   img_h_ = img_h;
   d_r_ = d_r;
@@ -62,10 +67,14 @@ bool HoughTransfer::Init(int img_w, int img_h, float d_r, float d_theta) {
   // 建立查询表 query_map_（快速查r-θ索引）
   // 每一个像素 (w,h) 都有一组θ方向的r索引。
   // 提前计算好，后面只要一查，不用每次再算 cosθ 和 sinθ，加速几十倍！
+  /* way 1 二维表
   query_map_.resize(img_w_ * img_h_);
   for (auto& query : query_map_) {
     query.resize(theta_size_, 0);
   }
+  */
+  // way 2 扁平化
+  query_map_.assign(static_cast<size_t>(img_w_) * img_h_ * theta_size_, -1);
 
   // 这里是按图像坐标系计算的查询表
   // 将图像中的每个像素点（在(w,h) 坐标系中）映射到霍夫空间中，计算它在 (r,θ) 空间中的对应位置。
@@ -85,7 +94,10 @@ bool HoughTransfer::Init(int img_w, int img_h, float d_r, float d_theta) {
           static_cast<int>((cos(cur_theta) * w + sin(cur_theta) * h) / d_r_) +
           r_size_ / 2;
       if (0 <= r && r < r_size_) {
-        query_map_[img_pos][theta_idx] = r * theta_size_ + theta_idx;
+        // 二维表
+        // query_map_[img_pos][theta_idx] = r * theta_size_ + theta_idx;
+        query_map_[static_cast<size_t>(img_pos) * theta_size_ + theta_idx] =
+            r * theta_size_ + theta_idx;
       }
     }
   }
@@ -117,7 +129,7 @@ bool HoughTransfer::Init(int img_w, int img_h, float d_r, float d_theta) {
 //                              length,vote_num,pts in HoughLine
 bool HoughTransfer::ImageVote(const std::vector<int>& image,
                               bool with_distribute) {
-  if (image.size() != query_map_.size()) {
+  if (!prepared_ || image.size() != static_cast<size_t>(img_w_) * img_h_) {
     return false;
   }
   ResetMaps(with_distribute);
@@ -136,22 +148,36 @@ bool HoughTransfer::ImageVote(const std::vector<int>& image,
 //             with_distribute: flag to control whether to calculate element
 //                              length,vote_num,pts in HoughLine
 void HoughTransfer::PointVote(int x, int y, bool with_distribute) {
+  if (x < 0 || x >= img_w_ || y < 0 || y >= img_h_) {
+    return;
+  }
   const int pos = y * img_w_ + x;
   PointVote(pos, with_distribute);
 }
 
 // @paramas[IN] pos: pos = y*img_w +x
 void HoughTransfer::PointVote(int pos, bool with_distribute) {
+  if (!prepared_ || pos < 0 || pos >= img_w_ * img_h_) {
+    return;
+  }
   // 图像点坐标 pos 遍历枚举所有 θ，对 (ρ, θ) 投票
   for (int theta_idx = 0; theta_idx < theta_size_; ++theta_idx) {
     // query_map_[pos][theta_idx] 是霍夫空间中 (r,θ) 的索引
-    ++vote_map_[query_map_[pos][theta_idx]];
+    // 二维霍夫空间中 (r,θ) 的票数加一
+    // ++vote_map_[query_map_[pos][theta_idx]]; 
+    const int vote_pos =
+        query_map_[static_cast<size_t>(pos) * theta_size_ + theta_idx];
+    if (vote_pos < 0) {
+      continue;
+    }
+    ++vote_map_[vote_pos];
     // 将当前点的位置 pos 也保存到该票数桶对应的点集合
     // distribute_map_里就记录了所有为该(r, θ)贡献投票的点的坐标
     if (with_distribute) {
       // distribute_map_ 中的 pos 值只是对同一个霍夫 bin 投过票的点，
       // 和它们在原始空间（比如图像空间）中是否临近无关。
-      distribute_map_[query_map_[pos][theta_idx]].push_back(pos);
+      // distribute_map_[query_map_[pos][theta_idx]].push_back(pos);
+      distribute_map_[vote_pos].push_back(pos);
     }
   }
 }
@@ -196,8 +222,9 @@ unsigned int HoughTransfer::MemoryConsume() const {
         static_cast<unsigned int>(vote_map_.capacity() * sizeof(vote_map_[0]));
     size += static_cast<unsigned int>(query_map_.capacity() *
                                       sizeof(query_map_[0]));
-    size += static_cast<unsigned int>(theta_size_ * query_map_.size() *
-                                      sizeof(query_map_[0][0]));
+    // 二维表 必须将头结构开销与数据堆内存分别计算并相加
+    // size += static_cast<unsigned int>(theta_size_ * query_map_.size() *
+    //                                   sizeof(query_map_[0][0]));
     size += static_cast<unsigned int>(distribute_map_.capacity() *
                                       sizeof(distribute_map_[0]));
     for (const auto& distribute : distribute_map_) {
@@ -240,7 +267,8 @@ bool HoughTransfer::CheckPrepared() const {
   if (static_cast<int>(vote_map_.size()) != r_size_ * theta_size_) {
     return false;
   }
-  if (static_cast<int>(query_map_.size()) != img_w_ * img_h_) {
+  if (query_map_.size() !=
+      static_cast<size_t>(img_w_) * img_h_ * theta_size_) {
     return false;
   }
   if (static_cast<int>(distribute_map_.size()) != r_size_ * theta_size_) {
