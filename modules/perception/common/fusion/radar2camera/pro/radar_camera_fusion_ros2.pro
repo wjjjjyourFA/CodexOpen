@@ -27,43 +27,52 @@ CONFIG(release, debug|release) {
   QMAKE_CXXFLAGS += -O3
 }
 
+CONFIG += openmp
 QMAKE_CXXFLAGS += -fopenmp
 QMAKE_LFLAGS += -fopenmp
 
 SOURCES += \
   $$CODEX_PATH/cyber/binary.cc \
-  $$CODEX_PATH/cyber/common/environment_conf.h \
+  $$CODEX_PATH/modules/common/math/math_utils_extra.cpp \
   $$PREFIX/common/base/camera.cc \
   $$PREFIX/common/base/distortion_model.cc \
+  $$PREFIX/common/base/fisheye_model.cc \
+  $$PREFIX/tools/opencv/cv_colors.cpp \
+  $$PREFIX/tools/opencv/colors.cpp \
+  $$PREFIX/common/config/utils.cpp \
+  $$PREFIX/common/config/sensor_extrinsics.cpp \
   $$PREFIX/common/camera/common/undistortion_handler.cc \
-  $$PREFIX/common/camera/parameter/read_camera_params.cpp \
-  $$PREFIX/common/base/parameter/read_params.cpp \
-  $$PREFIX/common/base/parameter/utils.cpp \
-  $$PREFIX/tools/common/colors.cpp \
-  $$PREFIX/tools/common/show_data_3d.cpp \
-  $$PREFIX/tools/common/show_data_2d.cpp \
+  $$PREFIX/common/camera/common/undistortion_handler_cv.cc \
+  $$PREFIX/common/camera/params/camera_params.cpp \
+  $$files($$PREFIX/tools/common/*.cpp) \
+  # $$PREFIX/tools/common/show_data_3d.cpp \
+  # $$PREFIX/tools/common/show_data_2d.cpp \
   $$PREFIX/common/fusion/lidar2camera/lidar_camera_fusion.cpp \
-  $$SELF_PATH/radar_camera_fusion_realtime.cpp \
   $$SELF_PATH/radar_camera_fusion.cpp \
+  $$SELF_PATH/run_radar_camera_fusion_realtime.cpp \
   $$SELF_PATH/config/runtime_config.cpp \
+  $$SELF_PATH/config/interface_config.cpp \
   $$SELF_PATH/ros2_convert.cpp \
 
 HEADERS += \
   $$CODEX_PATH/cyber/binary.h \
+  $$CODEX_PATH/cyber/common/environment_conf.h \
+  $$CODEX_PATH/modules/common/math/math_utils_extra.h \
   $$PREFIX/common/base/camera.h \
   $$PREFIX/common/base/distortion_model.h \
+  $$PREFIX/common/base/fisheye_model.h \
+  $$PREFIX/common/config/utils.h \
+  $$PREFIX/common/config/sensor_extrinsics.h \
   $$PREFIX/common/camera/common/undistortion_handler.h \
+  $$PREFIX/common/camera/common/undistortion_handler_cv.h \
   $$PREFIX/common/camera/params/camera_params.h \
-  $$PREFIX/common/lidar/third_party/pcl_extra/point_types.h \
-  $$PREFIX/common/base/parameter/read_params.h \
-  $$PREFIX/common/base/parameter/utils.h \
-  $$PREFIX/tools/common/colors.hpp \
-  $$PREFIX/tools/common/show_data_3d.h \
-  $$PREFIX/tools/common/show_data_2d.h \
-  $$PREFIX/tools/save_file/save_ply.h \
+  # $$PREFIX/tools/common/show_data_3d.h \
+  # $$PREFIX/tools/common/show_data_2d.h \
   $$PREFIX/common/fusion/lidar2camera/lidar_camera_fusion.h \
+  $$PREFIX/tools/save_file/save_ply.h \
   $$SELF_PATH/radar_camera_fusion.h \
   $$SELF_PATH/config/runtime_config.h \
+  $$SELF_PATH/config/interface_config.h \
   $$SELF_PATH/ros2_convert.h \
 
 INCLUDEPATH += \

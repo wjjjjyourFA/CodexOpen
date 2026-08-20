@@ -9,11 +9,11 @@ namespace hugin {
 
 struct EIGEN_ALIGN16 Point {
   PCL_ADD_POINT4D;
-  float range;
-  float azimuth;
-  float elevation;
-  float doppler;  // range_rate
-  float rcs;
+  float range     = 0.0f;
+  float azimuth   = 0.0f;
+  float elevation = 0.0f;
+  float doppler   = 0.0f;  // range_rate
+  float rcs       = 0.0f;
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW  // 保证内存对齐
 };
 

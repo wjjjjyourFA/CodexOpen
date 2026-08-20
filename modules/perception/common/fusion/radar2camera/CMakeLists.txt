@@ -4,7 +4,6 @@ cmake_minimum_required(VERSION 3.16)
 project(perception_common_fusion_radar2camera)
 
 set(CMAKE_VERBOSE_MAKEFILE OFF)
-set(CMAKE_CXX_STANDARD 14)
 
 find_package(Eigen3 REQUIRED)
 # include_directories(${EIGEN3_INCLUDE_DIRS})
@@ -62,12 +61,12 @@ if(BUILD_ROS1)
   # )
 
   add_executable(radar_camera_fusion_realtime_ros1
-    radar_camera_fusion_realtime.cpp
+    run_radar_camera_fusion_realtime.cpp
     ${APOLLO_SOURCES}
     ${CODEX_SOURCES}
     ${SOURCES}
     ${CMAKE_CURRENT_SOURCE_DIR}/ros1_convert.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/config/runtime_config_realtime.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/config/runtime_config.cpp
     # ${CMAKE_SOURCE_DIR}/modules/perception/common/lidar/convert/robosense.cpp
     # ${CMAKE_SOURCE_DIR}/modules/perception/common/lidar/convert/velodyne.cpp
   )
@@ -94,9 +93,8 @@ if(BUILD_ROS1)
     # perception_common_lidar
   )
 
-  if (OPENMP_FOUND)
-    target_compile_options(radar_camera_fusion_realtime_ros1 PRIVATE ${OpenMP_CXX_FLAGS})
-    target_link_libraries(radar_camera_fusion_realtime_ros1 PRIVATE gomp)
+  if(OpenMP_CXX_FOUND)
+    target_link_libraries(radar_camera_fusion_realtime_ros1 PRIVATE OpenMP::OpenMP_CXX)
   endif()
 
   install_module(radar_camera_fusion_realtime_ros1 modules/perception/common/fusion/radar2camera)
@@ -105,6 +103,7 @@ endif()
 add_library(${PROJECT_NAME} STATIC
   ${SOURCES}
 )
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 
 target_include_directories(${PROJECT_NAME}
   PUBLIC
@@ -128,5 +127,9 @@ target_link_libraries(${PROJECT_NAME}
     # perception_common_lidar_convert
     perception_common_fusion_lidar2camera
 )
+
+if(OpenMP_CXX_FOUND)
+  target_link_libraries(${PROJECT_NAME} PUBLIC OpenMP::OpenMP_CXX)
+endif()
 
 install_module(${PROJECT_NAME} modules/perception/common/fusion/radar2camera)

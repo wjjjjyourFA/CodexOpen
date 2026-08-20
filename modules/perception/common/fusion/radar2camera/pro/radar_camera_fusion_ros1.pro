@@ -44,9 +44,10 @@ SOURCES += \
   $$PREFIX/common/camera/common/undistortion_handler.cc \
   $$PREFIX/common/camera/common/undistortion_handler_cv.cc \
   $$PREFIX/common/camera/params/camera_params.cpp \
-  $$PREFIX/common/fusion/lidar2camera/lidar_camera_fusion.cpp \
+  $$files($$PREFIX/tools/common/*.cpp) \
   # $$PREFIX/tools/common/show_data_3d.cpp \
-  $$PREFIX/tools/common/show_data_2d.cpp \
+  # $$PREFIX/tools/common/show_data_2d.cpp \
+  $$PREFIX/common/fusion/lidar2camera/lidar_camera_fusion.cpp \
   $$SELF_PATH/radar_camera_fusion.cpp \
   $$SELF_PATH/run_radar_camera_fusion_realtime.cpp \
   $$SELF_PATH/config/runtime_config.cpp \
@@ -65,9 +66,9 @@ HEADERS += \
   $$PREFIX/common/camera/common/undistortion_handler.h \
   $$PREFIX/common/camera/common/undistortion_handler_cv.h \
   $$PREFIX/common/camera/params/camera_params.h \
-  $$PREFIX/common/fusion/lidar2camera/lidar_camera_fusion.h \
   # $$PREFIX/tools/common/show_data_3d.h \
-  $$PREFIX/tools/common/show_data_2d.h \
+  # $$PREFIX/tools/common/show_data_2d.h \
+  $$PREFIX/common/fusion/lidar2camera/lidar_camera_fusion.h \
   $$PREFIX/tools/save_file/save_ply.h \
   $$SELF_PATH/radar_camera_fusion.h \
   $$SELF_PATH/config/runtime_config.h \
