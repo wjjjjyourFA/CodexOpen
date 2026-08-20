@@ -3,6 +3,8 @@
 
 #include <cmath>
 
+#include "modules/perception/tools/pcl/point_types.h"
+
 /* 未公开 / 已移除
 template <typename T>
 bool HasNaN(T point) {

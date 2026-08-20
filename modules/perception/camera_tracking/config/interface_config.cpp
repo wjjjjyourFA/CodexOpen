@@ -4,7 +4,7 @@ namespace jojo {
 namespace perception {
 namespace ct {
 
-void RuntimeConfig::LoadConfig(const std::string& config_path) {
+void InterfaceConfig::LoadConfig(const std::string& config_path) {
   try {
     // clang-format off
     boost::property_tree::ptree pt;

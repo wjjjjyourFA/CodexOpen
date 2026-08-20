@@ -46,8 +46,9 @@ SOURCES += \
   $$PREFIX/common/lidar/convert/robosense.cpp \
   $$PREFIX/common/lidar/convert/rs_sort_map.cpp \
   $$PREFIX/common/lidar/convert/velodyne.cpp \
+  $$files($$PREFIX/tools/common/*.cpp) \
   # $$PREFIX/tools/common/show_data_3d.cpp \
-  $$PREFIX/tools/common/show_data_2d.cpp \
+  # $$PREFIX/tools/common/show_data_2d.cpp \
   $$SELF_PATH/lidar_camera_fusion.cpp \
   $$SELF_PATH/run_lidar_camera_fusion_realtime.cpp \
   $$SELF_PATH/config/runtime_config.cpp \
@@ -72,8 +73,9 @@ HEADERS += \
   $$PREFIX/common/lidar/convert/robosense.h \
   $$PREFIX/common/lidar/convert/rs_sort_map.h \
   $$PREFIX/common/lidar/convert/velodyne.h \
-  # $$PREFIX/tools/common/show_data_3d.h \
-  $$PREFIX/tools/common/show_data_2d.h \
+  $$PREFIX/tools/opencv/common.h \
+  $$PREFIX/tools/opencv/cv_colors.h \
+  $$PREFIX/tools/opencv/colors.hpp \
   $$PREFIX/tools/save_file/save_ply.h \
   $$SELF_PATH/lidar_camera_fusion.h \
   $$SELF_PATH/config/runtime_config.h \

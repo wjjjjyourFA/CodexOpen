@@ -11,7 +11,8 @@
 
 #include "modules/perception/common/base/point.h"
 #include "modules/perception/tools/common/bev_projector.h"
-#include "modules/perception/tools/pcl/point_types.h"
+#include "modules/perception/tools/opencv/common.h"
+#include "modules/perception/tools/pcl/common.h"
 
 // clang-format off
 void show2d_lidar_data(const pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud,

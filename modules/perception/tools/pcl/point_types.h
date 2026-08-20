@@ -3,10 +3,10 @@
 
 #pragma once
 
-#include <pcl/point_types.h>
-#include <pcl/point_cloud.h>
-#include <pcl/register_point_struct.h>
 #include <pcl/common/io.h>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl/register_point_struct.h>
 
 // clang-format off
 namespace pcl {

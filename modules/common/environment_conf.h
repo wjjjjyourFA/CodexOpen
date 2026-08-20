@@ -13,15 +13,16 @@
 
 #define ONLY_COMPRESSED_IMAGE
 
-#define RSLIDAR_OLD
+// #define RSLIDAR_OLD
 // #define RSLIDAR_NEW
+#define RSLIDAR_NORMAL
 // #define VELODYNE
 // #define LIVOX_OLD
 // #define LIVOX_NEW
 
 #define LIDAR_DATASET
 
-#if defined(RSLIDAR_OLD) || defined(RSLIDAR_NEW)
+#if defined(RSLIDAR_OLD) || defined(RSLIDAR_NEW) || defined(RSLIDAR_NORMAL)
 #define USE_RSLIDAR
 #endif
 

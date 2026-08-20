@@ -1,5 +1,7 @@
 #include "modules/perception/common/fusion/lidar2camera/lidar_camera_fusion.h"
 
+#include <cmath>
+
 namespace jojo {
 namespace perception {
 namespace fusion {
@@ -11,22 +13,33 @@ LidarCameraFusion::LidarCameraFusion(/* args */) {
   cloud_color_ = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>());
   // clang-format on
 
-  inv_dist_ = 1.0 / dist_;
+  projection_matrix_.setZero();
+  inv_dist_ = 1.0f / static_cast<float>(dist_);
 }
 
 LidarCameraFusion::~LidarCameraFusion() {}
 
-void LidarCameraFusion::set_params(const std::string& name,
+bool LidarCameraFusion::set_params(const std::string& name,
                                    int dist_threshold) {
+  if (dist_threshold <= 0) {
+    return false;
+  }
+  std::lock_guard<std::mutex> lock(data_mutex_);
   dist_ = dist_threshold;
   // 只算一次
-  inv_dist_ = 1.0 / dist_;
+  inv_dist_ = 1.0f / static_cast<float>(dist_);
 
   name_ = name;
+  return true;
 }
 
-void LidarCameraFusion::fuse(int mode, bool is_mask, bool color) {
+bool LidarCameraFusion::fuse(int mode, bool is_mask, bool color) {
   std::lock_guard<std::mutex> lock(data_mutex_);
+  if (!projection_ready_ || !cloud_ || cloud_->empty() || image_.empty() ||
+      image_.type() != CV_8UC3) {
+    mask_.release();
+    return false;
+  }
   // way 1 复用 会影响外部
   // cloud_color_->clear();
   // way 2 每次都会新建对象，不会影响外部异步消费（显示、发布）
@@ -59,9 +72,10 @@ void LidarCameraFusion::fuse(int mode, bool is_mask, bool color) {
       break;
     default:
       std::cout << name_ + "CameraFusion mode set error" << std::endl;
-      break;
+      return false;
   }
   // clang-format on
+  return true;
 }
 
 void LidarCameraFusion::project_lidar_to_camera(
@@ -158,11 +172,10 @@ void LidarCameraFusion::project_lidar_to_camera_fast(
     cv::Mat& mask, bool color) {
   // 将点云转为 Eigen 矩阵
   // Eigen::MatrixXf points;
-  Eigen::Matrix<float, 4, Eigen::Dynamic> points;
-  pcl_to_eigen<pcl::PointXYZ>(cloud, points);
+  pcl_to_eigen<pcl::PointXYZ>(cloud, points_workspace_);
 
-  project_lidar_to_camera_fast_impl(points, projection_matrix, image, mask,
-                                    cloud_color_, color);
+  project_lidar_to_camera_fast_impl(points_workspace_, projection_matrix, image,
+                                    mask, cloud_color_, color);
 }
 
 void LidarCameraFusion::project_lidar_to_camera_fast_impl(
@@ -175,37 +188,33 @@ void LidarCameraFusion::project_lidar_to_camera_fast_impl(
   }
 
   // 执行批量投影
-  Eigen::Matrix<float, 3, Eigen::Dynamic> projected_points =
-      projection_matrix * points;
-
-  // 执行批量投影并归一化
-  Eigen::VectorXi u =
-      (projected_points.row(0).array() / projected_points.row(2).array())
-          .cast<int>();
-  Eigen::VectorXi v =
-      (projected_points.row(1).array() / projected_points.row(2).array())
-          .cast<int>();
+  projected_workspace_.resize(3, points.cols());
+  projected_workspace_.noalias() = projection_matrix * points;
+  const auto& projected_points   = projected_workspace_;
 
   // 转换为图像范围点并过滤
   for (int i = 0; i < projected_points.cols(); ++i) {
-    if (projected_points(2, i) <= 0) {
+    const float depth = projected_points(2, i);
+    if (!std::isfinite(depth) || depth <= 0.0f) {
       continue;  // Skip points behind the camera
     }
+    const int u = static_cast<int>(projected_points(0, i) / depth);
+    const int v = static_cast<int>(projected_points(1, i) / depth);
 
-    if (u[i] >= 0 && v[i] >= 0 && u[i] < image.cols && v[i] < image.rows) {
+    if (u >= 0 && v >= 0 && u < image.cols && v < image.rows) {
       // 获取当前点的空间坐标
       // Eigen::Vector3f point(points(0, i), points(1, i), points(2, i));
       // float dist_squared = point.squaredNorm();
 
       // way 1 opencv bgr
-      int type = mask_.type();
+      int type = mask.type();
       if (type == CV_32FC3) {
-        cv::Vec3f& mPix = mask_.at<cv::Vec3f>(v[i], u[i]);
+        cv::Vec3f& mPix = mask.at<cv::Vec3f>(v, u);
         mPix[0]         = points(2, i);  // B <- Z
         mPix[1]         = points(1, i);  // G <- Y
         mPix[2]         = points(0, i);  // R <- X
       } else if (type == CV_8UC3) {
-        cv::Vec3b& mPix = mask.at<cv::Vec3b>(v[i], u[i]);
+        cv::Vec3b& mPix = mask.at<cv::Vec3b>(v, u);
         mPix[0]         = points(2, i);
         mPix[1]         = points(1, i);
         mPix[2]         = points(0, i);
@@ -232,7 +241,7 @@ void LidarCameraFusion::project_lidar_to_camera_fast_impl(
       */
 
       if (color) {
-        const cv::Vec3b& pix = image.at<cv::Vec3b>(v[i], u[i]);
+        const cv::Vec3b& pix = image.at<cv::Vec3b>(v, u);
         pcl::PointXYZRGB tmp_point;
         tmp_point.x = points(0, i);
         tmp_point.y = points(1, i);
@@ -258,13 +267,13 @@ void project_lidar_to_camera_raw(
 */
 
 void LidarCameraFusion::show_lidar_color_cloud() {
-  // clang-format off
-  cloud_color_ = 
-      pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>());
-  // clang-format on
   {
     std::lock_guard<std::mutex> lock(data_mutex_);
-    cloud_color_->clear();
+
+    // clang-format off
+    // cloud_color_ = std::make_shared<pcl::PointCloud<pcl::PointXYZRGB>>();
+    cloud_color_ =  pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>());
+    // clang-format on
 
     pcl::PointXYZRGB tmp_point;
     for (const auto& point : cloud_->points) {
@@ -316,52 +325,92 @@ void LidarCameraFusion::show_image_proj() {
   cv::waitKey(1);
 }
 
-void LidarCameraFusion::SetProjectionMatrix(
+bool LidarCameraFusion::SetProjectionMatrix(
     const Eigen::Matrix4f& projection_matrix) {
+  if (!projection_matrix.allFinite()) {
+    return false;
+  }
   std::lock_guard<std::mutex> lock(data_mutex_);
   // 取4x4的前3行4列赋值
   projection_matrix_ = projection_matrix.block<3, 4>(0, 0);
+  projection_ready_  = true;
+  return true;
 }
 
-void LidarCameraFusion::SetProjectionMatrix(
+bool LidarCameraFusion::SetProjectionMatrix(
     const Eigen::Matrix<float, 3, 4>& projection_matrix) {
+  if (!projection_matrix.allFinite()) {
+    return false;
+  }
   std::lock_guard<std::mutex> lock(data_mutex_);
   projection_matrix_ = projection_matrix;
+  projection_ready_  = true;
+  return true;
 }
 
-void LidarCameraFusion::SetL2CMatrix(
+bool LidarCameraFusion::SetL2CMatrix(
     std::shared_ptr<jojo::perception::camera::Lidar2CameraMatrix> l2c_matrix) {
+  if (!l2c_matrix || !l2c_matrix->projection_matrix.allFinite()) {
+    return false;
+  }
   std::lock_guard<std::mutex> lock(data_mutex_);
-  l2c_matrix_ = l2c_matrix;
+  l2c_matrix_        = std::move(l2c_matrix);
+  projection_matrix_ = l2c_matrix_->projection_matrix.block<3, 4>(0, 0);
+  projection_ready_  = true;
+  return true;
 }
 
-void LidarCameraFusion::SetLidarPointCloud(
+bool LidarCameraFusion::SetLidarPointCloud(
     const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud) {
+  if (!cloud || cloud->empty()) {
+    return false;
+  }
   std::lock_guard<std::mutex> lock(data_mutex_);
+  // 全量点云数据的深拷贝
+  // *cloud_ = *cloud;
+  // 仅原子递增引用计数，耗时仅几纳秒，完全零拷贝
   cloud_ = cloud;
+  return true;
 }
 
-void LidarCameraFusion::SetLidarPointCloud(
+bool LidarCameraFusion::SetLidarPointCloud(
     const pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud) {
+  if (!cloud || cloud->empty()) {
+    return false;
+  }
   std::lock_guard<std::mutex> lock(data_mutex_);
   pcl::copyPointCloud(*cloud, *cloud_);
+  return true;
 }
 
-void LidarCameraFusion::SetCameraImage(const cv::Mat& image) {
+bool LidarCameraFusion::SetCameraImage(const cv::Mat& image) {
+  if (image.empty() || image.type() != CV_8UC3) {
+    return false;
+  }
   std::lock_guard<std::mutex> lock(data_mutex_);
   // undistort_image
+  // image_ = image.clone();
   image_ = image;
+  return true;
 }
 
 bool LidarCameraFusion::GetFusedPointCloudColor(
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr& cloud_color) {
   std::lock_guard<std::mutex> lock(data_mutex_);
+  if (!cloud_color_ || cloud_color_->empty()) {
+    return false;
+  }
+  // cloud_color = std::make_shared<pcl::PointCloud<pcl::PointXYZRGB>>(*cloud_color_);
   cloud_color = cloud_color_;
   return true;
 }
 
 bool LidarCameraFusion::GetFusedImage(cv::Mat& image) {
   std::lock_guard<std::mutex> lock(data_mutex_);
+  if (mask_.empty()) {
+    return false;
+  }
+  // image = mask_.clone();
   image = mask_;
   return true;
 }
