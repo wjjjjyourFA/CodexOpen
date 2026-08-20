@@ -18,7 +18,7 @@ namespace cfg = jojo::perception::config;
 int main(int argc, char** argv) {
   // clang-format off
   std::string name = "LidarImageFuse";
-  std::string cofing_path = "./../../../../config/PerceptionFuse/LidarCameraFuse.ini";
+  std::string cofing_path = "./../../../../config/PerceptionFuse/LidarCamera/LidarCameraFuse.ini";
   // clang-format on
 
   auto runtime_config = std::make_shared<RuntimeConfig>();

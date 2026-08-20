@@ -18,13 +18,13 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/image_encodings.h>
 #include <sensor_msgs/point_cloud_conversion.h>
-#include "sensor_msgs/CompressedImage.h"
 
 #include <cv_bridge/cv_bridge.h>
 #include <pcl_conversions/pcl_conversions.h>
 
 #include "modules/common/environment_conf.h"
 #include "modules/common/math/math_utils_extra.h"
+#include "sensor_msgs/CompressedImage.h"
 // #include "modules/perception/common/camera/common/undistortion_handler.h"
 #include "modules/perception/common/camera/common/undistortion_handler_cv.h"
 #include "modules/perception/common/camera/params/camera_params.h"

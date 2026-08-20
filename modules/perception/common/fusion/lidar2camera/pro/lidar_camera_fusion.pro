@@ -43,8 +43,9 @@ SOURCES += \
   $$PREFIX/common/camera/params/camera_params.cpp \
   $$PREFIX/tools/opencv/cv_colors.cpp \
   $$PREFIX/tools/opencv/colors.cpp \
+  $$files($$PREFIX/tools/common/*.cpp) \
   # $$PREFIX/tools/common/show_data_3d.cpp \
-  $$PREFIX/tools/common/show_data_2d.cpp \
+  # $$PREFIX/tools/common/show_data_2d.cpp \
   $$SELF_PATH/run_lidar_camera_fusion.cpp \
   $$SELF_PATH/lidar_camera_fusion.cpp \
   $$SELF_PATH/config/runtime_config.cpp \
@@ -60,11 +61,13 @@ HEADERS += \
   $$PREFIX/common/camera/common/undistortion_handler.h \
   $$PREFIX/common/camera/common/undistortion_handler_cv.h \
   $$PREFIX/common/camera/params/camera_params.h \
+  $$PREFIX/tools/opencv/common.h \
   $$PREFIX/tools/opencv/cv_colors.h \
   $$PREFIX/tools/opencv/colors.hpp \
   $$PREFIX/tools/pcl/pcl_eigen.h \
+  $$files($$PREFIX/tools/common/*.h) \
   # $$PREFIX/tools/common/show_data_3d.h \
-  $$PREFIX/tools/common/show_data_2d.h \
+  # $$PREFIX/tools/common/show_data_2d.h \
   $$PREFIX/tools/save_file/save_ply.h \
   $$SELF_PATH/lidar_camera_fusion.h \
   $$SELF_PATH/config/runtime_config.h \

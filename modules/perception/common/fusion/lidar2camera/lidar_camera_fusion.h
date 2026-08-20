@@ -31,19 +31,19 @@ class LidarCameraFusion {
   LidarCameraFusion(/* args */);
   virtual ~LidarCameraFusion();
 
-  void set_params(const std::string& name = "", int dist_threshold = 100);
+  bool set_params(const std::string& name = "", int dist_threshold = 100);
 
   // clang-format off
-  void SetProjectionMatrix(const Eigen::Matrix4f& projection_matrix);
-  void SetProjectionMatrix(const Eigen::Matrix<float, 3, 4>& projection_matrix);
-  void SetL2CMatrix(std::shared_ptr<jojo::perception::camera::Lidar2CameraMatrix> l2c_matrix);
+  bool SetProjectionMatrix(const Eigen::Matrix4f& projection_matrix);
+  bool SetProjectionMatrix(const Eigen::Matrix<float, 3, 4>& projection_matrix);
+  bool SetL2CMatrix(std::shared_ptr<jojo::perception::camera::Lidar2CameraMatrix> l2c_matrix);
   // clang-format on
 
-  void SetLidarPointCloud(const pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud);
-  void SetLidarPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud);
+  bool SetLidarPointCloud(const pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud);
+  bool SetLidarPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud);
 
   // undistort_image
-  void SetCameraImage(const cv::Mat& image);
+  bool SetCameraImage(const cv::Mat& image);
 
   // clang-format off
   bool GetFusedPointCloudColor(pcl::PointCloud<pcl::PointXYZRGB>::Ptr& cloud_color);
@@ -51,7 +51,7 @@ class LidarCameraFusion {
   // clang-format on
 
   // 所有的调用都通过 fuse 函数
-  void fuse(int mode = 1, bool is_mask = true, bool color = false);
+  bool fuse(int mode = 1, bool is_mask = true, bool color = false);
   void show_lidar_color_cloud();
   void show_image_proj();
 
@@ -86,6 +86,7 @@ class LidarCameraFusion {
  protected:  // <== private
   // input
   Eigen::Matrix<float, 3, 4> projection_matrix_;
+  bool projection_ready_ = false;
   // lidar to camera matrix, include:
   // intrinsic_matrix, distortion_params, extrinsic_matrix
   std::shared_ptr<jojo::perception::camera::Lidar2CameraMatrix> l2c_matrix_;
@@ -94,6 +95,10 @@ class LidarCameraFusion {
   cv::Mat image_, mask_;
   // output
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_color_;
+
+  // Reused by the fast projection path while data_mutex_ is held.
+  Eigen::Matrix<float, 4, Eigen::Dynamic> points_workspace_;
+  Eigen::Matrix<float, 3, Eigen::Dynamic> projected_workspace_;
 
   mutable std::mutex data_mutex_;
 };
