@@ -4,7 +4,6 @@ cmake_minimum_required(VERSION 3.16)
 project(perception_common_fusion_lidar2camera)
 
 set(CMAKE_VERBOSE_MAKEFILE OFF)
-set(CMAKE_CXX_STANDARD 14)
 
 find_package(Eigen3 REQUIRED)
 # include_directories(${EIGEN3_INCLUDE_DIRS})
@@ -48,14 +47,15 @@ file(GLOB SOURCES
   # "${CMAKE_CURRENT_SOURCE_DIR}/ros1_convert.cpp"
   # "${CMAKE_CURRENT_SOURCE_DIR}/ros2_convert.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/lidar_camera_fusion.cpp"
-  # "${CMAKE_CURRENT_SOURCE_DIR}/lidar_multi_camera_fusion.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/lidar_multi_camera_fusion.cpp"
   # "${CMAKE_CURRENT_SOURCE_DIR}/config/runtime_config.cpp"
   # "${CMAKE_CURRENT_SOURCE_DIR}/config/runtime_config_realtime.cpp"
 )
 
 option(BUILD_TESTING "Enable Unit Tests" OFF)
 
-if(BUILD_TESTING)
+if(BUILD_TESTING AND EXISTS
+   "${CMAKE_CURRENT_SOURCE_DIR}/lidar_camera_fusion_test.cpp")
   add_executable(lidar_camera_fusion_test
     lidar_camera_fusion_test.cpp
     ${APOLLO_SOURCES}
@@ -78,10 +78,20 @@ if(BUILD_TESTING)
     perception_common_lidar_convert
   )
 
-  if (OPENMP_FOUND)
-    target_compile_options(lidar_camera_fusion_test PRIVATE ${OpenMP_CXX_FLAGS})
-    target_link_libraries(lidar_camera_fusion_test PRIVATE gomp)
+  if(OpenMP_CXX_FOUND)
+    target_link_libraries(lidar_camera_fusion_test PRIVATE OpenMP::OpenMP_CXX)
   endif()
+endif()
+
+if(BUILD_TESTING)
+  add_executable(lidar_camera_fusion_core_test
+    lidar_camera_fusion_core_test.cpp
+  )
+  target_link_libraries(lidar_camera_fusion_core_test PRIVATE
+    ${PROJECT_NAME}
+  )
+  add_test(NAME LidarCameraFusionCoreTest
+           COMMAND lidar_camera_fusion_core_test)
 endif()
 
 option(BUILD_ROS1 "Enable ROS1" OFF)
@@ -93,12 +103,12 @@ if(BUILD_ROS1)
   # )
 
   add_executable(lidar_camera_fusion_realtime_ros1
-    lidar_camera_fusion_realtime.cpp
+    run_lidar_camera_fusion_realtime.cpp
     ${APOLLO_SOURCES}
     ${CODEX_SOURCES}
     ${SOURCES}
     ${CMAKE_CURRENT_SOURCE_DIR}/ros1_convert.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/config/runtime_config_realtime.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/config/runtime_config.cpp
     # ${CMAKE_SOURCE_DIR}/modules/perception/common/lidar/convert/robosense.cpp
     # ${CMAKE_SOURCE_DIR}/modules/perception/common/lidar/convert/velodyne.cpp
   )
@@ -125,9 +135,8 @@ if(BUILD_ROS1)
     # perception_common_lidar
   )
 
-  if (OPENMP_FOUND)
-    target_compile_options(lidar_camera_fusion_realtime_ros1 PRIVATE ${OpenMP_CXX_FLAGS})
-    target_link_libraries(lidar_camera_fusion_realtime_ros1 PRIVATE gomp)
+  if(OpenMP_CXX_FOUND)
+    target_link_libraries(lidar_camera_fusion_realtime_ros1 PRIVATE OpenMP::OpenMP_CXX)
   endif()
 
   # 安装到自定义目录
@@ -137,6 +146,7 @@ endif()
 add_library(${PROJECT_NAME} STATIC
   ${SOURCES}
 )
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 
 target_include_directories(${PROJECT_NAME}
   PUBLIC
@@ -159,5 +169,9 @@ target_link_libraries(${PROJECT_NAME}
     perception_tools
     perception_common_lidar_convert
 )
+
+if(OpenMP_CXX_FOUND)
+  target_link_libraries(${PROJECT_NAME} PUBLIC OpenMP::OpenMP_CXX)
+endif()
 
 install_module(${PROJECT_NAME} modules/perception/common/fusion/lidar2camera)
