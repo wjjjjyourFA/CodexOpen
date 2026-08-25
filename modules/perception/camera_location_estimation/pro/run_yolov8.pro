@@ -7,7 +7,7 @@ IMAGE_DETECTOR = 1
 IMAGE_BYTETRACK = 1
 
 TEMPLATE = app
-CONFIG += console c++14
+CONFIG += console c++17
 CONFIG -= app_bundle
 CONFIG -= qt
 CONFIG += object_parallel_to_source
@@ -45,9 +45,8 @@ SOURCES += \
   $$PREFIX/common/base/distortion_model.cc \
   $$PREFIX/common/base/fisheye_model.cc \
   $$PREFIX/common/base/segment.cc \
-  $$PREFIX/common/config/utils.cpp \
-  $$PREFIX/common/config/sensor_extrinsics.cpp \
   $$PREFIX/common/camera/common/undistortion_handler.cc \
+  $$files($$PREFIX/common/config/*.cpp) \
   $$files($$PREFIX/common/camera/params/*.cpp) \
   $$PREFIX/common/algorithm/image_processing/util/utils.cpp \
   $$PREFIX/common/algorithm/point_cloud_processing/cluster_postprocess.cpp \
@@ -57,7 +56,7 @@ SOURCES += \
   $$PREFIX/tools/opencv/colors.cpp \
   $$PREFIX/tools/opencv/cv_colors.cpp \
   # $$PREFIX/tools/common/show_data_3d.cpp \
-  $$PREFIX/tools/common/show_data_2d.cpp \
+  # $$PREFIX/tools/common/show_data_2d.cpp \
   $$CODEX_PATH/tools/data_loader/data_loader.cpp \
   $$CODEX_PATH/tools/data_loader/config/runtime_config.cpp \
   $$CODEX_PATH/tools/data_loader/config/interface_config.cpp \
@@ -68,6 +67,13 @@ SOURCES += \
   $$SELF_PATH/camera_location_estimation.cpp \
   $$SELF_PATH/config/runtime_config.cpp \
   $$SELF_PATH/run_yolo_loc.cpp \
+
+SOURCES -= \
+  $$PREFIX/tools/pcl/pcl_viewer_test.cpp \
+  $$SELF_PATH/config/runtime_config_legacy.cpp \
+  $$PREFIX/common/config/config_core_test.cpp \
+  $$PREFIX/common/camera/params/camera_params_core_test.cpp \
+  $$PREFIX/common/lidar/convert/lidar_convert_core_test.cpp
 
 HEADERS += \
   $$CODEX_PATH/cyber/binary.h \
@@ -83,10 +89,9 @@ HEADERS += \
   $$PREFIX/common/base/distortion_model.h \
   $$PREFIX/common/base/fisheye_model.h \
   $$PREFIX/common/base/segment.h \
-  $$PREFIX/common/config/utils.h \
-  $$PREFIX/common/config/sensor_extrinsics.h \
   $$PREFIX/common/algorithm/point_cloud_processing/util/utils.h \
   $$PREFIX/common/camera/common/undistortion_handler.h \
+  $$files($$PREFIX/common/config/*.h) \
   $$files($$PREFIX/common/camera/params/*.h) \
   $$PREFIX/common/algorithm/image_processing/util/utils.h \
   $$PREFIX/common/algorithm/point_cloud_processing/cluster_postprocess.h \
@@ -97,7 +102,7 @@ HEADERS += \
   $$PREFIX/tools/opencv/colors.hpp \
   $$PREFIX/tools/opencv/cv_colors.h \
   # $$PREFIX/tools/common/show_data_3d.h \
-  $$PREFIX/tools/common/show_data_2d.h \
+  # $$PREFIX/tools/common/show_data_2d.h \
   $$CODEX_PATH/tools/data_loader/data_loader.h \
   $$CODEX_PATH/tools/data_loader/config/runtime_config.h \
   $$CODEX_PATH/tools/data_loader/config/interface_config.h \
@@ -181,7 +186,8 @@ LIBS += \
 LIBS += \
   -L/usr/local/cuda/lib64 \
   -lcudart -lcublas -lcurand -lnvrtc \
-  -lnvcaffe_parser -lnvinfer -lnvinfer_plugin -lnvparsers
+  -lnvcaffe_parser -lnvinfer -lnvinfer_plugin -lnvparsers \
+  -lnvonnxparser
 
 contains(IMAGE_DETECTOR, 1){
 # CUDA settings <-- may change depending on your system

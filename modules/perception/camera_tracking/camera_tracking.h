@@ -4,8 +4,8 @@
 #include "modules/perception/camera_detection_single_stage/detector/yolo_obstacle_detector.h"
 #include "modules/perception/common/base/object.h"
 
-#define DEEPSORT
-// #define BYTETRACK
+// #define DEEPSORT
+#define BYTETRACK
 
 #if defined(DEEPSORT)
 #include "modules/perception/camera_tracking/tracking/deepsort/deepsort_wrapper.h"
