@@ -50,11 +50,9 @@ SOURCES += \
   $$PREFIX/base/camera.cc \
   $$PREFIX/base/distortion_model.cc \
   $$PREFIX/base/fisheye_model.cc \
-  $$PREFIX/config/utils.cpp \
-  $$PREFIX/config/sensor_extrinsics.cpp \
-  $$PREFIX/config/vehicle_config.cpp \
   $$PREFIX/camera/common/undistortion_handler.cc \
-  $$PREFIX/camera/params/*.cpp \
+  $$files($$PREFIX/config/*.cpp) \
+  $$files($$PREFIX/camera/params/*.cpp) \
   $$PREFIX/fusion/lidar2camera/lidar_camera_fusion.cpp \
   $$CODEX_PATH/modules/perception/tools/opencv/cv_colors.cpp \
   $$DATA_PROCESSOR_PATH/config/sensor_config.cc \
@@ -69,6 +67,13 @@ SOURCES += \
   $$SELF_PATH/bird_view_map_leagecy.cpp \
   $$SELF_PATH/run_bird_view_map.cpp
 
+SOURCES -= \
+  $$PREFIX/tools/pcl/pcl_viewer_test.cpp \
+  $$SELF_PATH/config/runtime_config_legacy.cpp \
+  $$PREFIX/config/config_core_test.cpp \
+  $$PREFIX/camera/params/camera_params_core_test.cpp \
+  $$PREFIX/lidar/convert/lidar_convert_core_test.cpp
+
 HEADERS += \
   $$CODEX_PATH/cyber/binary.h \
   $$CODEX_PATH/cyber/common/file.h \
@@ -82,13 +87,11 @@ HEADERS += \
   $$PREFIX/base/camera.h \
   $$PREFIX/base/distortion_model.h \
   $$PREFIX/base/fisheye_model.h \
-  $$PREFIX/config/utils.h \
+  $$PREFIX/camera/common/undistortion_handler.h \
+  $$files($$PREFIX/config/*.h) \
+  $$files($$PREFIX/camera/params/*.h) \
   $$PREFIX/fusion/lidar2camera/lidar_camera_fusion.h \
   $$CODEX_PATH/modules/perception/tools/opencv/cv_colors.h \
-  $$PREFIX/config/sensor_extrinsics.h \
-  $$PREFIX/config/vehicle_config.h \
-  $$PREFIX/camera/common/undistortion_handler.h \
-  $$PREFIX/camera/params/*.h \
   $$DATA_PROCESSOR_PATH/config/sensor_config.h \
   $$OTHER_PATH/data_loader.h \
   $$OTHER_PATH/data_container.h \

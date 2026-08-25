@@ -120,19 +120,19 @@ cv::Rect AdjustRectWithScale(const cv::Rect& rect, const float& scale,
   return cv::Rect(new_x, new_y, new_width, new_height);
 }
 
-void RoiMask2PointCloud(const std::vector<cv::Mat>& splits,
-                        std::vector<cv::Mat>& splits_roi, const cv::Rect& roi,
-                        pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud,
-                        size_t RoiLimit) {
-  if (splits.size() < 3 || splits_roi.size() < 3) return;
+size_t RoiMask2PointCloud(const std::vector<cv::Mat>& splits,
+                          std::vector<cv::Mat>& splits_roi, const cv::Rect& roi,
+                          pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud,
+                          size_t RoiLimit) {
+  if (!cloud) return 0U;
+  cloud->clear();
 
+  if (splits.size() < 3 || splits_roi.size() < 3) return;
   // 直接清除
   // splits_roi.clear();
 
   // 预估总点数，reserve 提高效率
   size_t total = roi.width * roi.height;
-
-  cloud->clear();
   cloud->points.reserve(total);
 
   if (total > RoiLimit) {
@@ -184,6 +184,44 @@ void RoiMask2PointCloud(const std::vector<cv::Mat>& splits,
   }
 
   cloud->width    = static_cast<uint32_t>(cloud->points.size());
-  cloud->height   = 1;
+  cloud->height   = 1U;
   cloud->is_dense = false;
+
+  return cloud->points.size();
+}
+
+size_t RoiMask2PointCloud(const cv::Mat& mask, const cv::Rect& requested_roi,
+                          pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud) {
+  if (!cloud) return 0U;
+  cloud->clear();
+
+  if (mask.empty() || mask.type() != CV_32FC3) return 0U;
+
+  const cv::Rect roi = requested_roi & cv::Rect(0, 0, mask.cols, mask.rows);
+  if (roi.empty()) return 0U;
+
+  cloud->points.reserve(static_cast<size_t>(roi.width) * roi.height);
+
+  for (int row = roi.y; row < roi.y + roi.height; ++row) {
+    const cv::Vec3f* values = mask.ptr<cv::Vec3f>(row);
+    for (int col = roi.x; col < roi.x + roi.width; ++col) {
+      const cv::Vec3f& value = values[col];
+      // (z, y, x)
+      const float x = value[2];
+      const float y = value[1];
+      const float z = value[0];
+
+      if (!std::isfinite(x) || !std::isfinite(y) || !std::isfinite(z)) continue;
+
+      if (x == 0.0f && y == 0.0f && z == 0.0f) continue;
+
+      cloud->points.emplace_back(x, y, z);
+    }
+  }
+
+  cloud->width    = static_cast<uint32_t>(cloud->points.size());
+  cloud->height   = 1U;
+  cloud->is_dense = false;
+
+  return cloud->points.size();
 }

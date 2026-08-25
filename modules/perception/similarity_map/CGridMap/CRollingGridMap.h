@@ -126,14 +126,13 @@ void CRollingGridMap<CellType>::Shift(int32_t dr, int32_t dc) {
   }
 
   // rows
-  if (dr < 0) {  // logical row-- --> north/up
+  if (dr < 0) {  // move window north: expose/reset the new top row
     for (int32_t i = 0; i < -dr; ++i) {
-      // 模板类中 的 this->func() 表明使用 父类函数
-      ShiftPhysicalRowPositive();
-    }
-  } else if (dr > 0) {  // logical row++ -->south/down
-    for (int32_t i = 0; i < dr; ++i) {
       ShiftPhysicalRowNegative();
+    }
+  } else if (dr > 0) {  // move window south: expose/reset the new bottom row
+    for (int32_t i = 0; i < dr; ++i) {
+      ShiftPhysicalRowPositive();
     }
   }
 

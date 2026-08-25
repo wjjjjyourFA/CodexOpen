@@ -93,10 +93,10 @@ CellType* CResidualGridMap<CellType>::GetValueFromXY(float local_x,
   // ==> 把 local_x = 0 放到 grid center
   // 这里实际变换的是 local 系，不影响 grid 索引（0,rows 0,cols）
   // local 的 Y 轴，被翻转成图像坐标系
-  // c = this->half_cols_ + std::floor((local_x - residual_x_) / resolution_);
-  // r = this->half_rows_ - 1 - std::floor((local_y - residual_y_) / resolution_);
-  c = this->half_cols_ + std::floor(local_x / resolution_);
-  r = this->half_rows_ - 1 - std::floor(local_y / resolution_);
+  c = this->half_cols_ + static_cast<int32_t>(std::floor((local_x - residual_x_) / resolution_));
+  r = this->half_rows_ - 1 - static_cast<int32_t>(std::floor((local_y - residual_y_) / resolution_));
+  // c = this->half_cols_ + std::floor(local_x / resolution_);
+  // r = this->half_rows_ - 1 - std::floor(local_y / resolution_);
   // std::cout << "c: " << c << " r: " << r << std::endl;
 
   return this->AtRC(r, c);

@@ -92,14 +92,12 @@ bool CLocalWindowMap<CellType>::ReCenterByPose(double pose_x, double pose_y) {
   // !! 这里只是设置残差
   this->SetResidualByPose(center_x_, center_y_);
 
-  // 1. 当前 pose 点对应的世界 grid 坐标
+  // 1. 当前 pose 点对应的固定世界 grid 坐标。Y 轴取反后对应 image row。
   // clang-format off
   // !! 这里是数学坐标上进行操作，并没有和实际物理坐标对应 ==> 并不知道向上移动是 rows++ 还是 rows--
   // 通过 MoveWindowNorth() 反推，这里要将 pose_y 转换为 world_grid_r 取反
-  // int32_t world_grid_c = std::floor((pose_x - this->residual_x_) / this->resolution_);
-  // int32_t world_grid_r = -std::floor((pose_y - this->residual_y_) / this->resolution_);
-  int32_t world_grid_c = std::floor(pose_x / this->resolution_);
-  int32_t world_grid_r = -std::floor(pose_y / this->resolution_);
+  int32_t world_grid_c = static_cast<int32_t>(std::floor(pose_x / this->resolution_));
+  int32_t world_grid_r = -static_cast<int32_t>(std::floor(pose_y / this->resolution_));
   // std::cout << "world_grid_c: " << world_grid_c << " world_grid_r: " << world_grid_r << std::endl;
   // clang-format on
 
@@ -112,7 +110,10 @@ bool CLocalWindowMap<CellType>::ReCenterByPose(double pose_x, double pose_y) {
 
   // too far -> full reset
   if (std::abs(dr) >= this->rows_ || std::abs(dc) >= this->cols_) {
-    this->ResetMap();
+    // Keep the pose-relative metric residual selected above. 
+    // ResetMap() without arguments would silently restore a zero residual 
+    // and break the local-coordinate projection inherited from CResidualGridMap.
+    this->ResetMap(this->residual_x_, this->residual_y_);
 
     this->array_c0_ = 0;
     this->array_r0_ = 0;
@@ -176,12 +177,12 @@ CellType* CLocalWindowMap<CellType>::GetValueFromWorldXY(double world_x,
                                                          double world_y,
                                                          int32_t& r,
                                                          int32_t& c) {
-  // world ==> global logical
+  // Absolute world coordinates use the fixed world-grid origin. 
+  // residual_* is the pose-relative sub-cell offset used by CResidualGridMap::GetValueFromXY;
+  // applying it here would move the world grid every time the pose changes.
   // clang-format off
-  // int32_t global_c = this->half_cols_ + std::floor((world_x - this->residual_x_) / this->resolution_);
-  // int32_t global_r = this->half_rows_ - 1 - std::floor((world_y - this->residual_y_) / this->resolution_);
-  int32_t global_c = this->half_cols_ + std::floor(world_x / this->resolution_);
-  int32_t global_r = this->half_rows_ - 1 - std::floor(world_y / this->resolution_);
+  int32_t global_c = this->half_cols_ + static_cast<int32_t>(std::floor(world_x / this->resolution_));
+  int32_t global_r = this->half_rows_ - 1 - static_cast<int32_t>(std::floor(world_y / this->resolution_));
   // clang-format on
   // global logical ==> local logical: [0, rows_), [0, cols_)
   r = global_r - map_anchor_r_;
@@ -212,10 +213,12 @@ CellType* CLocalWindowMap<CellType>::GetWorldXYFromRC(int32_t r, int32_t c,
   int32_t global_r = r + map_anchor_r_;
   int32_t global_c = c + map_anchor_c_;
 
-  // global logical ==> world(cell center)
+  // global logical ==> world(cell center). 
+  // This is the inverse of the fixed world-grid projection in GetValueFromWorldXY, 
+  // so no pose residual belongs in this conversion.
   // clang-format off
-  world_x = (global_c - this->half_cols_ + 0.5) * this->resolution_ + this->residual_x_;
-  world_y = (this->half_rows_ - 1 - global_r + 0.5) * this->resolution_ + this->residual_y_;
+  world_x = (global_c - this->half_cols_ + 0.5) * this->resolution_;
+  world_y = (this->half_rows_ - 1 - global_r + 0.5) * this->resolution_;
   // clang-format on
 
   return ptr;
