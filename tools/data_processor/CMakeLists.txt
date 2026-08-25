@@ -94,7 +94,6 @@ if(BUILD_ROS1)
   install_module(data_processor_ros1 tools/data_processor
     ros1_message
     ros2_message
-    rs_driver
   )
 endif()
 
@@ -192,7 +191,6 @@ if(BUILD_ROS2)
   install_module(data_processor_ros2 tools/data_processor
     ros1_message
     ros2_message
-    rs_driver
   )
 
   ament_package()
