@@ -183,14 +183,23 @@ void LidarCameraFusion::project_lidar_to_camera_fast_impl(
     const Eigen::Matrix<float, 3, 4>& projection_matrix, const cv::Mat& image,
     cv::Mat& mask, pcl::PointCloud<pcl::PointXYZRGB>::Ptr& cloud_color,
     bool color) {
+  project_lidar_to_camera_fast_impl(points, projection_matrix, image, mask,
+                                    cloud_color, projected_workspace_, color);
+}
+
+void LidarCameraFusion::project_lidar_to_camera_fast_impl(
+    const Eigen::Matrix<float, 4, Eigen::Dynamic>& points,
+    const Eigen::Matrix<float, 3, 4>& projection_matrix, const cv::Mat& image,
+    cv::Mat& mask, pcl::PointCloud<pcl::PointXYZRGB>::Ptr& cloud_color,
+    Eigen::Matrix<float, 3, Eigen::Dynamic>& projected_workspace, bool color) {
   if (color && !cloud_color) {
     return;
   }
 
   // 执行批量投影
-  projected_workspace_.resize(3, points.cols());
-  projected_workspace_.noalias() = projection_matrix * points;
-  const auto& projected_points   = projected_workspace_;
+  projected_workspace.resize(3, points.cols());
+  projected_workspace.noalias() = projection_matrix * points;
+  const auto& projected_points  = projected_workspace;
 
   // 转换为图像范围点并过滤
   for (int i = 0; i < projected_points.cols(); ++i) {

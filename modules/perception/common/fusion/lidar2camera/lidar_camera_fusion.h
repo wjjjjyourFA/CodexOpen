@@ -73,6 +73,15 @@ class LidarCameraFusion {
       cv::Mat& mask, pcl::PointCloud<pcl::PointXYZRGB>::Ptr& cloud_color,
       bool color = false);
 
+  // Thread-safe variant when each caller provides an independent projection workspace. 
+  // The points matrix is read-only and can be shared by all camera projection tasks.
+  void project_lidar_to_camera_fast_impl(
+      const Eigen::Matrix<float, 4, Eigen::Dynamic>& points,
+      const Eigen::Matrix<float, 3, 4>& projection_matrix, const cv::Mat& image,
+      cv::Mat& mask, pcl::PointCloud<pcl::PointXYZRGB>::Ptr& cloud_color,
+      Eigen::Matrix<float, 3, Eigen::Dynamic>& projected_workspace,
+      bool color = false);
+
   void project_lidar_to_camera_raw(
       const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud,
       const Eigen::Matrix<float, 3, 4>& extrinsic_matrix, const cv::Mat& image,

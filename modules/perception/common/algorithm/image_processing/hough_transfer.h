@@ -117,7 +117,9 @@ class HoughTransfer {
   int theta_size_;
   int vote_reserve_size_;
   std::vector<int> vote_map_;
-  std::vector<std::vector<int>> query_map_;
+  // Flat, contiguous lookup table: [pixel * theta_size + theta].
+  // Invalid rho/theta combinations are stored as -1.
+  std::vector<int> query_map_;
   std::vector<std::vector<int>> distribute_map_;
 };
 
