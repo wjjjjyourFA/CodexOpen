@@ -1,26 +1,36 @@
+#ifndef MODULES_PERCEPTION_COMMON_ALGORITHM_POINT_CLOUD_PROCESSING_DBSCAN_EXTENSIONS_H_
+#define MODULES_PERCEPTION_COMMON_ALGORITHM_POINT_CLOUD_PROCESSING_DBSCAN_EXTENSIONS_H_
+
 #include "modules/perception/common/algorithm/point_cloud_processing/dbscan.h"
 
 namespace jojo {
 namespace perception {
 namespace algorithm {
 
+// DBSCAN extension using a combined XYZ and velocity distance metric.
 template <typename PointXYZV>
 class DBSCAN_velocity : public DBSCAN<PointXYZV> {
-  using DBSCAN::DBSCAN;
-
  public:
-  // 这里应该叫做距离度量函数
-  double Distance(const PointXYZV& a, const PointXYZV& b) {
-    // 开方耗时，不开方能行吗
-    double spatial_distance =
-        std::sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y) +
-                  (a.z - b.z) * (a.z - b.z));
-    // 直接速度加减应该是有问题的
-    double velocity_difference = std::abs(a.v - b.v);
-    return spatial_distance + velocity_difference;
-  };
+  using DBSCAN<PointXYZV>::DBSCAN;
+
+ protected:
+  double SquaredDistance(const PointXYZV& a,
+                         const PointXYZV& b) const override {
+    const double dx = static_cast<double>(a.x) - static_cast<double>(b.x);
+    const double dy = static_cast<double>(a.y) - static_cast<double>(b.y);
+    const double dz = static_cast<double>(a.z) - static_cast<double>(b.z);
+    const double dv = static_cast<double>(a.v) - static_cast<double>(b.v);
+
+    // 位置和速度的单位不同，可通过权重调整速度差对聚类的影响。
+    return dx * dx + dy * dy + dz * dz + kVelocityWeight * dv * dv;
+  }
+
+ private:
+  static constexpr double kVelocityWeight = 1.0;
 };
 
 }  // namespace algorithm
 }  // namespace perception
 }  // namespace jojo
+
+#endif  // MODULES_PERCEPTION_COMMON_ALGORITHM_POINT_CLOUD_PROCESSING_DBSCAN_EXTENSIONS_H_

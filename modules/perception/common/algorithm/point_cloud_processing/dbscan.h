@@ -1,13 +1,12 @@
-#ifndef __DBSCAN_H__
-#define __DBSCAN_H__
+#ifndef MODULES_PERCEPTION_COMMON_ALGORITHM_POINT_CLOUD_PROCESSING_DBSCAN_H_
+#define MODULES_PERCEPTION_COMMON_ALGORITHM_POINT_CLOUD_PROCESSING_DBSCAN_H_
 
 #include <cmath>
-#include <iostream>
+#include <cstddef>
+#include <functional>
 #include <queue>
 #include <unordered_map>
 #include <vector>
-
-#pragma once
 
 namespace jojo {
 namespace perception {
@@ -18,118 +17,98 @@ namespace algorithm {
 第二种，在函数内部新建同样长度的索引数组。
 这里选择第二种， 避免对点集重复操作。
 */
+
+// Standard DBSCAN labels:
+//   0  : unclassified
+//   -1 : noise
+//   >0 : cluster id
+//
+// min_pts includes the query point itself, as in the original DBSCAN definition.
+// RegionQuery only performs a geometric epsilon-neighborhood query;
+// point visitation and cluster assignment are handled separately.
 template <typename DataType>
 class DBSCAN {
  public:
-  // DBSCAN() {};
   virtual ~DBSCAN() = default;
 
-  bool set_params(double eps, int minPts) {
-    if (!std::isfinite(eps) || eps <= 0.0 || minPts <= 0) {
+  bool set_params(double eps, int min_pts) {
+    if (!std::isfinite(eps) || eps <= 0.0 || min_pts <= 0) {
       return false;
     }
-    this->eps_    = eps;
-    this->minPts_ = minPts;
-    RebuildSpatialIndex();
+
+    eps_    = eps;
+    minPts_ = min_pts;
+    ResetClusteringState();
+    RebuildSpatialIndex(eps_);
     return true;
   }
 
   virtual void SetInputCloud(const std::vector<DataType>& cloud) {
-    this->points_ = cloud;
-    this->size_   = cloud.size();
-    RebuildSpatialIndex();
-  };
+    points_ = cloud;
+    size_   = points_.size();
+    ResetClusteringState();
+    RebuildSpatialIndex(eps_);
+  }
 
-  // virtual void init() {};
   bool Run() {
+    ResetClusteringState();
     if (eps_ <= 0.0 || minPts_ <= 0 || points_.empty()) {
-      labels_.assign(size_, 0);
-      cluster_id_ = 0;
       return false;
     }
-    // P1 —— P2 —— P3
-    //      |
-    //      P4
-
-    // -1: 噪声, 0: 未分类, 其他: 簇 ID
-    // 初始化：开始时，所有数据点均被标记为未分类
-    // 使用构造函数初始化
-    // this->labels_ = std::vector<int>(this->size_, 0);
-    this->labels_.assign(this->size_, 0);
-    this->cluster_id_ = 0;
 
     std::vector<int> neighbors;
-    // 对每一个未分类的点，执行以下操作
-    for (size_t i = 0; i < this->size_; ++i) {
-      if (labels_[i] != 0) {
+    for (size_t i = 0; i < size_; ++i) {
+      // 对每一个未分类的点，执行以下操作
+      if (visited_[i]) {
         continue;
       }
 
+      // A point becomes visited when its neighborhood is queried,
+      // not when it is assigned to a cluster.
+      // This distinction is required for noise points to be absorbed later as border points.
+      visited_[i] = true;
       // 计算每个点的邻域内的点
-      neighbors.clear();
-      RegionQuery(i, this->eps_, labels_, neighbors);
+      RegionQuery(static_cast<int>(i), eps_, neighbors);
 
       // 判断是否是核心点，简单理解，看其邻域内的点数
-      if (neighbors.size() < static_cast<size_t>(this->minPts_)) {
-        labels_[i] = -1;  // Noise
-      } else {
-        ++cluster_id_;  // 增加类别数
-        // 这里的 i 代表被选择的核心点
-        ExpandClusterBfs(labels_, i, cluster_id_, neighbors);
+      if (neighbors.size() < static_cast<size_t>(minPts_)) {
+        labels_[i] = kNoise;
+        continue;
       }
+
+      // 增加类别数
+      ++cluster_id_;
+      // 这里的 i 代表被选择的核心点
+      ExpandClusterBfs(labels_, static_cast<int>(i), cluster_id_, neighbors);
     }
     return true;
-  };
+  }
 
   virtual bool OutputCluster(std::vector<std::vector<DataType>>& clusters) {
     clusters.clear();
-    /* way 1
-    std::vector<std::vector<DataType>> tmp_clusters(cluster_id_);
-    // 把不同的簇的点压进不同的vector当中
-    for (size_t i = 0; i < this->size_; ++i) {
+    // 调整 clusters 数量为 cluster_id_ 的大小
+    clusters.resize(static_cast<size_t>(cluster_id_));
+    // 把不同的簇的点压进各自的 vector 当中
+    for (size_t i = 0; i < size_; ++i) {
       if (labels_[i] > 0) {
-        tmp_clusters[labels_[i] - 1].push_back(this->points_[i]);
+        clusters[static_cast<size_t>(labels_[i] - 1)].push_back(points_[i]);
       }
     }
-
-    // 将tmp_clusters的结果拷贝到clusters中
-    clusters.insert(clusters.end(), tmp_clusters.begin(), tmp_clusters.end());
-    */
-
-    // 调整clusters大小为cluster_id_
-    clusters.resize(cluster_id_);
-    // 把不同的簇的点压进不同的vector当中
-    for (size_t i = 0; i < this->size_; ++i) {
-      if (labels_[i] > 0) {
-        clusters[labels_[i] - 1].push_back(this->points_[i]);
-      }
-    }
-
     return true;
-  };
+  }
 
-  // 此处为未排序或排序点集，全局遍历搜索
-  virtual void RegionQuery(int index, double eps, std::vector<int>& labels,
-                           std::vector<int>& neighbors) {
-    if (index < 0 || static_cast<size_t>(index) >= size_ || eps <= 0.0) {
+  // Returns every point in the closed epsilon-neighborhood, including the query point itself.
+  // Cluster labels must not affect neighborhood density.
+  virtual void RegionQuery(int index, double eps, std::vector<int>& neighbors) {
+    neighbors.clear();
+    if (index < 0 || static_cast<size_t>(index) >= size_ ||
+        !std::isfinite(eps) || eps <= 0.0) {
       return;
     }
-    /* way 1 原始 DBSCAN 简易写法
-    for (size_t i = 0; i < this->size_; ++i) {
-      // radius
-      // 只跳过已分配到簇的点，允许未分类点和噪声点
-      if (labels[i] > 0) {
-        continue;
-      }
-      if (distance(this->points_[index], this->points_[i]) <= eps) {
-        neighbors.push_back(i);
-      }
-    }
-    */
 
-    // way 2 ： 使用空间索引加速查询，27个邻域网格，网格大小为 eps
+    // 使用空间索引加速查询，27个邻域网格，网格大小为 eps
     if (spatial_index_.empty() || indexed_eps_ != eps) {
-      RebuildSpatialIndex();
+      RebuildSpatialIndex(eps);
     }
 
     const CellKey center     = CellFor(points_[index], eps);
@@ -142,10 +121,8 @@ class DBSCAN {
           if (cell == spatial_index_.end()) {
             continue;
           }
+
           for (const int candidate : cell->second) {
-            if (labels[candidate] > 0) {
-              continue;
-            }
             // 相邻 Cell 不代表两个点一定在 eps 半径内，需要进一步判断
             if (SquaredDistance(points_[index], points_[candidate]) <=
                 eps_squared) {
@@ -155,90 +132,98 @@ class DBSCAN {
         }
       }
     }
-  };
+  }
 
+  // Compatibility overload for existing callers.
+  // Labels are intentionally ignored:  RegionQuery is a pure geometric query in standard DBSCAN.
+  virtual void RegionQuery(int index, double eps, std::vector<int>& /*labels*/,
+                           std::vector<int>& neighbors) {
+    RegionQuery(index, eps, neighbors);
+  }
+
+  // Kept for source compatibility. The iterative implementation has the same
+  // DBSCAN expansion semantics without risking recursion-stack overflow.
   void ExpandClusterDfs(std::vector<int>& labels, int index, int cluster_id,
                         std::vector<int>& neighbors) {
-    labels[index] = cluster_id;
-
-    // 遍历所有邻居点
-    for (int near_index : neighbors) {
-      // 只处理未分类点或噪声点
-      if (labels[near_index] > 0) {
-        continue;
-      }
-
-      labels[near_index] = cluster_id;
-
-      std::vector<int> new_neighbors;
-      RegionQuery(near_index, this->eps_, labels, new_neighbors);
-
-      // 如果该点是核心点（满足 MinPts），继续递归扩展
-      if (new_neighbors.size() >= static_cast<size_t>(this->minPts_)) {
-        ExpandClusterDfs(labels, near_index, cluster_id, new_neighbors);
-        // 递归后，再合并 new_neighbors，确保完整性
-        neighbors.insert(neighbors.end(), new_neighbors.begin(),
-                         new_neighbors.end());
-      }
-    }
-  };
+    ExpandClusterBfs(labels, index, cluster_id, neighbors);
+  }
 
   void ExpandClusterBfs(std::vector<int>& labels, int index, int cluster_id,
                         std::vector<int>& neighbors) {
-    // 标记当前点的类别
+    if (index < 0 || static_cast<size_t>(index) >= size_) {
+      return;
+    }
+    if (labels.size() != size_) {
+      labels.assign(size_, kUnclassified);
+    }
+    if (visited_.size() != size_) {
+      visited_.assign(size_, false);
+    }
+
     labels[index] = cluster_id;
 
-    // BFS 广度优先搜索来扩展簇，而不是递归（避免栈溢出）。
+    // BFS 广度优先搜索来扩展簇，而不是递归（避免栈溢出）
     std::queue<int> process_queue;
+    std::vector<bool> queued(size_, false);
 
     // 标记当前点的邻域内的点，并加入搜索队列
-    for (int near_index : neighbors) {
-      // 注释原因，使得 前期的 noise 点，可以被重新吸收到 cluster 中
-      /* RegionQuery 已经处理过，这里不需要再处理
-      // 如果这个点已经分类（噪声点除外），就跳过
-      if (labels[near_index] > 0) {
-        continue;
-      } 
-      */
-      labels[near_index] = cluster_id;
-      process_queue.push(near_index);
+    for (const int neighbor : neighbors) {
+      EnqueueIfNeeded(neighbor, queued, process_queue);
     }
 
     while (!process_queue.empty()) {
-      int current_point_index = process_queue.front();
+      const int current = process_queue.front();
       process_queue.pop();
 
-      std::vector<int> new_neighbors;
-      RegionQuery(current_point_index, this->eps_, labels, new_neighbors);
+      if (!visited_[current]) {
+        visited_[current] = true;
 
-      if (new_neighbors.size() >= static_cast<size_t>(this->minPts_)) {
-        for (int new_near_index : new_neighbors) {
-          /* RegionQuery 已经处理过，这里不需要再处理
-          // 如果这个点已经分类（噪声点除外），就跳过
-          if (labels[new_near_index] > 0) {
-            continue;
-          } */
-          labels[new_near_index] = cluster_id;
-          process_queue.push(new_near_index);
+        std::vector<int> current_neighbors;
+        RegionQuery(current, eps_, current_neighbors);
+        if (current_neighbors.size() >= static_cast<size_t>(minPts_)) {
+          // Only core points expand the search frontier.
+          // Border points are assigned to the cluster but do not propagate it further.
+          for (const int neighbor : current_neighbors) {
+            EnqueueIfNeeded(neighbor, queued, process_queue);
+          }
         }
+      }
 
-        neighbors.insert(neighbors.end(), new_neighbors.begin(),
-                         new_neighbors.end());
+      // A point previously marked as noise may become a border point.
+      // Points already owned by another cluster are never reassigned.
+      if (labels[current] == kUnclassified || labels[current] == kNoise) {
+        labels[current] = cluster_id;
       }
     }
-  };
+  }
 
   // 点集中每个点的标签
   std::vector<int> GetLabels() const { return labels_; }
 
  protected:
-  int minPts_ = 0;  //最小聚类数
-  double eps_ = 0.0;  //半径
+  int minPts_  = 0;  // 最小聚类数
+  double eps_  = 0.0;  // 半径
+  size_t size_ = 0;
   std::vector<DataType> points_;
-  size_t size_ = 0;  // data_num
   std::vector<int> labels_;
+  std::vector<bool> visited_;
+
+  // 子类只需重写该距离度量函数，即可复用完整的 DBSCAN 流程。
+  // 返回距离的平方，以避免基础欧氏距离执行不必要的开方。
+  // 空间哈希仍按 XYZ 做候选点预筛选，因此自定义度量不应把 XYZ
+  // 距离大于 eps 的点判定为邻居。
+  virtual double SquaredDistance(const DataType& a,
+                                 const DataType& b) const {
+    const double dx = static_cast<double>(a.x) - static_cast<double>(b.x);
+    const double dy = static_cast<double>(a.y) - static_cast<double>(b.y);
+    const double dz = static_cast<double>(a.z) - static_cast<double>(b.z);
+    return dx * dx + dy * dy + dz * dz;
+  }
 
  private:
+  static constexpr int kNoise        = -1;
+  static constexpr int kUnclassified = 0;
+
   struct CellKey {
     int x;
     int y;
@@ -264,39 +249,44 @@ class DBSCAN {
             static_cast<int>(std::floor(point.z / cell_size))};
   }
 
-  double SquaredDistance(const DataType& a, const DataType& b) const {
-    const double dx = static_cast<double>(a.x) - b.x;
-    const double dy = static_cast<double>(a.y) - b.y;
-    const double dz = static_cast<double>(a.z) - b.z;
-    return dx * dx + dy * dy + dz * dz;
+  void ResetClusteringState() {
+    labels_.assign(size_, kUnclassified);
+    visited_.assign(size_, false);
+    cluster_id_ = 0;
   }
 
-  void RebuildSpatialIndex() {
+  void RebuildSpatialIndex(double cell_size) {
     spatial_index_.clear();
-    indexed_eps_ = eps_;
-    if (eps_ <= 0.0) {
+    indexed_eps_ = cell_size;
+    if (!std::isfinite(cell_size) || cell_size <= 0.0) {
       return;
     }
+
     spatial_index_.reserve(points_.size());
     for (size_t i = 0; i < points_.size(); ++i) {
-      spatial_index_[CellFor(points_[i], eps_)].push_back(static_cast<int>(i));
+      spatial_index_[CellFor(points_[i], cell_size)].push_back(
+          static_cast<int>(i));
     }
+  }
+
+  void EnqueueIfNeeded(int index, std::vector<bool>& queued,
+                       std::queue<int>& process_queue) const {
+    if (index < 0 || static_cast<size_t>(index) >= size_ || queued[index]) {
+      return;
+    }
+    queued[index] = true;
+    process_queue.push(index);
   }
 
   int cluster_id_     = 0;  // 数值代表分出几类点云簇
   double indexed_eps_ = 0.0;
   std::unordered_map<CellKey, std::vector<int>, CellKeyHash> spatial_index_;
 
-  // Dbscan 的复杂度一般是 O(n log n)（使用 KD-Tree 进行最近邻搜索），
-  // 但如果直接用暴力搜索（两两计算距离），复杂度会是 O(n²)
-  virtual double distance(const DataType& a, const DataType& b) {
-    return std::sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y) +
-                     (a.z - b.z) * (a.z - b.z));
-  };
+  // Dbscan 的复杂度一般是 O(n log n)（使用 KD-Tree 进行最近邻搜索），但如果直接用暴力搜索（两两计算距离），复杂度会是 O(n²)
 };
 
 }  // namespace algorithm
 }  // namespace perception
 }  // namespace jojo
 
-#endif
+#endif  // MODULES_PERCEPTION_COMMON_ALGORITHM_POINT_CLOUD_PROCESSING_DBSCAN_H_
