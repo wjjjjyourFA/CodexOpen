@@ -18,6 +18,11 @@ class Frame2dTransform {
     offset_theta_ = 0;
     sinot_        = sin(offset_theta_);
     cosot_        = cos(offset_theta_);
+    dr_x_         = 0;
+    dr_y_         = 0;
+    dr_theta_     = 0;
+    sindt_        = sin(dr_theta_);
+    cosdt_        = cos(dr_theta_);
   }
 
   // 设置 传感器坐标系 在 车身坐标系 中的位置
@@ -108,7 +113,7 @@ class Frame2dTransform {
   }
 
   void SensorPose2Odom(double sensor_x, double sensor_y, double sensor_theta,
-                       double& odom_x, double& odom_y, double odom_theta) {
+                       double& odom_x, double& odom_y, double& odom_theta) {
     double body_x, body_y, body_theta;
 
     SensorPose2Body(sensor_x, sensor_y, sensor_theta, body_x, body_y,
@@ -117,7 +122,7 @@ class Frame2dTransform {
   }
   void OdomPose2Sensor(double odom_x, double odom_y, double odom_theta,
                        double& sensor_x, double& sensor_y,
-                       double sensor_theta) {
+                       double& sensor_theta) {
     double body_x, body_y, body_theta;
 
     OdomPose2Body(odom_x, odom_y, odom_theta, body_x, body_y, body_theta);
@@ -134,8 +139,8 @@ class Frame2dTransform {
 
   void BodyVel2Sensor(double body_vel_x, double body_vel_y,
                       double& sensor_vel_x, double& sensor_vel_y) {
-    sensor_vel_x = cosdt_ * body_vel_x + sindt_ * body_vel_y;
-    sensor_vel_y = -sindt_ * body_vel_x + cosdt_ * body_vel_y;
+    sensor_vel_x = cosot_ * body_vel_x + sinot_ * body_vel_y;
+    sensor_vel_y = -sinot_ * body_vel_x + cosot_ * body_vel_y;
   }
 
   void BodyVel2Odom(double body_vel_x, double body_vel_y, double& odom_vel_x,
