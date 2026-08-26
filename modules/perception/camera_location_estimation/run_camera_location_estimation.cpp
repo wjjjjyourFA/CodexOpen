@@ -33,6 +33,14 @@ int main(int argc, char** argv) {
   interface_config->set_name(name);
   interface_config->LoadConfig(if_config_path);
 
+  if (!runtime_config->valid || !interface_config->valid) {
+    std::cerr << "Invalid camera location configuration: "
+              << (!runtime_config->valid ? runtime_config->validation_error
+                                         : interface_config->validation_error)
+              << std::endl;
+    return 1;
+  }
+
 #if defined(ENABLE_ROS1)
   ROS_INFO("\033[1;32m----> ImageLocation Started .\033[0m");
 
@@ -41,15 +49,13 @@ int main(int argc, char** argv) {
   ros::NodeHandle private_nh("~");
 
   auto _pRos1Convert = std::make_shared<Ros1Convert>(nh, private_nh);
-  _pRos1Convert->Init(runtime_config, interface_config);
+  if (!_pRos1Convert->Init(runtime_config, interface_config)) return 1;
 
-  // _pRos1Convert->Run();
-
-  std::thread a(&Ros1Convert::Run, _pRos1Convert);
-  a.detach();
-
-  // spin 与 thread 联动，保证了 lidar drvier 触发顺序
+  // 回调只更新最新数据，融合定位仍由原来的 Run 循环执行。
+  std::thread worker(&Ros1Convert::Run, _pRos1Convert);
   ros::spin();
+  worker.join();
+  _pRos1Convert->Stop();
 
 #elif defined(ENABLE_ROS2)
   rclcpp::init(argc, argv);

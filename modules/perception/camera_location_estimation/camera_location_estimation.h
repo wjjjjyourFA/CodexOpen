@@ -1,80 +1,31 @@
 #ifndef CAMERA_LOCATION_ESTIMATION_H
 #define CAMERA_LOCATION_ESTIMATION_H
 
+#include <atomic>
+#include <cstddef>
+#include <memory>
+#include <string>
+#include <vector>
+
+#include <Eigen/Core>
+#include <opencv2/opencv.hpp>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
-// #include "modules/common/math/math_utils_extra.h"
 #include "modules/perception/camera_detection_single_stage/detector/yolo_obstacle_detector.h"
+#include "modules/perception/camera_location_estimation/common.h"
 #include "modules/perception/camera_tracking/camera_tracking.h"
-// 投影定位线程，可以是该模块的子线程，也可以是独立的线程
 #include "modules/perception/common/algorithm/image_processing/util/utils.h"
 #include "modules/perception/common/algorithm/point_cloud_processing/cluster_postprocess.h"
 #include "modules/perception/common/base/box3d_extra.h"
 #include "modules/perception/common/base/segment.h"
 #include "modules/perception/common/fusion/lidar2camera/lidar_camera_fusion.h"
-// #include "modules/perception/common/fusion/radar2camera/radar_camera_fusion.h"
 #include "modules/perception/common/lidar/cluster/object_cluster.h"
-#include "modules/perception/tools/common/show_data_2d.h"
+#include "modules/perception/tools/opencv/cv_colors.h"
 
 namespace jojo {
 namespace perception {
 namespace cle {
-
-// 目标定位的 距离估计的 结果框
-// legacy
-// struct FrameObject : public jojo::perception::base::Object {
-struct FrameObject {
-  FrameObject() = default;
-
-  // 原始检测（完整保留）
-  base::Object obj;
-  // 必须共享或很大对象
-  // std::shared_ptr<const base::Object> obj = nullptr;
-
-  // 推理框 box2d
-  cv::Rect srcRec;
-  // 中心修正 / 估计框 box2d <== 推理框
-  cv::Rect cenRec;
-
-  // 目标 三维框 box3d <== 估计框 推算得到
-  // ==> parent.camera_supplement.box3d;
-
-  // 该 center 中心源自相机使用点云，因此是很不准确的，只能作为参考
-  // Eigen::Vector3f local_center = Eigen::Vector3f(0, 0, 0);
-  // ==> parent.camera_supplement.local_center
-  // float dist = local_center.squaredNorm();
-
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-};
-
-// 中间结构体；用于初始化每一个相机的中间数据；
-class ImageLocationData {
- public:
-  ImageLocationData() {};
-  virtual ~ImageLocationData() = default;
-
-  // 只维护一张 mask
-  cv::Mat projection_mask;
-
-  // 多个测距器相关参数  lidar + radar
-  // projection_matrix;
-};
-
-struct ImageLocationHyperparams {
-  // 缩小 30%
-  float scale = 0.7f;
-
-  size_t RoiLimit = 50 * 50;
-
-  // cluster
-  // width height length
-  int imageSize[3] = {1920, 1080, 1};
-  float eps        = 0.5;
-  int minPts       = 5;
-
-  int pixel_threshold = 15;
-};
 
 /*
 出于融合定位的考虑，所有用于测距的点云，应当转换到 相机坐标系；
@@ -82,60 +33,73 @@ struct ImageLocationHyperparams {
 */
 class CameraLocationEstimation {
  public:
-  CameraLocationEstimation(uint mode = 1);
+  // clang-format off
+  explicit CameraLocationEstimation(InferenceMode mode = InferenceMode::kDetection);
+  explicit CameraLocationEstimation(unsigned int mode);
   virtual ~CameraLocationEstimation();
+  // clang-format on
 
-  void Init(const std::string& engine_file);
-  void InitCluster();
-  bool isInited() const { return initialized_; };
+  // clang-format off
+  bool Initialize(const std::string& engine_file,
+      const ImageLocationHyperparams& config = ImageLocationHyperparams(),
+      std::string* error = nullptr/**/);
+  // clang-format on
+  void Init(const std::string& engine_file);  // 兼容旧调用
+  bool isInited() const { return initialized_; }
 
   void Start();
   void Stop();
 
   void Run();
 
-  // 需要的并不是投影线程，而是投影点云的MASK。
-  void DetectionAndLocation(cv::Mat& cimage, cv::Mat& projection_mask,
-                            cv::Mat& show_image, bool show = false);
+  // 新接口：推理/定位与 GUI 解耦，并返回可供下游使用的结构化结果。
+  bool Estimate(cv::Mat& image, const cv::Mat& projection_mask,
+                LocationEstimateResult* result);
+  void Visualize(cv::Mat& image, const LocationEstimateResult& result);
 
-  void TrackingAndLocation(cv::Mat& cimage, cv::Mat& projection_mask,
+  // 兼容旧接口。
+  void DetectionAndLocation(cv::Mat& image, cv::Mat& projection_mask,
+                            cv::Mat& show_image, bool show = false);
+  void TrackingAndLocation(cv::Mat& image, cv::Mat& projection_mask,
                            cv::Mat& show_image, bool show = false);
 
-  void SetProjectionMatrix(const Eigen::Matrix4f& projection_matrix);
+  bool SetProjectionMatrix(const Eigen::Matrix4f& projection_matrix);
 
  protected:
-  std::shared_ptr<jojo::perception::cdss::YoloObstacleDetector> image_detector;
-  std::shared_ptr<jojo::perception::ct::CameraTracking> image_tracking;
   bool InitEngine(const std::string& engine_file);
+  bool InitCluster(const cv::Size& mask_size);
 
-  bool BoxTypeNeed(const jojo::perception::base::ObjectType& type);
-  void FrameObjectGetObjRec(
-      std::vector<jojo::perception::base::Object>& detections,
-      std::vector<FrameObject>& frame_boxes, cv::Mat& image, bool show = false);
+  bool BoxTypeNeed(const base::ObjectType& type) const;
 
-  std::shared_ptr<jojo::perception::lidar::ObjectCluster> object_cluster;
-  void GetCloudAndCluster(std::vector<FrameObject>& frame_boxes, cv::Mat& mask,
-                          cv::Mat& image);
-  void Cluster(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr,
-               std::shared_ptr<base::Segment>& result);
+  void FrameObjectGetObjRec(std::vector<base::Object>& detections,
+                            std::vector<FrameObject>* frame_boxes,
+                            const cv::Size& image_size);
 
-  std::atomic_bool initialized_{false}, isRunning_{false};
+  std::size_t GetCloudAndCluster(std::vector<FrameObject>* frame_boxes,
+                                 const cv::Mat& mask);
+
+  void Cluster(const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud,
+               std::shared_ptr<base::Segment>* result);
 
  private:
+  std::shared_ptr<jojo::perception::cdss::YoloObstacleDetector> image_detector;
+  std::shared_ptr<jojo::perception::ct::CameraTracking> image_tracking;
+  std::shared_ptr<jojo::perception::lidar::ObjectCluster> object_cluster;
+
   ImageLocationHyperparams hps_;
-  uint mode = 1;
+  InferenceMode mode_ = InferenceMode::kDetection;
+  std::atomic_bool initialized_{false};
+  std::atomic_bool isRunning_{false};
 
   // 缓冲变量
-  pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_cloud;  // from mask
+  pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_cloud;
   pcl::PointCloud<pcl::PointXYZI>::Ptr cluster_cloud;
-  // /* debug
-  pcl::PointCloud<pcl::PointXYZI>::Ptr clustered;
-  // */
-
-  std::vector<std::shared_ptr<jojo::perception::base::Segment>> segs;
-
   Eigen::Matrix<float, 3, 4> projection_matrix_;
-  void DrawLocateCube(cv::Mat& frame, std::vector<FrameObject>& frame_boxes);
+  bool projection_ready_ = false;
+  cv::Size cluster_mask_size_;
+
+  void DrawLocateCube(cv::Mat& frame,
+                      const std::vector<FrameObject>& frame_boxes);
 };
 
 }  // namespace cle

@@ -1,4 +1,4 @@
-#include "modules/perception/camera_location_estimation/camera_location_estimation.h"
+#include "modules/perception/camera_location_estimation/camera_location_estimation_legacy.h"
 #include "modules/perception/camera_location_estimation/config/runtime_config.h"
 #include "modules/perception/common/fusion/lidar2camera/lidar_camera_fusion.h"
 #include "tools/data_loader/config/interface_config.h"
@@ -50,15 +50,9 @@ int main(int argc, char** argv) {
   }
 
   auto image_locator = std::make_shared<cle::CameraLocationEstimation>(
-      runtime_config->inference_mode);
-  std::string location_error;
-  if (!image_locator->Initialize(runtime_config->engine_file,
-                                 runtime_config->location, &location_error) ||
-      !image_locator->SetProjectionMatrix(matrix.front()->projection_matrix)) {
-    std::cerr << "Camera location initialization failed: " << location_error
-              << std::endl;
-    return 1;
-  }
+      static_cast<uint>(runtime_config->inference_mode));
+  image_locator->Init(std::string(runtime_config->engine_file));
+  image_locator->SetProjectionMatrix(matrix.front()->projection_matrix);
   image_locator->Start();
 
   std::string dl_rc_path = "./../../../config/DataLoader/DataLoader.ini";
@@ -142,17 +136,22 @@ int main(int argc, char** argv) {
     if (image_locator->isInited()) {
       cv::Mat cur_image = group->camera.front().data;
 
-      cle::LocationEstimateResult result;
-      if (!image_locator->Estimate(cur_image, cur_mask, &result)) {
-        std::cerr << "Frame location failed: " << result.error << std::endl;
-      } else {
-        // cv::Mat show_image = cur_image.clone();
-        cv::Mat show_image = cur_image;
+      // cv::Mat show_image = cur_image.clone();
+      cv::Mat show_image = cur_image;
 
-        image_locator->Visualize(show_image, result);
-        cv::namedWindow("image_loc", cv::WINDOW_NORMAL);
-        cv::imshow("image_loc", show_image);
+      // clang-format off
+      switch (runtime_config->use_det_or_track) {
+        case 1:
+          image_locator->DetectionAndLocation(cur_image, cur_mask, show_image, true);
+          break;
+        case 2:
+          // image_locator->TrackingAndLocation(cur_image, cur_mask, show_image, true);
+          break;
+        default:
+          std::cout << "Error: use_det_or_track is not set" << std::endl;
+          break;
       }
+      // clang-format on
     }
 
     char key = (char)cv::waitKey(1);
