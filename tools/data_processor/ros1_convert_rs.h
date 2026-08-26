@@ -14,7 +14,7 @@
 #include "tools/data_processor/ros1_convert.h"
 
 // CODEXOPEN
-#include "rslidar_sdk-1.5.19/rslidar_packet.hpp"
+#include "rslidar_sdk-1.5.20/rslidar_packet.hpp"
 
 namespace jojo {
 namespace tools {

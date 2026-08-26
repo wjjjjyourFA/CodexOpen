@@ -16,7 +16,7 @@ DEFINES += DATA_PROCESSOR_ROS1_RS
 CODEX_PATH = $$clean_path($$PWD/../../..)
 PREFIX = $$CODEX_PATH/modules/perception
 SELF_PATH = $$CODEX_PATH/tools/data_processor
-RS_SDK_PATH = $$SELF_PATH/rs_driver/ros1/src/rslidar_sdk-1.5.19
+RS_SDK_PATH = $$CODEX_PATH/ros1/src/drivers/lidar/rslidar_sdk-1.5.20
 
 # DESTDIR += $$PWD/bin
 DESTDIR = $$CODEX_PATH/install/bin/tools/data_processor

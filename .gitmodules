@@ -1,7 +1,13 @@
-[submodule "tools/data_processor/rs_driver/ros2/src/rslidar_sdk-1.5.19"]
-	path = tools/data_processor/rs_driver/ros2/src/rslidar_sdk-1.5.19
-	url = https://github.com/RoboSense-LiDAR/rslidar_sdk.git
+
+[submodule "ros1/src/drivers/lidar/rslidar_sdk-1.5.20"]
+	path = ros1/src/drivers/lidar/rslidar_sdk-1.5.20
+	url = https://github.com/wjjjjyourFA/rslidar_sdk.git
 	ignore = all
+[submodule "ros2/src/drivers/lidar/rslidar_sdk-1.5.20"]
+	path = ros2/src/drivers/lidar/rslidar_sdk-1.5.20
+	url = https://github.com/wjjjjyourFA/rslidar_sdk.git
+	ignore = all
+
 [submodule "modules/drivers/lidar/Livox-SDK2-1.2.5"]
 	path = modules/drivers/lidar/Livox-SDK2-1.2.5
 	url = https://github.com/Livox-SDK/Livox-SDK2.git
@@ -14,14 +20,7 @@
 	path = ros2/src/drivers/lidar/livox_ros_driver2-1.2.4
 	url = https://github.com/Livox-SDK/livox_ros_driver2.git
 	ignore = all
-[submodule "ros1/src/drivers/lidar/rslidar_sdk-1.5.19"]
-	path = ros1/src/drivers/lidar/rslidar_sdk-1.5.19
-	url = https://github.com/RoboSense-LiDAR/rslidar_sdk.git
-	ignore = all
-[submodule "ros2/src/drivers/lidar/rslidar_sdk-1.5.19"]
-	path = ros2/src/drivers/lidar/rslidar_sdk-1.5.19
-	url = https://github.com/RoboSense-LiDAR/rslidar_sdk.git
-	ignore = all
+
 [submodule "modules/drivers/rgbd/librealsense-2.57.3"]
 	path = modules/drivers/rgbd/librealsense-2.57.3
 	url = https://github.com/realsenseai/librealsense.git
@@ -30,7 +29,12 @@
 	path = ros2/src/drivers/rgbd/realsense-ros-4.57.3
 	url = https://github.com/realsenseai/realsense-ros.git
 	ignore = all
-[submodule "tools/data_processor/rs_driver/ros1/src/rslidar_sdk-1.5.19"]
-	path = tools/data_processor/rs_driver/ros1/src/rslidar_sdk-1.5.19
-	url = https://github.com/RoboSense-LiDAR/rslidar_sdk.git
+
+[submodule "ros1/src/drivers/lidar/rslidar_msg-1.5.9"]
+	path = ros1/src/drivers/lidar/rslidar_msg-1.5.9
+	url = https://github.com/RoboSense-LiDAR/rslidar_msg.git
+	ignore = all
+[submodule "ros2/src/drivers/lidar/rslidar_msg-1.5.9"]
+	path = ros2/src/drivers/lidar/rslidar_msg-1.5.9
+	url = https://github.com/RoboSense-LiDAR/rslidar_msg.git
 	ignore = all

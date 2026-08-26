@@ -192,7 +192,8 @@ LIBS += \
 LIBS += \
   -L/usr/local/cuda/lib64 \
   -lcudart -lcublas -lcurand -lnvrtc \
-  -lnvcaffe_parser -lnvinfer -lnvinfer_plugin -lnvparsers
+  -lnvcaffe_parser -lnvinfer -lnvinfer_plugin -lnvparsers \
+  -lnvonnxparser
 
 contains(IMAGE_DETECTOR, 1){
 # CUDA settings <-- may change depending on your system

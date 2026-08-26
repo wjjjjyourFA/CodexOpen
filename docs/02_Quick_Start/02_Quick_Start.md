@@ -9,14 +9,19 @@ docker 镜像的详细介绍：[docker_CodexOpen](./../../docs/安装指南/dock
 
 > 使用 CMakeList，编译 `.proto` 文件，`lib`文件等
 
-0. 将拉取，或下载后加压出的 `CodexOpen-main` 改名 `CodexOpen` ，对齐颗粒度；
-1. 在对应的`docker`环境中，修改 `modules/common/environment_conf.h` 文件中的**全局宏**，以适配不同的通信框架：
+1. 将[拉取或下载](https://github.com/wjjjjyourFA/CodexOpen)后解压出的 `CodexOpen-main` 改名 `CodexOpen` ，对齐颗粒度；
+2. 下载 夸克网盘 中提供的 docker 镜像，并 `docker load -i jojo_ros1_noetic.tar` 加载到本机；
+3. 在 vscode 中安装 `Dev Containers` 插件；
+4. 将 `CodexOpen/docker/vscode/jojo-deploy-ros1` 文件夹拖拽到 vscode 中打开；
+5. 按需求修改 `.devcontainer/devcontainer.json` 和 `.devcontainer/ros1.Dockerfile`；
+6. `Ctrl + Shift + P`, `Dev Containers: Rebuild and Reopen in Container` 重建容器；
+7. 在对应的`docker`环境中，修改 `modules/common/environment_conf.h` 文件中的**全局宏**，以适配不同的通信框架：
 ```c++
 #define ENABLE_ROS1
 // #define ENABLE_ROS2
 // #define ENABLE_DDS
 ```
-2. 编译安装：非测试环境，不建议启用`TESTING`
+8. 编译安装：非测试环境，不建议启用`TESTING`
 ```sh
 cd CodexOpen/build
 # 仅编译公用 proto
@@ -40,8 +45,8 @@ ninja -j 12
 # 编译完成后，必须进行安装，否则 INSTALL 目录下不会出现 可执行文件 和 库文件
 ninja install
 ```
-3. 第一次编译完成后，如果需要更换环境进行二次编译。请先删除 `BUILD` 缓存，并检查**全局宏**。
-4. `CodexOpen` 代码仍在开发中，仅部分成熟算法支持`CMakeList`一键编译。其余开发代码，请检查`PRO`文件。
+9. 第一次编译完成后，如果需要更换环境进行二次编译。请先删除 `BUILD` 缓存，并检查**全局宏**。
+10. `CodexOpen` 代码仍在开发中，仅部分成熟算法支持`CMakeList`一键编译。其余开发代码，请检查`PRO`文件。
 
 ### GPU 初始化
 
@@ -49,6 +54,8 @@ ninja install
 请需要使用这些模块的同学，自行在 `MASTER` 主机上安装**适配显卡版本**的 **驱动**、**推理库**（谨慎在容器中安装），详细操作步骤见：[gpu_CodexOpen](./../../docs/安装指南/docker/gpu_CodexOpen.md)
 
 ---
+
+### ros编译
 
 > CodexOpen ros1 | ros2
 
@@ -61,6 +68,10 @@ catkin build -DPYTHON_EXECUTABLE=/usr/bin/python3 -j8
 cd CodexOpen/ros2
 colcon build  --symlink-install  --parallel-workers 8
 ```
+
+本镜像已经预装 ros 全家桶：支持 `rqt_graph`、`rqt_image_view`、`rviz`、`rqt_bag`
+
+---
 
 ## 单位说明
 
