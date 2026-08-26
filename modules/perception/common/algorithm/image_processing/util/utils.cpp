@@ -127,7 +127,7 @@ size_t RoiMask2PointCloud(const std::vector<cv::Mat>& splits,
   if (!cloud) return 0U;
   cloud->clear();
 
-  if (splits.size() < 3 || splits_roi.size() < 3) return;
+  if (splits.size() < 3 || splits_roi.size() < 3) return 0U;
   // 直接清除
   // splits_roi.clear();
 

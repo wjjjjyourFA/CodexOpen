@@ -75,7 +75,7 @@ void ColorMap::Run(
   this->UpdateColorGridMapGlobalBev(cur_cloud, cur_pose);
 
   // this->ShowColorGridMap();
-  this->ShowColorGridMapRotation(cur_pose);
+  this->ShowColorGridMapYawAligned(cur_pose);
 
   if (rparam_->b_show_color_point) {
     this->VisColorCloud(cur_cloud);
@@ -181,7 +181,7 @@ void ColorMap::ShowColorGridMap() {
   cv::waitKey(1);
 }
 
-void ColorMap::ShowColorGridMapRotation(const Eigen::Matrix4f& pose) {
+void ColorMap::ShowColorGridMapYawAligned(const Eigen::Matrix4f& pose) {
   // 局部颜色栅格图
   //     ↓
   // 按照车辆朝向 theta，进行二维旋转
