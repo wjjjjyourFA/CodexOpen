@@ -1,8 +1,8 @@
 #ifndef CV_UTILS_H
 #define CV_UTILS_H
 
-#include <vector>
 #include <cmath>
+#include <vector>
 
 #include <opencv2/opencv.hpp>
 
@@ -42,12 +42,17 @@ void ConvertEulerZYXToRodrigues(const std::vector<double>& euler, cv::Mat& rvec,
 cv::Rect AdjustRectWithScale(const cv::Rect& rect, const float& scale,
                              const cv::Size& image_size);
 
-#include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
 
-void RoiMask2PointCloud(const std::vector<cv::Mat>& splits,
-                        std::vector<cv::Mat>& splits_roi, const cv::Rect& roi,
-                        pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud,
-                        size_t RoiLimit = 128 * 128);
+size_t RoiMask2PointCloud(const std::vector<cv::Mat>& splits,
+                          std::vector<cv::Mat>& splits_roi, const cv::Rect& roi,
+                          pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud,
+                          size_t RoiLimit = 128 * 128);
+
+// 直接从 CV_32FC3 投影 mask 的 ROI 提取点云，避免每帧 cv::split。
+// mask 通道约定为 (z, y, x)，输出为 PCL (x, y, z)。
+size_t RoiMask2PointCloud(const cv::Mat& mask, const cv::Rect& roi,
+                          pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud);
 
 #endif

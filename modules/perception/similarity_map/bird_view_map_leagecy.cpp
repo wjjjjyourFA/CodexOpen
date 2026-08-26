@@ -44,6 +44,7 @@ void BirdViewMap::Run(
   const auto& in_pose = Measures->se3_pose.data.matrix();
   const auto& image   = Measures->camera.at(0).data;
 
+  // 只有车辆移动超过约 2m 时才刷新一次。
   if (!this->NeedNewKeyFrame(in_pose)) {
     return;
   }
@@ -80,7 +81,8 @@ void BirdViewMap::GenerateBirdView() {
   for (const auto& pt : local_map_->points) {
     // x -> 前 , y -> 左
     int u = static_cast<int>(hps_.half_cols - pt.y / hps_.map_resolution);
-    int v = static_cast<int>(hps_.map_rows - 1 - pt.x / hps_.map_resolution);
+    // int v = static_cast<int>(hps_.map_rows - 1 - pt.x / hps_.map_resolution);
+    int v = static_cast<int>(hps_.half_rows - pt.x / hps_.map_resolution);
 
     if (u < 0 || u >= hps_.map_cols || v < 0 || v >= hps_.map_rows) {
       continue;

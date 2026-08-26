@@ -55,7 +55,7 @@ class ColorMap {
 
   void ShowColorGridMap();
 
-  void ShowColorGridMapRotation(const Eigen::Matrix4f& pose);
+  void ShowColorGridMapYawAligned(const Eigen::Matrix4f& pose);
 
   void VisColorCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud);
 

@@ -13,7 +13,7 @@ CONFIG -= qt
 CONFIG += object_parallel_to_source
 TARGET = image_locator_yolov8
 
-CODEX_PATH = $$PWD/../../../../../CodexOpen
+CODEX_PATH = $$clean_path($$PWD/../../../..)
 PREFIX = $$CODEX_PATH/modules/perception
 SELF_PATH = $$CODEX_PATH/modules/perception/camera_location_estimation
 DETECTOR_PATH = $$CODEX_PATH/modules/perception/camera_detection_single_stage
@@ -56,7 +56,8 @@ SOURCES += \
   $$PREFIX/tools/opencv/colors.cpp \
   $$PREFIX/tools/opencv/cv_colors.cpp \
   # $$PREFIX/tools/common/show_data_3d.cpp \
-  # $$PREFIX/tools/common/show_data_2d.cpp \
+  $$PREFIX/tools/common/show_data_2d.cpp \
+  $$PREFIX/tools/common/bev_projector.cpp \
   $$CODEX_PATH/tools/data_loader/data_loader.cpp \
   $$CODEX_PATH/tools/data_loader/config/runtime_config.cpp \
   $$CODEX_PATH/tools/data_loader/config/interface_config.cpp \
@@ -65,7 +66,9 @@ SOURCES += \
   $$DETECTOR_PATH/detector/yolo_obstacle_detector.cpp \
   $$TRACKING_PATH/camera_tracking.cpp \
   $$SELF_PATH/camera_location_estimation.cpp \
+  $$SELF_PATH/common.cpp \
   $$SELF_PATH/config/runtime_config.cpp \
+  $$SELF_PATH/config/interface_config.cpp \
   $$SELF_PATH/run_yolo_loc.cpp \
 
 SOURCES -= \
@@ -102,7 +105,8 @@ HEADERS += \
   $$PREFIX/tools/opencv/colors.hpp \
   $$PREFIX/tools/opencv/cv_colors.h \
   # $$PREFIX/tools/common/show_data_3d.h \
-  # $$PREFIX/tools/common/show_data_2d.h \
+  $$PREFIX/tools/common/show_data_2d.h \
+  $$PREFIX/tools/common/bev_projector.h \
   $$CODEX_PATH/tools/data_loader/data_loader.h \
   $$CODEX_PATH/tools/data_loader/config/runtime_config.h \
   $$CODEX_PATH/tools/data_loader/config/interface_config.h \
@@ -112,7 +116,9 @@ HEADERS += \
   $$DETECTOR_PATH/detector/yolo_obstacle_detector.h \
   $$TRACKING_PATH/camera_tracking.h \
   $$SELF_PATH/camera_location_estimation.h \
+  $$SELF_PATH/common.h \
   $$SELF_PATH/config/runtime_config.h \
+  $$SELF_PATH/config/interface_config.h \
 
 INCLUDEPATH += \
   $$CODEX_PATH \
@@ -151,7 +157,7 @@ SOURCES += \
 
 HEADERS += \
   $$TRACKING_PATH/tracking/bytetrack/bytetrack_wrapper.h \
-  $$SELF_TRACKING_PATHPATH/tracking/bytetrack/include/*.h \
+  $$TRACKING_PATH/tracking/bytetrack/include/*.h \
   $$TRACKING_PATH/tracking/bytetrack/include/*.hpp \
 
 INCLUDEPATH += \

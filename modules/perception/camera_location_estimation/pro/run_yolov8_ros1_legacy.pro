@@ -8,16 +8,17 @@ IMAGE_DETECTOR = 1
 IMAGE_BYTETRACK = 1
 
 TEMPLATE = app
-CONFIG += console c++14
+CONFIG += console c++17
 CONFIG -= app_bundle
 CONFIG -= qt
 CONFIG += object_parallel_to_source
 TARGET = image_locator_yolov8_ros1_legacy
 
-CODEX_PATH = $$PWD/../../../../../CodexOpen
+CODEX_PATH = $$clean_path($$PWD/../../../..)
 PREFIX = $$CODEX_PATH/modules/perception
 SELF_PATH = $$CODEX_PATH/modules/perception/camera_location_estimation
 DETECTOR_PATH = $$CODEX_PATH/modules/perception/camera_detection_single_stage
+TRACKING_PATH = $$CODEX_PATH/modules/perception/camera_tracking
 
 DESTDIR = $$CODEX_PATH/install/bin/modules/perception/camera_location_estimation
 
@@ -45,9 +46,8 @@ SOURCES += \
   $$PREFIX/common/base/distortion_model.cc \
   $$PREFIX/common/base/fisheye_model.cc \
   $$PREFIX/common/base/segment.cc \
-  $$PREFIX/common/config/utils.cpp \
-  $$PREFIX/common/config/sensor_extrinsics.cpp \
   $$PREFIX/common/camera/common/undistortion_handler.cc \
+  $$files($$PREFIX/common/config/*.cpp) \
   $$files($$PREFIX/common/camera/params/*.cpp) \
   $$PREFIX/common/lidar/convert/robosense.cpp \
   $$PREFIX/common/lidar/convert/rs_sort_map.cpp \
@@ -61,11 +61,20 @@ SOURCES += \
   # $$PREFIX/tools/common/show_data_3d.cpp \
   $$PREFIX/tools/common/show_data_2d.cpp \
   $$DETECTOR_PATH/detector/yolo_obstacle_detector.cpp \
+  $$TRACKING_PATH/camera_tracking.cpp \
   $$SELF_PATH/camera_location_estimation_legacy.cpp \
+  $$SELF_PATH/common.cpp \
   $$SELF_PATH/config/runtime_config.cpp \
   $$SELF_PATH/config/interface_config.cpp \
   $$SELF_PATH/run_camera_location_estimation.cpp \
   $$SELF_PATH/ros1_convert.cpp \
+
+SOURCES -= \
+  $$PREFIX/tools/pcl/pcl_viewer_test.cpp \
+  $$SELF_PATH/config/runtime_config_legacy.cpp \
+  $$PREFIX/common/config/config_core_test.cpp \
+  $$PREFIX/common/camera/params/camera_params_core_test.cpp \
+  $$PREFIX/common/lidar/convert/lidar_convert_core_test.cpp
 
 HEADERS += \
   $$CODEX_PATH/cyber/binary.h \
@@ -82,10 +91,9 @@ HEADERS += \
   $$PREFIX/common/base/distortion_model.h \
   $$PREFIX/common/base/fisheye_model.h \
   $$PREFIX/common/base/segment.h \
-  $$PREFIX/common/config/utils.h \
-  $$PREFIX/common/config/sensor_extrinsics.h \
   $$PREFIX/common/algorithm/point_cloud_processing/util/utils.h \
   $$PREFIX/common/camera/common/undistortion_handler.h \
+  $$files($$PREFIX/common/config/*.h) \
   $$files($$PREFIX/common/camera/params/*.h) \
   $$PREFIX/common/lidar/convert/robosense.h \
   $$PREFIX/common/lidar/convert/rs_sort_map.h \
@@ -100,7 +108,9 @@ HEADERS += \
   # $$PREFIX/tools/common/show_data_3d.h \
   $$PREFIX/tools/common/show_data_2d.h \
   $$DETECTOR_PATH/detector/yolo_obstacle_detector.h \
+  $$TRACKING_PATH/camera_tracking.h \
   $$SELF_PATH/camera_location_estimation_legacy.h \
+  $$SELF_PATH/common.h \
   $$SELF_PATH/config/runtime_config.h \
   $$SELF_PATH/config/interface_config.h \
   $$SELF_PATH/ros1_convert.h \
@@ -111,8 +121,7 @@ INCLUDEPATH += \
 INCLUDEPATH += \
   /usr/include/eigen3 \
   /usr/include/opencv4 \
-  # /opt/ros \
-  /opt/ros/$(ROS_DISTRO)/include \
+  # /usr/local/include/opencv4 \
 
 contains(IMAGE_DETECTOR, 1){
 SOURCES += \
@@ -134,6 +143,21 @@ INCLUDEPATH += \
   $$DETECTOR_PATH/detector/yolov8 \
   $$DETECTOR_PATH/detector/yolov8/plugin \
   $$DETECTOR_PATH/detector/yolov8/include \
+}
+
+contains(IMAGE_BYTETRACK, 1){
+SOURCES += \
+  $$TRACKING_PATH/tracking/bytetrack/bytetrack_wrapper.cpp \
+  $$TRACKING_PATH/tracking/bytetrack/src/*.cpp \
+
+HEADERS += \
+  $$TRACKING_PATH/tracking/bytetrack/bytetrack_wrapper.h \
+  $$TRACKING_PATH/tracking/bytetrack/include/*.h \
+  $$TRACKING_PATH/tracking/bytetrack/include/*.hpp \
+
+INCLUDEPATH += \
+  $$TRACKING_PATH/tracking/bytetrack \
+  $$TRACKING_PATH/tracking/bytetrack/include \
 }
 
 contains(MY_ROS_INFO, 1){

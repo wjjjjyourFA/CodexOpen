@@ -75,7 +75,7 @@ void ColorMap::Run(
   this->UpdateColorGridMapGlobalBev(cur_cloud, cur_pose);
 
   // this->ShowColorGridMap();
-  this->ShowColorGridMapRotation(cur_pose);
+  this->ShowColorGridMapYawAligned(cur_pose);
 
   if (rparam_->b_show_color_point) {
     this->VisColorCloud(cur_cloud);
@@ -167,9 +167,9 @@ void ColorMap::ShowColorGridMap() {
   }
 
   cv::line(show_mat, cv::Point(0, hps_.half_rows),
-           cv::Point(hps_.map_rows, hps_.half_rows), cv::Scalar(125, 125, 125));
+           cv::Point(hps_.map_cols, hps_.half_rows), cv::Scalar(125, 125, 125));
   cv::line(show_mat, cv::Point(hps_.half_cols, 0),
-           cv::Point(hps_.half_cols, hps_.map_cols), cv::Scalar(125, 125, 125));
+           cv::Point(hps_.half_cols, hps_.map_rows), cv::Scalar(125, 125, 125));
 
   static bool init = true;
   if (init) {
@@ -181,7 +181,7 @@ void ColorMap::ShowColorGridMap() {
   cv::waitKey(1);
 }
 
-void ColorMap::ShowColorGridMapRotation(const Eigen::Matrix4f& pose) {
+void ColorMap::ShowColorGridMapYawAligned(const Eigen::Matrix4f& pose) {
   // 局部颜色栅格图
   //     ↓
   // 按照车辆朝向 theta，进行二维旋转
@@ -269,9 +269,9 @@ void ColorMap::ShowColorGridMapRotation(const Eigen::Matrix4f& pose) {
   }
 
   cv::line(show_mat, cv::Point(0, hps_.half_rows),
-           cv::Point(hps_.map_rows, hps_.half_rows), cv::Scalar(125, 125, 125));
+           cv::Point(hps_.map_cols, hps_.half_rows), cv::Scalar(125, 125, 125));
   cv::line(show_mat, cv::Point(hps_.half_cols, 0),
-           cv::Point(hps_.half_cols, hps_.map_cols), cv::Scalar(125, 125, 125));
+           cv::Point(hps_.half_cols, hps_.map_rows), cv::Scalar(125, 125, 125));
 
   static bool init = true;
   if (init) {

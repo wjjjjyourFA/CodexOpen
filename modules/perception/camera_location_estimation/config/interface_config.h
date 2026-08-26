@@ -1,11 +1,8 @@
 #ifndef CAMERA_LOCATION_ESTIMATION_INTERFACE_CONFIG_H
 #define CAMERA_LOCATION_ESTIMATION_INTERFACE_CONFIG_H
 
-#pragma once
+#include <string>
 
-#include <iostream>
-
-#include <boost/optional.hpp>
 #include <boost/property_tree/ini_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 
@@ -18,20 +15,20 @@ namespace cle {
 class InterfaceConfig : public jojo::common::config::ConfigFileBase {
  public:
   using jojo::common::config::ConfigFileBase::ConfigFileBase;
-
   void LoadConfig(const std::string& config_path) override;
+  bool Validate(std::string* error = nullptr) const;
 
- public:
   bool b_compressed = true;
-
-  std::string image_topic = "";
-  std::string lidar_topic = "";
+  std::string image_topic;
+  std::string lidar_topic;
 
   int rate = 10;
+
+  bool valid = false;
+  std::string validation_error;
 };
 
 }  // namespace cle
 }  // namespace perception
 }  // namespace jojo
-
 #endif
