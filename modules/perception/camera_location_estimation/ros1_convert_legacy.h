@@ -18,8 +18,6 @@
 #include <pcl_conversions/pcl_conversions.h>
 
 #include "modules/common/math/math_utils_extra.h"
-#include "modules/localization/common/transform/frame2d_transform.hpp"
-// #include "modules/localization/common/transform/object_location_projector.h"
 #include "modules/perception/camera_location_estimation/camera_location_estimation.h"
 #include "modules/perception/camera_location_estimation/config/interface_config.h"
 #include "modules/perception/camera_location_estimation/config/runtime_config.h"
@@ -28,8 +26,6 @@
 #include "modules/perception/common/fusion/lidar2camera/lidar_camera_fusion.h"
 #include "modules/perception/common/lidar/convert/robosense.h"
 #include "modules/perception/common/lidar/convert/velodyne.h"
-#include "self_state/GlobalPose.h"
-#include "self_state/LocalPose.h"
 
 namespace cfg    = jojo::perception::config;
 namespace camera = jojo::perception::camera;
@@ -38,9 +34,6 @@ namespace cle    = jojo::perception::cle;
 
 typedef pcl::PointXYZI PointT;
 typedef pcl::PointCloud<PointT> CloudT;
-
-typedef self_state::GlobalPose globalpose_msgtype;
-typedef self_state::LocalPose localpose_msgtype;
 
 class Ros1Convert {
  public:
@@ -59,9 +52,6 @@ class Ros1Convert {
   void PointCloud2Callback(const sensor_msgs::PointCloud2ConstPtr& msg);
   void PointCloudCallback(const sensor_msgs::PointCloudConstPtr& msg);
 
-  void GposePreprocessing(const globalpose_msgtype& msg);
-  void LposePreprocessing(const localpose_msgtype& msg);
-
   std::shared_ptr<camera::CameraParams> camera_params_;
   std::shared_ptr<camera::UndistortionHandler> camera_undistort_;
   std::shared_ptr<fusion::LidarCameraFusion> fusion_;
@@ -73,10 +63,6 @@ class Ros1Convert {
   std::shared_ptr<cle::InterfaceConfig> iparam_;
 
   std::unique_ptr<cle::CameraLocationEstimation> image_locator_;
-  // clang-format off
-  std::shared_ptr<jojo::localization::common::Frame2dTransform> object_location_projector_;
-  // std::shared_ptr<jojo::localization::common::GlobalLocationProjector> object_location_projector_;
-  // clang-format on
 
   ros::NodeHandle node_;
   ros::Subscriber image_sub_;
@@ -85,15 +71,9 @@ class Ros1Convert {
   std::mutex data_mutex_;
   cv::Mat latest_image_;
   CloudT::Ptr latest_cloud_;
-  globalpose_msgtype global_location_;
-  localpose_msgtype local_location_;
-
-  bool has_image_       = false;
-  bool has_cloud_       = false;
-  bool has_global_pose_ = false;
-  bool has_local_pose_  = false;
-
-  bool undistortion_ready_ = true;
+  bool has_image_             = false;
+  bool has_cloud_             = false;
+  bool undistortion_ready_    = true;
   std::atomic_bool stopping_{false};
 };
 

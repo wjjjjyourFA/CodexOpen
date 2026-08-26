@@ -310,7 +310,7 @@ void CameraLocationEstimation::DrawLocateCube(
     cv::rectangle(frame, object.srcRec, cv::Scalar(0, 255, 0), 2);
     if (!object.located || !projection_ready_) continue;
 
-    // 2d 检测框
+    // camera 检测框
     const auto& supplement = object.obj.camera_supplement;
     // 3d 检测框
     const auto& corners = supplement.box3d_supplement.corners;

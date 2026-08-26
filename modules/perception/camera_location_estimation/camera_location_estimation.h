@@ -28,8 +28,8 @@ namespace perception {
 namespace cle {
 
 /*
-出于融合定位的考虑，所有用于测距的点云，应当转换到 相机坐标系；
-输出结果，基于相机坐标系；
+出于融合定位的考虑，所有用于测距的点云，应当转换到统一的主雷达坐标系；
+基于该主雷达坐标系，输出定位结果；
 */
 class CameraLocationEstimation {
  public:

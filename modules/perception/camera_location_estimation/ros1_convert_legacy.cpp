@@ -1,4 +1,4 @@
-#include "modules/perception/camera_location_estimation/ros1_convert.h"
+#include "modules/perception/camera_location_estimation/ros1_convert_legacy.h"
 
 #include <utility>
 
@@ -80,21 +80,6 @@ void Ros1Convert::PointCloudCallback(
   has_cloud_    = true;
 }
 
-void Ros1Convert::GposePreprocessing(const globalpose_msgtype& msg) {
-  // std::cout<< "GposePreprocessing is running " << std::endl;
-  // int64_t recTimeCloudCur = tic() * 1000;
-
-  // 回调函数，将ROS本地位置消息中的数据更新到外部的本地位置数据结构
-  global_location_ = msg;
-}
-
-void Ros1Convert::LposePreprocessing(const localpose_msgtype& msg) {
-  // std::cout<< "LposePreprocessing is running " << std::endl;
-  // int64_t recTimeCloudCur = tic() * 1000;
-
-  local_location_ = msg;
-}
-
 bool Ros1Convert::Init(std::shared_ptr<cle::RuntimeConfig> rparam,
                        std::shared_ptr<cle::InterfaceConfig> iparam) {
   if (!rparam || !iparam) return false;
@@ -139,16 +124,6 @@ bool Ros1Convert::Init(std::shared_ptr<cle::RuntimeConfig> rparam,
   }
   cloud_sub_ = node_.subscribe<sensor_msgs::PointCloud2>(
       iparam_->lidar_topic, 1, &Ros1Convert::PointCloud2Callback, this);
-
-  // clang-format off
-  object_location_projector_.reset(new jojo::localization::common::Frame2dTransform());
-  // object_location_projector_.reset(new jojo::localization::common::GlobalLocationProjector());
-  // clang-format on
-
-  double transf_offset_X = 0, transf_offset_Y = 0, transf_offset_Theta = 0;
-  object_location_projector_->SetSensorInBody(
-      transf_offset_X, transf_offset_Y, transf_offset_Theta * M_PI / 180.0);
-
   return true;
 }
 
@@ -218,7 +193,6 @@ void Ros1Convert::Process(cv::Mat image, const CloudT::Ptr& cloud) {
     image = std::move(corrected);
   }
 
-  // 1. 点云投影到图像。
   if (!fusion_->SetLidarPointCloud(cloud) || !fusion_->SetCameraImage(image) ||
       !fusion_->fuse(2, true, false)) {
     return;
@@ -227,7 +201,6 @@ void Ros1Convert::Process(cv::Mat image, const CloudT::Ptr& cloud) {
   cv::Mat mask;
   if (!fusion_->GetFusedImage(mask)) return;
 
-  // 2. 得到 lidar/local frame 下的目标。
   cle::LocationEstimateResult result;
   if (!image_locator_->Estimate(image, mask, &result)) {
     ROS_WARN_THROTTLE(1.0, "Camera location failed: %s", result.error.c_str());
@@ -240,29 +213,4 @@ void Ros1Convert::Process(cv::Mat image, const CloudT::Ptr& cloud) {
   cv::imshow("image_loc", visualization);
   cv::resizeWindow("image_loc", 1024, 768);
   cv::waitKey(1);
-
-  // 3. 获取点云观测时刻的车辆位姿。
-  // current vehicle localpose
-  double dr_x = local_location_.dr_x, dr_y = local_location_.dr_y;
-  double dr_theta = local_location_.dr_heading * M_PI / 180.0;
-  object_location_projector_->SetBodyInOdom(dr_x, dr_y, dr_theta);
-
-  for (const auto& object : result.objects) {
-    // 4. 转换 lidar -> global 目标。
-    const auto& supplement = object.obj.camera_supplement;
-
-    // TODO: center dmin dmax minmax maxmin
-    double localpose[2] = {0};
-    // way 1
-    object_location_projector_->SensorPose2Odom(supplement.local_center.x(),
-                                                supplement.local_center.y(),
-                                                localpose[0], localpose[1]);
-    /* way 2
-    object_location_projector_->SensorPose2Body();
-    object_location_projector_->BodyPose2Odom();
-    */
-  }
-
-  // 6. 发布 global_result。
-  // Publish(global_result);
 }

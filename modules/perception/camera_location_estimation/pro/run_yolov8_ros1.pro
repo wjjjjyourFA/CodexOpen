@@ -69,6 +69,7 @@ SOURCES += \
   $$SELF_PATH/config/interface_config.cpp \
   $$SELF_PATH/run_camera_location_estimation.cpp \
   $$SELF_PATH/ros1_convert.cpp \
+  $$CODEX_PATH/modules/localization/common/transform/frame2d_transform.cpp \
 
 SOURCES -= \
   $$PREFIX/tools/pcl/pcl_viewer_test.cpp \
@@ -116,6 +117,7 @@ HEADERS += \
   $$SELF_PATH/config/runtime_config.h \
   $$SELF_PATH/config/interface_config.h \
   $$SELF_PATH/ros1_convert.h \
+  $$CODEX_PATH/modules/localization/common/transform/frame2d_transform.hpp \
 
 INCLUDEPATH += \
   $$CODEX_PATH \
@@ -166,7 +168,7 @@ contains(MY_ROS_INFO, 1){
 INCLUDEPATH += \
   /opt/ros/melodic/include \
   /opt/ros/noetic/include \
-  # $$CODEX_PATH/ros1/devel/include \
+  $$CODEX_PATH/ros1/devel/include \
 }
 
 # contains(MY_SYSTEM_INFO, 20.04){
