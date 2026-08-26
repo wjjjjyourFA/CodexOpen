@@ -1,0 +1,29 @@
+super_lio_robot:
+  topics:
+    lidar: /livox/lidar
+    imu: /imu/data
+    odometry: /lio/odom
+    state_estimation: /state_estimation
+    path: /lio/path
+    registered_scan: /registered_scan
+    world_cloud: /lio/cloud_world
+    imu_odometry: /lio/imu/odom
+    robot_odometry: /lio/robo/odom
+    robot_pose: /mavros/vision_pose/pose
+    global_map: /lio/global_map
+    initial_pose: /initialpose
+  frames:
+    world: world
+    map: map
+    sensor: sensor
+  queues:
+    lidar: 1000
+    imu: 10000
+    odometry: 100
+    path: 1
+    cloud: 10
+    initial_pose: 1
+  transport:
+    processing_rate: 500.0
+    path_min_distance: 0.1
+    global_map_latched: true

@@ -1,0 +1,61 @@
+lio:
+  map:
+    save_map: false
+    if_filter: true
+    save_map_dir: map
+    map_name: map.pcd
+    ds_size: 0.25
+    save_interval: 500
+
+  sensor:
+    lidar_type: 1
+    blind: 0.4
+    x_min: -0.4
+    x_max: 0.4
+    y_min: -0.4
+    y_max: 0.4
+    z_min: -0.4
+    z_max: 0.4
+    maxrange: 60.0
+    filter_rate: 3
+    enable_downsample: true
+    voxel_fliter_size: 0.5
+    gravity_norm: 9.7946
+    imu_type: 1
+    imu_na: 0.1
+    imu_ng: 0.1
+    imu_nba: 0.0001
+    imu_nbg: 0.0001
+
+  extrinsic:
+    lidar_imu: [-0.011, -0.02329, 0.04412,
+                1.0, 0.0, 0.0,
+                0.0, 1.0, 0.0,
+                0.0, 0.0, 1.0]
+    odom_robo: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    qlu_or_rqu: true
+    b_rawimu: true
+
+  hash_map:
+    hash_capacity: 2000000
+    vox_resolution: 0.5
+
+  kf:
+    kf_type: 0
+    kf_max_iterations: 4
+    kf_align_gravity: true
+    kf_quit_eps: 0.001
+
+  output:
+    robot: false
+    plan_env_world: false
+    plan_env_body: false
+    ml_map: false
+    planner: false
+    map: true
+    dense: true
+    pub_step: 1
+    ax7_compat_output: false
+
+  eva:
+    timer: true

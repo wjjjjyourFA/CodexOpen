@@ -1,0 +1,27 @@
+# Camera intrinsics. Values preserve the active multi-scene preset from the
+# staged FAST-Calib config/qr_params.yaml.
+fx: 2478.48702288166
+fy: 2478.58544825456
+cx: 1230.99707596681
+cy: 1025.66149498072
+k1: -0.0493178189623200
+k2: 0.147394487986097
+p1: -0.00127118592043482
+p2: -0.00200379689523022
+
+# Calibration target geometry (metres).
+marker_size: 0.20
+delta_width_qr_center: 0.55
+delta_height_qr_center: 0.35
+delta_width_circles: 0.5
+delta_height_circles: 0.4
+circle_radius: 0.12
+min_detected_markers: 3
+
+# LiDAR distance filter (metres), preserving the staged multi_scene_33 preset.
+x_min: 2.0
+x_max: 5.0
+y_min: -1.0
+y_max: 4.0
+z_min: 0.0
+z_max: 2.0

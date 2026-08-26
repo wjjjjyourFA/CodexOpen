@@ -1,0 +1,88 @@
+Panels:
+  - Class: rviz/Displays
+    Name: Displays
+  - Class: rviz/Views
+    Name: Views
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Class: rviz/PointCloud2
+      Name: Filtered cloud
+      Topic: /filtered_cloud
+      Enabled: false
+      Queue Size: 10
+      Style: Points
+      Size (Pixels): 2
+      Color Transformer: FlatColor
+      Color: 170; 170; 170
+    - Class: rviz/PointCloud2
+      Name: Plane cloud
+      Topic: /plane_cloud
+      Enabled: true
+      Queue Size: 10
+      Style: Points
+      Size (Pixels): 1
+      Color Transformer: FlatColor
+      Color: 255; 255; 255
+    - Class: rviz/PointCloud2
+      Name: Edge cloud
+      Topic: /edge_cloud
+      Enabled: false
+      Queue Size: 10
+      Style: Points
+      Size (Pixels): 4
+      Color Transformer: FlatColor
+      Color: 255; 255; 0
+    - Class: rviz/PointCloud2
+      Name: LiDAR centers
+      Topic: /center_cloud
+      Enabled: true
+      Queue Size: 10
+      Style: Points
+      Size (Pixels): 10
+      Color Transformer: FlatColor
+      Color: 239; 41; 41
+    - Class: rviz/PointCloud2
+      Name: Camera centers
+      Topic: /qr_cloud
+      Enabled: true
+      Queue Size: 10
+      Style: Points
+      Size (Pixels): 17
+      Color Transformer: FlatColor
+      Color: 0; 255; 0
+    - Class: rviz/PointCloud2
+      Name: Aligned LiDAR centers
+      Topic: /aligned_lidar_centers
+      Enabled: true
+      Queue Size: 10
+      Style: Points
+      Size (Pixels): 20
+      Color Transformer: FlatColor
+      Color: 239; 41; 41
+    - Class: rviz/PointCloud2
+      Name: Colored cloud
+      Topic: /colored_cloud
+      Enabled: true
+      Queue Size: 10
+      Style: Points
+      Size (Pixels): 2
+      Color Transformer: RGB8
+  Enabled: true
+  Global Options:
+    Background Color: 0; 0; 0
+    Fixed Frame: map
+    Frame Rate: 30
+  Name: root
+  Tools:
+    - Class: rviz/Interact
+    - Class: rviz/MoveCamera
+    - Class: rviz/Select
+  Views:
+    Current:
+      Class: rviz/Orbit
+      Distance: 3
+      Name: Current View
+Window Geometry:
+  Height: 900
+  Width: 1440

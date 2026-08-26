@@ -1,0 +1,25 @@
+fast_calib:
+  # Offline calibration inputs. The launcher can override all four values.
+  bag_path: "/workspaces/CodexOpen/tmp/fast_calib/calib_data/avia_multi_scene/33.bag"
+  image_path: "/workspaces/CodexOpen/tmp/fast_calib/calib_data/avia_multi_scene/33.jpg"
+  lidar_topic: "/livox/lidar"
+  output_path: "/workspaces/CodexOpen/tmp/fast_calib/output"
+
+  # Preserve the original 1 Hz debug point-cloud workflow and map frame.
+  debug:
+    enabled: true
+    frame_id: "map"
+    publish_rate_hz: 1.0
+    cloud_queue_size: 1
+    center_queue_size: 10
+
+  topics:
+    qr_cloud: "qr_cloud"
+    center_cloud: "center_cloud"
+    filtered_cloud: "filtered_cloud"
+    plane_cloud: "plane_cloud"
+    aligned_cloud: "aligned_cloud"
+    edge_cloud: "edge_cloud"
+    center_z0_cloud: "center_z0_cloud"
+    aligned_lidar_centers: "aligned_lidar_centers"
+    colored_cloud: "colored_cloud"

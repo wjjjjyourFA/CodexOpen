@@ -98,6 +98,8 @@ install(PROGRAMS
   ${CMAKE_SOURCE_DIR}/script/robot_plan_expv2.sh
   ${CMAKE_SOURCE_DIR}/script/robot_plan_path.sh
   ${CMAKE_SOURCE_DIR}/script/robot_plan_stack.sh
+  ${CMAKE_SOURCE_DIR}/script/super_lio_robot.sh
+  ${CMAKE_SOURCE_DIR}/script/fast_calib.sh
   ${CMAKE_SOURCE_DIR}/script/runtime_common.sh
   DESTINATION scripts
 )
