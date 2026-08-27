@@ -11,7 +11,7 @@ CONFIG -= qt
 CONFIG += object_parallel_to_source
 TARGET = gauss_projection_test
 
-CODEX_PATH = $$PWD/../../../../../../CodexOpen
+CODEX_PATH = $$clean_path($$PWD/../../../../..)
 SELF_PATH = $$CODEX_PATH/modules/localization/common/algorithm
 
 DESTDIR = $$CODEX_PATH/install/bin/modules/localization/common
