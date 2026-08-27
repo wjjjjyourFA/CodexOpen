@@ -3,7 +3,7 @@
 	// 基础配置层，会生成第一个镜像
 	"name": "jojo-container-ros1-deploy",
 	// "workspaceMount": "source=/home/jojo/CodexOpen,target=/workspaces/CodexOpen,type=bind",
-	"workspaceMount": "source=/home/jojo/Workspace/CodexOpen,target=/workspaces/CodexOpen,type=bind",
+	"workspaceMount": "source=/media/jojo/AQiDePan/CodexOpen-ai,target=/workspaces/CodexOpen,type=bind",
 	"workspaceFolder": "/workspaces/CodexOpen",
 	// way 2 原地临时构建容器，具体步骤见 dockerfile
 	"build": {
@@ -36,11 +36,12 @@
 		// vscode 自动挂载映射 /workspaces/<你的工程名>
 		// path to your host CodexOpen
 		// "--volume=/path/CodexOpen:${containerWorkspaceFolder}",
-		"--volume=${localEnv:HOME}/.codex:/home/ros/.codex",
-		// "--volume=${localEnv:HOME}/.config/Code/User/globalStorage/fszn.codex-session-manager:/home/ros/.config/Code/User/globalStorage/fszn.codex-session-manager",
+		// "--volume=${localEnv:HOME}/.codex:/home/ros/.codex",
+		"--volume=${localEnv:HOME}/.codex-containers/CodexOpen-ai:/home/ros/.codex",
 		"--volume=/home/jojo/Workspace/CodexOpenExtra:/workspaces/CodexOpenExtra",
 		"--volume=/home/jojo/Workspace/CodexOpenData:/workspaces/CodexOpenData",
 		"--volume=/home/jojo/Workspace/CodexOpenExtraData:/workspaces/CodexOpenExtraData",
+		"--volume=/media/jojo/YP004/PiKa5:/workspaces/PiKa5",
 		// other volume
 		"--ipc=host",
 		"--group-add=video",
