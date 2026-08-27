@@ -43,3 +43,7 @@
 	path = tools/az_toolkit
 	url = https://github.com/wjjjjyourFA/az_toolkit.git
 	ignore = all
+[submodule "tools/data_label"]
+	path = tools/data_label
+	url = https://github.com/wjjjjyourFA/data_label.git
+	ignore = all

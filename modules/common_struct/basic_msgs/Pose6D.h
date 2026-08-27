@@ -26,7 +26,7 @@ struct Pose6D {
   double z{};
   double roll{};
   double pitch{};
-  double azimuth{};  // yaw
+  double azimuth{};  // yaw, rad
 
   Pose6D() = default;
   Pose6D(double _x, double _y, double _z, double _roll, double _pitch,
