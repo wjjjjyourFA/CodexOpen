@@ -166,7 +166,7 @@ contains(MY_ROS_INFO, 1){
 INCLUDEPATH += \
   /opt/ros/melodic/include \
   /opt/ros/noetic/include \
-  # $$CODEX_PATH/ros1/devel/include \
+  $$CODEX_PATH/ros1/devel/include \
 }
 
 # contains(MY_SYSTEM_INFO, 20.04){

@@ -36,11 +36,12 @@
 		// vscode 自动挂载映射 /workspaces/<你的工程名>
 		// path to your host CodexOpen
 		// "--volume=/path/CodexOpen:${containerWorkspaceFolder}",
-		"--volume=${localEnv:HOME}/.codex:/home/ros/.codex",
-		// "--volume=${localEnv:HOME}/.config/Code/User/globalStorage/fszn.codex-session-manager:/home/ros/.config/Code/User/globalStorage/fszn.codex-session-manager",
+		// "--volume=${localEnv:HOME}/.codex:/home/ros/.codex",
+		"--volume=${localEnv:HOME}/.codex-containers/CodexOpen-ai:/home/ros/.codex",
 		"--volume=/home/jojo/Workspace/CodexOpenExtra:/workspaces/CodexOpenExtra",
 		"--volume=/home/jojo/Workspace/CodexOpenData:/workspaces/CodexOpenData",
 		"--volume=/home/jojo/Workspace/CodexOpenExtraData:/workspaces/CodexOpenExtraData",
+		"--volume=/media/jojo/YP004/PiKa5:/workspaces/PiKa5",
 		// other volume
 		"--ipc=host",
 		"--group-add=video",
