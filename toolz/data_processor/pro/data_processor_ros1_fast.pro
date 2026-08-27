@@ -12,7 +12,7 @@ CONFIG -= qt
 CONFIG += object_parallel_to_source
 TARGET = data_processor_ros1_fast
 
-CODEX_PATH = $$PWD/../../../../CodexOpen
+CODEX_PATH = $$clean_path($$PWD/../../..)
 PREFIX = $$CODEX_PATH/modules/perception
 SELF_PATH = $$CODEX_PATH/tools/data_processor
 BRANCH_PATH = $$CODEX_PATH/toolz/data_processor

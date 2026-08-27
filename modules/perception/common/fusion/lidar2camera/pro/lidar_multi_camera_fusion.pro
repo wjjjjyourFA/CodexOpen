@@ -3,14 +3,13 @@ unix{
   MY_SYSTEM_INFO = $$system(uname -a | cut -d \~ -f 2 | cut -d \- -f 1)
   message("System Is Ubuntu" $${QT_ARCH} : $${MY_SYSTEM_INFO})
 }
-MY_ROS_INFO = 1
 
 TEMPLATE = app
-CONFIG += console c++14
+CONFIG += console c++17
 CONFIG -= app_bundle
 CONFIG -= qt
 CONFIG += object_parallel_to_source
-TARGET = lidar_camera_fusion_ros1
+TARGET = lidar_multi_camera_fusion
 
 CODEX_PATH = $$clean_path($$PWD/../../../../../..)
 PREFIX = $$CODEX_PATH/modules/perception
@@ -27,60 +26,56 @@ CONFIG(release, debug|release) {
   QMAKE_CXXFLAGS += -O3
 }
 
+# 启用 OpenMP 支持
 CONFIG += openmp
 QMAKE_CXXFLAGS += -fopenmp
 QMAKE_LFLAGS += -fopenmp
 
 SOURCES += \
   $$CODEX_PATH/cyber/binary.cc \
+  $$CODEX_PATH/cyber/base/thread_pool_legacy.cpp \
   $$CODEX_PATH/modules/common/math/math_utils_extra.cpp \
   $$PREFIX/common/base/camera.cc \
   $$PREFIX/common/base/distortion_model.cc \
   $$PREFIX/common/base/fisheye_model.cc \
-  $$PREFIX/tools/opencv/cv_colors.cpp \
-  $$PREFIX/tools/opencv/colors.cpp \
   $$PREFIX/common/config/utils.cpp \
   $$PREFIX/common/camera/common/undistortion_handler.cc \
   $$PREFIX/common/camera/common/undistortion_handler_cv.cc \
   $$PREFIX/common/camera/params/camera_params.cpp \
-  $$PREFIX/common/lidar/convert/robosense.cpp \
-  $$PREFIX/common/lidar/convert/rs_sort_map.cpp \
-  $$PREFIX/common/lidar/convert/velodyne.cpp \
+  $$PREFIX/tools/opencv/cv_colors.cpp \
+  $$PREFIX/tools/opencv/colors.cpp \
   $$files($$PREFIX/tools/common/*.cpp) \
   # $$PREFIX/tools/common/show_data_3d.cpp \
   # $$PREFIX/tools/common/show_data_2d.cpp \
+  $$SELF_PATH/run_lidar_multi_camera_fusion.cpp \
   $$SELF_PATH/lidar_camera_fusion.cpp \
-  $$SELF_PATH/run_lidar_camera_fusion_realtime.cpp \
+  $$SELF_PATH/lidar_multi_camera_fusion.cpp \
   $$SELF_PATH/config/runtime_config.cpp \
   $$SELF_PATH/config/interface_config.cpp \
-  $$SELF_PATH/ros1_convert.cpp \
 
 HEADERS += \
   $$CODEX_PATH/cyber/binary.h \
-  $$CODEX_PATH/cyber/common/environment_conf.h \
+  $$CODEX_PATH/cyber/base/thread_pool_legacy.h \
   $$CODEX_PATH/modules/common/math/math_utils_extra.h \
   $$PREFIX/common/base/camera.h \
   $$PREFIX/common/base/distortion_model.h \
   $$PREFIX/common/base/fisheye_model.h \
-  $$PREFIX/tools/opencv/cv_colors.h \
-  $$PREFIX/tools/opencv/colors.hpp \
-  $$PREFIX/tools/pcl/pcl_eigen.h \
-  $$PREFIX/tools/pcl/point_types.h \
   $$PREFIX/common/config/utils.h \
   $$PREFIX/common/camera/common/undistortion_handler.h \
   $$PREFIX/common/camera/common/undistortion_handler_cv.h \
   $$PREFIX/common/camera/params/camera_params.h \
-  $$PREFIX/common/lidar/convert/robosense.h \
-  $$PREFIX/common/lidar/convert/rs_sort_map.h \
-  $$PREFIX/common/lidar/convert/velodyne.h \
   $$PREFIX/tools/opencv/common.h \
   $$PREFIX/tools/opencv/cv_colors.h \
   $$PREFIX/tools/opencv/colors.hpp \
+  $$PREFIX/tools/pcl/pcl_eigen.h \
+  $$files($$PREFIX/tools/common/*.h) \
+  # $$PREFIX/tools/common/show_data_3d.h \
+  # $$PREFIX/tools/common/show_data_2d.h \
   $$PREFIX/tools/save_file/save_ply.h \
   $$SELF_PATH/lidar_camera_fusion.h \
+  $$SELF_PATH/lidar_multi_camera_fusion.h \
   $$SELF_PATH/config/runtime_config.h \
   $$SELF_PATH/config/interface_config.h \
-  $$SELF_PATH/ros1_convert.h \
 
 INCLUDEPATH += \
   $$CODEX_PATH \
@@ -88,15 +83,8 @@ INCLUDEPATH += \
 INCLUDEPATH += \
   /usr/include/eigen3 \
   /usr/include/opencv4 \
-  # /opt/ros \
-  /opt/ros/$(ROS_DISTRO)/include \
-
-contains(MY_ROS_INFO, 1){
-INCLUDEPATH += \
-  /opt/ros/melodic/include \
-  /opt/ros/noetic/include \
-  # $$CODEX_PATH/ros1/devel/include \
-}
+  # /usr/local/include/opencv4 \
+  /usr/local/include \
 
 # contains(MY_SYSTEM_INFO, 20.04){
 INCLUDEPATH += \
@@ -114,7 +102,6 @@ LIBS += \
   -lvtkCommonCore-6.3 -lvtkCommonDataModel-6.3 -lvtkCommonMath-6.3 -lvtkFiltersCore-6.3 -lvtksys-6.3 -lvtkRenderingCore-6.3 -lvtkFiltersHybrid-6.3
 }
 
-## BASE
 LIBS += \
   -L/usr/local/lib \
   -L/usr/lib/x86_64-linux-gnu \
@@ -124,17 +111,4 @@ LIBS += \
   -lboost_filesystem -lboost_system -lboost_thread \
   -lpcl_common -lpcl_filters -lpcl_io -lpcl_io_ply \
   -lpcl_visualization \
-  -lpthread -lglog -lyaml-cpp -lprotobuf
-
-## ROS1
-contains(MY_ROS_INFO, 1){
-LIBS += \
-  # -L/opt/ros/$(ROS_DISTRO)/lib \
-  -L/opt/ros/melodic/lib \
-  -L/opt/ros/noetic/lib \
-  -lroscpp -lroslib -lrosconsole -lroscpp_serialization -lrostime \
-  -lcv_bridge -limage_transport \
-  -lxmlrpcpp -lrosconsole_log4cxx -lrosconsole_backend_interface \
-  -lmessage_filters -lclass_loader -lrospack -lcpp_common \
-  -lrosbag_storage \
-}
+  -lgomp -lglog -lpthread

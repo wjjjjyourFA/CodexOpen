@@ -12,7 +12,7 @@ CONFIG -= qt
 CONFIG += object_parallel_to_source
 TARGET = lidar_camera_fusion_ros2
 
-CODEX_PATH = $$PWD/../../../../../../../CodexOpen
+CODEX_PATH = $$clean_path($$PWD/../../../../../..)
 PREFIX = $$CODEX_PATH/modules/perception
 SELF_PATH = $$CODEX_PATH/modules/perception/common/fusion/lidar2camera
 

@@ -13,7 +13,7 @@ CONFIG += object_parallel_to_source
 TARGET = data_processor_ros2
 DEFINES += DATA_PROCESSOR_ROS2
 
-CODEX_PATH = $$PWD/../../../../CodexOpen
+CODEX_PATH = $$clean_path($$PWD/../../..)
 PREFIX = $$CODEX_PATH/modules/perception
 SELF_PATH = $$CODEX_PATH/tools/data_processor
 

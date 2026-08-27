@@ -13,7 +13,7 @@ CONFIG += object_parallel_to_source
 DEFINES += ONLY_COMPRESSED_IMAGE
 TARGET = camera_image_to_ros1_jpeg
 
-CODEX_PATH = $$PWD/../../../../../CodexOpen
+CODEX_PATH = $$clean_path($$PWD/../../../..)
 SELF_PATH = $$CODEX_PATH/modules/drivers/camera
 
 DESTDIR = $$CODEX_PATH/install/bin/modules/drivers/camera

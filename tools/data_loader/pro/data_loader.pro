@@ -11,7 +11,7 @@ CONFIG -= qt
 CONFIG += object_parallel_to_source
 TARGET = data_loader
 
-CODEX_PATH = $$PWD/../../../../CodexOpen
+CODEX_PATH = $$clean_path($$PWD/../../..)
 PREFIX = $$CODEX_PATH/modules/perception
 SELF_PATH = $$CODEX_PATH/tools/data_loader
 DATA_PROCESSOR_PATH = $$CODEX_PATH/tools/data_processor

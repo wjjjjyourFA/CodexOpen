@@ -13,7 +13,7 @@ CONFIG -= qt
 CONFIG += object_parallel_to_source
 TARGET = image_tracking_yolov8_deepsort
 
-CODEX_PATH = $$PWD/../../../../../CodexOpen
+CODEX_PATH = $$clean_path($$PWD/../../../..)
 PREFIX = $$CODEX_PATH/modules/perception
 SELF_PATH = $$CODEX_PATH/modules/perception/camera_tracking
 DETECTOR_PATH = $$CODEX_PATH/modules/perception/camera_detection_single_stage

@@ -22,7 +22,7 @@ ros2/build
 ros2/install
 ros2/log
 
-# third_party/
+third_party/
 third_tools/
 
 modules/drivers/lidar/
@@ -31,7 +31,7 @@ modules/drivers/rgbd/
 modules/tools/camera_calibration/
 
 # tools/common/
-tools/az_toolkit/
+# tools/az_toolkit/
 tools/waymo_toolkit/
 tools/data_label/
 
@@ -42,18 +42,10 @@ tools/mmpose_inference_gui/moc/
 tools/mmpose_inference_gui/pro/ui/
 
 tools/data_processor/ros1_message/
-tools/data_processor/rs_driver/ros1/*
-!tools/data_processor/rs_driver/ros1/src/
-tools/data_processor/rs_driver/ros1/src/*
-!tools/data_processor/rs_driver/ros1/src/rslidar_sdk-1.5.19
-
 tools/data_processor/ros2_message/
-tools/data_processor/rs_driver/ros2/*
-!tools/data_processor/rs_driver/ros2/src/
-tools/data_processor/rs_driver/ros2/src/*
-!tools/data_processor/rs_driver/ros2/src/rslidar_sdk-1.5.19
 
 *.pro.user
+*.pro.user.*
 *.qtc_clangd
 *.qmake.stash
 Makefile

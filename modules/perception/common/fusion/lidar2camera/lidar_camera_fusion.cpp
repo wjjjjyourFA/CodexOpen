@@ -266,15 +266,6 @@ void LidarCameraFusion::project_lidar_to_camera_fast_impl(
   // cv::imshow("projected_image", mask);
 }
 
-/*
-void project_lidar_to_camera_raw(
-    const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud,
-    const Eigen::Matrix<float, 3, 4>& extrinsic_matrix, const cv::Mat& image,
-    cv::Mat& mask, bool color = false) {
-      
-    }
-*/
-
 void LidarCameraFusion::show_lidar_color_cloud() {
   {
     std::lock_guard<std::mutex> lock(data_mutex_);
