@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 
 project(common)
 
-add_subdirectory(util)
+add_subdirectory(utils)
 add_subdirectory(math)
 add_subdirectory(config)
 add_subdirectory(transform)
