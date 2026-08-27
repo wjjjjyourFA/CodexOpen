@@ -18,6 +18,8 @@ void InterfaceConfig::LoadConfig(const std::string& config_path) {
 
     image_topic = pt.get<std::string>("topics.image_topic", "");
     lidar_topic = pt.get<std::string>("topics.lidar_topic", "");
+    gnss_topic = pt.get<std::string>("topics.gnss_topic", "");
+    odom_topic = pt.get<std::string>("topics.odom_topic", "");
 
     valid = Validate(&validation_error);
     if (!valid) std::cerr << validation_error << std::endl;

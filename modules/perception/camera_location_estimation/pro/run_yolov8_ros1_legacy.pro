@@ -66,7 +66,7 @@ SOURCES += \
   $$SELF_PATH/common.cpp \
   $$SELF_PATH/config/runtime_config.cpp \
   $$SELF_PATH/config/interface_config.cpp \
-  $$SELF_PATH/run_camera_location_estimation.cpp \
+  $$SELF_PATH/run_camera_location_estimation_realtime.cpp \
   $$SELF_PATH/ros1_convert.cpp \
 
 SOURCES -= \

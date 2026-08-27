@@ -55,6 +55,12 @@ class CameraLocationEstimation {
   // 新接口：推理/定位与 GUI 解耦，并返回可供下游使用的结构化结果。
   bool Estimate(cv::Mat& image, const cv::Mat& projection_mask,
                 LocationEstimateResult* result);
+
+  // 将图像推理与点云定位拆开，便于上层与点云投影并行执行。
+  // Detect 只负责图像推理和二维框生成；Locate 使用投影 mask 完成点云聚类定位。
+  bool Detect(cv::Mat& image, LocationEstimateResult* result);
+  bool Locate(const cv::Mat& projection_mask, LocationEstimateResult* result);
+
   void Visualize(cv::Mat& image, const LocationEstimateResult& result);
 
   // 兼容旧接口。
