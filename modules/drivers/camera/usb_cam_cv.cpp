@@ -60,29 +60,10 @@ bool UsbCamCv::init(const std::shared_ptr<Config>& cameraconfig) {
            << ",must be yuyv | uyvy | mjpeg ";
     return false;
   }
-<<<<<<< HEAD
-  if (pixel_format_ == V4L2_PIX_FMT_MJPEG) {
-    /* 不再执行 mjpeg ==> rgb 的转换
-    if (init_mjpeg_decoder(config_->width(), config_->height()) != 1) {
-      return false;
-    }
-    */
-  }
-
-#if defined(ONLY_COMPRESSED_IMAGE)
-  if (!m_jpegEnc) {
-    m_jpegEnc =
-        std::make_unique<JpegEnc>(0, config_->width(), config_->height(), 90);
-  }
-  if (!m_jpegEnc->Init()) return false;
-#endif
-
-=======
   if (!init_image_processor()) {
     return false;
   }
 
->>>>>>> ai
   // 检测帧率异常, 丢弃帧率异常的图像
   // Warning when diff with last > 1.5* interval
   frame_warning_interval_ = static_cast<float>(1.5 / config_->frame_rate());
@@ -92,8 +73,6 @@ bool UsbCamCv::init(const std::shared_ptr<Config>& cameraconfig) {
   return true;
 }
 
-<<<<<<< HEAD
-=======
 bool UsbCamCv::init_image_processor() {
   if (pixel_format_ == V4L2_PIX_FMT_MJPEG) {
     if (init_mjpeg_decoder(config_->width(), config_->height()) != 1) {
@@ -104,7 +83,6 @@ bool UsbCamCv::init_image_processor() {
   return true;
 }
 
->>>>>>> ai
 int UsbCamCv::init_mjpeg_decoder(int image_width, int image_height) {
   // 设置日志级别
   // 所有 FFmpeg 日志都会被屏蔽，包括警告和错误
@@ -1045,10 +1023,6 @@ bool UsbCamCv::process_image(void* src, int len, CameraImagePtr dest,
 
   uint8_t* data = static_cast<uint8_t*>(src);
 
-<<<<<<< HEAD
-#ifndef ONLY_COMPRESSED_IMAGE
-=======
->>>>>>> ai
   if (pixel_format_ == V4L2_PIX_FMT_YUYV ||
       pixel_format_ == V4L2_PIX_FMT_UYVY) {
     // Equal to Opencv
@@ -1112,23 +1086,6 @@ bool UsbCamCv::process_image(void* src, int len, CameraImagePtr dest,
     AERROR << "unsupported pixel format:" << pixel_format_;
     return false;
   }
-<<<<<<< HEAD
-#else
-  // 转 JPEG
-  uint8_t* jpegPtr = nullptr;
-  size_t jpegSize  = 0;
-  m_jpegEnc->Encode(data, jpegPtr, jpegSize);
-  if (jpegPtr && jpegSize > 0) {
-    // 回调触发
-    if (mjpeg_callback_) {
-      mjpeg_callback_(jpegPtr, jpegSize);
-    }
-  }
-  // 控制帧率
-  //  std::this_thread::sleep_for(std::chrono::milliseconds(1000 / m_fps));
-#endif
-=======
->>>>>>> ai
 
   return true;
 }
@@ -1151,26 +1108,13 @@ bool UsbCamCv::process_image_mjpeg(void* src, int len, CameraImagePtr dest) {
   dest->image = bgr;
   */
 
-<<<<<<< HEAD
-  /* way 3
-=======
   // /* way 3
->>>>>>> ai
   // std::cout << "config_->height():" << config_->height() << "config_->width():" << config_->width() << std::endl;
   cv::Mat bgr(config_->height(), config_->width(), CV_8UC3);
   char* mjpeg_data = reinterpret_cast<char*>(src);
   this->mjpeg2rgb(mjpeg_data, len, bgr);
   dest->image = bgr;
-<<<<<<< HEAD
-  */
-
-  // way 4
-  if (mjpeg_callback_) {
-    mjpeg_callback_((uint8_t*)src, len);
-  }
-=======
   // */
->>>>>>> ai
 
   return true;
 }
