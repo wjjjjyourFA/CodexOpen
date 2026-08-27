@@ -31,7 +31,7 @@ modules/drivers/rgbd/
 modules/tools/camera_calibration/
 
 # tools/common/
-# tools/az_toolkit/
+tools/az_toolkit/
 tools/waymo_toolkit/
 tools/data_label/
 

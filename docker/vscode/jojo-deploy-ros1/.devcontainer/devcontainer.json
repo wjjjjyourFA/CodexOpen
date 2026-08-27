@@ -3,7 +3,7 @@
 	// 基础配置层，会生成第一个镜像
 	"name": "jojo-container-ros1-deploy",
 	// "workspaceMount": "source=/home/jojo/CodexOpen,target=/workspaces/CodexOpen,type=bind",
-	"workspaceMount": "source=/home/jojo/Workspace/CodexOpen,target=/workspaces/CodexOpen,type=bind",
+	"workspaceMount": "source=/media/jojo/AQiDePan/CodexOpen-ai,target=/workspaces/CodexOpen,type=bind",
 	"workspaceFolder": "/workspaces/CodexOpen",
 	// way 2 原地临时构建容器，具体步骤见 dockerfile
 	"build": {
