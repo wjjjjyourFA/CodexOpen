@@ -31,7 +31,8 @@ target_include_directories(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
   PUBLIC
     Eigen3::Eigen
-    gflags::gflags
+    # gflags::gflags
+    gflags
     nlohmann_json::nlohmann_json
     yaml-cpp
 )

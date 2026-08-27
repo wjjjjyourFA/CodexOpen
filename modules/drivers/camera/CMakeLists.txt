@@ -46,6 +46,7 @@ set(CODEX_SOURCES
 
 file(GLOB SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/usb_cam_cv.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/usb_cam_cv_jpeg.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/ros1_convert.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/ros2_convert.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/jpeg_encode.cpp"

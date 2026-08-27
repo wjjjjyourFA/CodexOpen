@@ -115,7 +115,11 @@ bool Ros1Convert::Init(std::shared_ptr<drivers::ConfigManager> param) {
     // std::cout << std::endl;
 
     // init camera_device
+#if defined(ONLY_COMPRESSED_IMAGE)
+    driver.camera_device = std::make_shared<camera::UsbCamCvJpeg>();
+#else
     driver.camera_device = std::make_shared<camera::UsbCamCv>();
+#endif
     driver.camera_device->init(driver.conf);
     driver.camera_device->DebugInfo();
     driver.index = num++;

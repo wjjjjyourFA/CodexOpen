@@ -126,9 +126,8 @@ void CameraLocationEstimation::Run() {
   while (isRunning_) usleep(10000000);
 }
 
-bool CameraLocationEstimation::Estimate(cv::Mat& image,
-                                        const cv::Mat& projection_mask,
-                                        LocationEstimateResult* result) {
+bool CameraLocationEstimation::Detect(cv::Mat& image,
+                                      LocationEstimateResult* result) {
   if (!result) return false;
   result->Clear();
 
@@ -136,13 +135,6 @@ bool CameraLocationEstimation::Estimate(cv::Mat& image,
     return Fail("location estimator is not running", &result->error);
   if (image.empty() || image.type() != CV_8UC3)
     return Fail("camera image must be CV_8UC3", &result->error);
-  if (projection_mask.empty() || projection_mask.type() != CV_32FC3)
-    return Fail("projection mask must be CV_32FC3", &result->error);
-  if (projection_mask.size() != image.size())
-    return Fail("projection mask and image sizes differ", &result->error);
-
-  if (!InitCluster(projection_mask.size()))
-    return Fail("point-cloud cluster initialization failed", &result->error);
 
   std::vector<base::Object> detections;
   if (mode_ == InferenceMode::kDetection) {
@@ -152,15 +144,39 @@ bool CameraLocationEstimation::Estimate(cv::Mat& image,
                                          image.rows, false);
   }
 
-  auto& tracks = detections;
-
-  result->inference_count = tracks.size();
-  FrameObjectGetObjRec(tracks, &result->objects, image.size());
-
+  result->inference_count = detections.size();
+  FrameObjectGetObjRec(detections, &result->objects, image.size());
   result->accepted_count = result->objects.size();
-  result->located_count = GetCloudAndCluster(&result->objects, projection_mask);
-
   return true;
+}
+
+bool CameraLocationEstimation::Locate(const cv::Mat& projection_mask,
+                                      LocationEstimateResult* result) {
+  if (!result) return false;
+  if (!initialized_ || !isRunning_)
+    return Fail("location estimator is not running", &result->error);
+  if (projection_mask.empty() || projection_mask.type() != CV_32FC3)
+    return Fail("projection mask must be CV_32FC3", &result->error);
+
+  if (!InitCluster(projection_mask.size()))
+    return Fail("point-cloud cluster initialization failed", &result->error);
+
+  result->located_count = GetCloudAndCluster(&result->objects, projection_mask);
+  return true;
+}
+
+bool CameraLocationEstimation::Estimate(cv::Mat& image,
+                                        const cv::Mat& projection_mask,
+                                        LocationEstimateResult* result) {
+  if (!result) return false;
+  if (projection_mask.empty() || projection_mask.type() != CV_32FC3) {
+    return Fail("projection mask must be CV_32FC3", &result->error);
+  }
+  if (!image.empty() && projection_mask.size() != image.size()) {
+    return Fail("projection mask and image sizes differ", &result->error);
+  }
+  if (!Detect(image, result)) return false;
+  return Locate(projection_mask, result);
 }
 
 void CameraLocationEstimation::DetectionAndLocation(cv::Mat& image,
@@ -310,7 +326,7 @@ void CameraLocationEstimation::DrawLocateCube(
     cv::rectangle(frame, object.srcRec, cv::Scalar(0, 255, 0), 2);
     if (!object.located || !projection_ready_) continue;
 
-    // 2d 检测框
+    // camera 检测框
     const auto& supplement = object.obj.camera_supplement;
     // 3d 检测框
     const auto& corners = supplement.box3d_supplement.corners;

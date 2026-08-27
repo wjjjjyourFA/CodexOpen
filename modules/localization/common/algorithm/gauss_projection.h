@@ -54,8 +54,9 @@ class GaussProjection {
 
  private:
   // 长半轴 扁率
-  double a, f;
-  std::string coordinate_system_name;
+  double a{6378137.0};
+  double f{1.0 / 298.257223563};
+  std::string coordinate_system_name{"WGS-84"};
 };
 
 }  // namespace common

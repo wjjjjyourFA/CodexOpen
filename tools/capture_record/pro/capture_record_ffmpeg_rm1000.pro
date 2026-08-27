@@ -1,0 +1,108 @@
+#-------------------------------------------------
+#
+# Project created by QtCreator 2025-09-11T15:51:03
+#
+#-------------------------------------------------
+TEMPLATE = app
+QT += multimedia multimediawidgets widgets
+CONFIG += c++17 object_parallel_to_source
+DEFINES += CAPTURE_BACKEND_FFMPEG CAPTURE_RM1000
+TARGET = capture_record_ffmpeg_rm1000
+
+CODEX_PATH = $$clean_path($$PWD/../../..)
+PREFIX = $$CODEX_PATH/modules/drivers
+SELF_PATH = $$CODEX_PATH/tools/capture_record
+RM1000_PATH = $$SELF_PATH/rm1000
+
+DESTDIR = $$CODEX_PATH/install/bin/tools/capture_record
+
+CONFIG(debug, debug|release) {
+  OBJECTS_DIR = $$CODEX_PATH/build/Debug
+  QMAKE_CXXFLAGS += -O1
+}
+CONFIG(release, debug|release) {
+  OBJECTS_DIR = $$CODEX_PATH/build/Release
+  QMAKE_CXXFLAGS += -O3
+}
+
+# 指定中间文件目录（moc, ui, qrc 生成文件都会放到这里）
+UI_DIR  = $$SELF_PATH/pro/ui
+MOC_DIR = $$CODEX_PATH/tools/capture_record/moc
+RCC_DIR = $$CODEX_PATH/tools/capture_record/rcc
+
+SOURCES += \
+  $$SELF_PATH/core/capture_state.cpp \
+  $$CODEX_PATH/cyber/binary.cc \
+  $$PREFIX/camera/usb_cam_cv.cpp \
+  $$PREFIX/camera/usb_cam_cv_jpeg.cpp \
+  $$PREFIX/camera/jpeg_encode.cpp \
+  # $$PREFIX/camera/proto/config.pb.cc \
+  $$SELF_PATH/main.cpp \
+  $$SELF_PATH/imagesettings.cpp \
+  $$SELF_PATH/videosettings.cpp \
+  $$SELF_PATH/v4l2/frame_queue.cpp \
+  $$SELF_PATH/ffmpeg/mainwindow_ffmpeg.cpp \
+  $$SELF_PATH/ffmpeg/camera_device.cpp \
+  $$SELF_PATH/ffmpeg/ffmpeg_writer.cpp \
+  $$SELF_PATH/common/serial_rm1000.cpp \
+
+HEADERS += \
+  $$SELF_PATH/core/capture_state.h \
+  $$CODEX_PATH/cyber/binary.h \
+  $$CODEX_PATH/cyber/common/log.h \
+  $$PREFIX/camera/usb_cam_cv.cpp \
+  $$PREFIX/camera/usb_cam_cv_jpeg.h \
+  $$PREFIX/camera/jpeg_encode.h \
+  # $$PREFIX/camera/proto/config.pb.h \
+  $$SELF_PATH/imagesettings.h \
+  $$SELF_PATH/videosettings.h \
+  $$SELF_PATH/v4l2/frame_queue.h \
+  $$SELF_PATH/ffmpeg/mainwindow_ffmpeg.h \
+  $$SELF_PATH/ffmpeg/camera_device.h \
+  $$SELF_PATH/ffmpeg/ffmpeg_writer.h \
+  $$SELF_PATH/common/common.h \
+  $$SELF_PATH/common/utils.h \
+  $$SELF_PATH/common/serial_rm1000.h \
+  $$RM1000_PATH/source/dio.h \
+  $$RM1000_PATH/source/gpio.h \
+  $$RM1000_PATH/source/device.h \
+  $$RM1000_PATH/source/usb_device.h \
+  $$RM1000_PATH/source/misc.h \
+  $$RM1000_PATH/source/adc.h \
+  $$RM1000_PATH/source/pwm.h \
+
+INCLUDEPATH += \
+  $$CODEX_PATH \
+  $$CODEX_PATH/install/include \
+  $$RM1000_PATH \
+
+LIBS += \
+  -L$$CODEX_PATH/install/lib/modules/drivers/camera/proto \
+  -lcamera_proto
+
+INCLUDEPATH += \
+  /usr/include/opencv4 \
+  /usr/local/include \
+
+FORMS += \
+  $$SELF_PATH/ui/mainwindow.ui \
+  $$SELF_PATH/ui/videosettings.ui \
+  $$SELF_PATH/ui/imagesettings.ui
+
+LIBS += \
+  -L/usr/local/lib \
+  -L/usr/lib/aarch64-linux-gnu \
+  -L/usr/lib/x86_64-linux-gnu \
+  -lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_imgcodecs \
+  -lopencv_videoio -lopencv_video \
+  # -lboost_filesystem -lboost_system -lboost_thread \
+  -lavcodec -lavutil -lavformat -lswscale \
+  -lpthread -lglog -lprotobuf \
+  -lyuv -lturbojpeg
+
+LIBS += \
+  -L$$RM1000_PATH/libs/linux_x86_64 \
+  -lrockmong -lusb-1.0 -lUSB2XXX \
+  # /usr/local/lib/rm1000/librockmong.so \
+  # /usr/local/lib/rm1000/libusb-1.0.so \
+  # /usr/local/lib/rm1000/libUSB2XXX.so \

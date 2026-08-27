@@ -11,8 +11,6 @@
 // #define ENABLE_ROS2
 // #define ENABLE_DDS
 
-#define ONLY_COMPRESSED_IMAGE
-
 // #define RSLIDAR_OLD
 // #define RSLIDAR_NEW
 #define RSLIDAR_NORMAL

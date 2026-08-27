@@ -4,7 +4,9 @@
 #include <opencv2/opencv.hpp>
 
 #include "modules/drivers/camera/usb_cam_cv.h"
-// #include "modules/drivers/camera/usb_cam_cv_legacy.h"
+#if defined(MJEPG)
+#include "modules/drivers/camera/usb_cam_cv_jpeg.h"
+#endif
 
 using apollo::drivers::camera::config::Config;
 

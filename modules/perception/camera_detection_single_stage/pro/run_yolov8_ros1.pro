@@ -13,7 +13,7 @@ CONFIG -= qt
 CONFIG += object_parallel_to_source
 TARGET = image_detector_yolov8_ros1
 
-CODEX_PATH = $$PWD/../../../../../CodexOpen
+CODEX_PATH = $$clean_path($$PWD/../../../..)
 PREFIX = $$CODEX_PATH/modules/perception
 SELF_PATH = $$CODEX_PATH/modules/perception/camera_detection_single_stage
 
@@ -47,7 +47,7 @@ SOURCES += \
   $$SELF_PATH/detector/yolo_obstacle_detector.cpp \
   $$SELF_PATH/config/runtime_config.cpp \
   $$SELF_PATH/config/interface_config.cpp \
-  $$SELF_PATH/run_camera_detection_single_stage.cpp \
+  $$SELF_PATH/run_camera_detection_single_stage_realtime.cpp \
   $$SELF_PATH/ros1_convert.cpp \
 
 SOURCES -= \

@@ -1,160 +1,203 @@
 #include "modules/perception/common/fusion/lidar2camera/lidar_multi_camera_fusion.h"
 
+#include <cmath>
+#include <future>
+#include <limits>
+#include <utility>
+
 namespace jojo {
 namespace perception {
 namespace fusion {
-namespace base = jojo::cyber::base;
+namespace base   = jojo::cyber::base;
 namespace camera = jojo::perception::camera;
 
-LidarMultiCameraFusion::LidarMultiCameraFusion() : LidarCameraFusion() {
-  //  : LidarCameraFusion() ==> 调用父类构造函数
+bool LidarMultiCameraFusion::Init(
+    const std::shared_ptr<base::ThreadPool>& thread_pool) {
+  thread_pool_ = thread_pool ? thread_pool : base::ThreadPool::Instance(8);
+  return static_cast<bool>(thread_pool_);
 }
 
-bool LidarMultiCameraFusion::Init(
-    const std::shared_ptr<base::ThreadPool> &thread_pool) {
-  if (!thread_pool) {
-    thread_pool_ = base::ThreadPool::Instance(8);
-  } else {
-    thread_pool_ = thread_pool;
+void LidarMultiCameraFusion::Start() { is_running_ = true; }
+
+void LidarMultiCameraFusion::Stop() { is_running_ = false; }
+
+void LidarMultiCameraFusion::Run(bool is_mask) {
+  std::lock_guard<std::mutex> run_lock(run_mutex_);
+  if (!is_running_) {
+    return;
   }
 
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud;
+  std::shared_ptr<camera::CameraParams> camera_params;
+  std::vector<std::shared_ptr<cv::Mat>> images;
+  {
+    std::lock_guard<std::mutex> data_lock(data_mutex_);
+    cloud         = cloud_;
+    camera_params = camera_params_;
+    images        = image_v_;
+  }
+
+  if (!ValidateBatchInput(cloud, camera_params, images)) {
+    std::lock_guard<std::mutex> data_lock(data_mutex_);
+    mask_v_.clear();
+    cloud_color_.reset(new pcl::PointCloud<pcl::PointXYZRGB>());
+    return;
+  }
+
+  // 一份点云只转换一次，所有相机任务共享只读的齐次坐标矩阵。
+  PointsMatrix points;
+  pcl_to_eigen<pcl::PointXYZ>(cloud, points);
+
+  const auto& camera_matrices = camera_params->GetMatrixVector();
+  std::vector<ProjectionMatrix> projection_matrices;
+  projection_matrices.reserve(camera_matrices.size());
+  for (const auto& matrix : camera_matrices) {
+    projection_matrices.emplace_back(
+        matrix->projection_matrix.block<3, 4>(0, 0));
+  }
+
+  std::vector<std::shared_ptr<cv::Mat>> outputs;
+  outputs.reserve(images.size());
+  for (const auto& image : images) {
+    if (is_mask) {
+      // 最终输出始终是可直接 imshow/发布的 CV_8UC3 图像。
+      // outputs.emplace_back(std::make_shared<cv::Mat>(cv::Mat::zeros(image->rows, image->cols, CV_8UC3)));
+      outputs.emplace_back(std::make_shared<cv::Mat>(
+          cv::Mat::zeros(image->rows, image->cols, CV_32FC3)));
+    } else {
+      // clone 保证 batch 投影不会修改调用方持有的原图。
+      outputs.emplace_back(std::make_shared<cv::Mat>(image->clone()));
+    }
+  }
+
+  ProjectBatch(points, projection_matrices, images, outputs);
+
+  // 每批结果使用新的对象，避免覆盖正在被外部异步消费的上一批结果。
+  std::lock_guard<std::mutex> data_lock(data_mutex_);
+  mask_v_ = std::move(outputs);
+  cloud_color_.reset(new pcl::PointCloud<pcl::PointXYZRGB>());
+}
+
+bool LidarMultiCameraFusion::ValidateBatchInput(
+    const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud,
+    const std::shared_ptr<camera::CameraParams>& camera_params,
+    const std::vector<std::shared_ptr<cv::Mat>>& image_v) const {
+  if (!cloud || cloud->empty() || !camera_params || image_v.empty()) {
+    return false;
+  }
+
+  const auto& matrix_v = camera_params->GetMatrixVector();
+  if (matrix_v.size() != image_v.size()) {
+    return false;
+  }
+
+  for (size_t i = 0; i < image_v.size(); ++i) {
+    if (!image_v[i] || image_v[i]->empty() || image_v[i]->type() != CV_8UC3 ||
+        !matrix_v[i] || !matrix_v[i]->projection_matrix.allFinite()) {
+      return false;
+    }
+  }
   return true;
 }
 
-void LidarMultiCameraFusion::Start() { isRunning_ = true; }
+void LidarMultiCameraFusion::ProjectBatch(
+    const PointsMatrix& points,
+    const std::vector<ProjectionMatrix>& projection_matrices,
+    const std::vector<std::shared_ptr<cv::Mat>>& image_v,
+    std::vector<std::shared_ptr<cv::Mat>>& output_v) {
+  const size_t camera_count = image_v.size();
+  const float invalid_value = std::numeric_limits<float>::quiet_NaN();
 
-void LidarMultiCameraFusion::Stop() { isRunning_ = false; }
+  // 父类公共函数负责批量矩阵乘法、深度过滤和图像边界过滤。独立的
+  // CV_32FC3 buffer 保存投影到像素后的原始 XYZ，避免把米制 XYZ 直接写入
+  // CV_8UC3 原图后变成几乎不可见的暗色单像素。
+  std::vector<cv::Mat> projections;
+  projections.reserve(camera_count);
+  for (const auto& image : image_v) {
+    projections.emplace_back(
+        image->rows, image->cols, CV_32FC3,
+        cv::Scalar(invalid_value, invalid_value, invalid_value));
+  }
 
-void LidarMultiCameraFusion::Run(bool is_mask) {
-  std::lock_guard<std::mutex> lock(data_mutex_);
+  // 每个相机拥有独立 workspace；一份 points 只读共享。
   // clang-format off
-  cloud_color_ = 
-      pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>());
+  std::vector<Eigen::Matrix<float, 3, Eigen::Dynamic>> workspaces(camera_count);
+  std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> unused_clouds(camera_count);
   // clang-format on
 
-  //
-  const size_t num = image_v_.size();
+  auto project_camera = [this, &points, &projection_matrices, &image_v,
+                         &output_v, &projections, &workspaces,
+                         &unused_clouds](size_t camera_index) {
+    project_lidar_to_camera_fast_impl(
+        points, projection_matrices[camera_index], *image_v[camera_index],
+        projections[camera_index], unused_clouds[camera_index],
+        workspaces[camera_index], false);
+    DrawProjectionResult(projections[camera_index], *output_v[camera_index]);
+  };
 
-  mask_v_.clear();
-  mask_v_.reserve(num);
-
-  for (int i = 0; i < num; ++i) {
-    std::shared_ptr<cv::Mat> mask;
-
-    // 绘制在 黑色底图 还是 原图 上
-    if (is_mask) {
-      mask = std::make_shared<cv::Mat>(
-          cv::Mat::zeros(image_v_[i]->rows, image_v_[i]->cols, CV_8UC3));
-    } else {
-      mask = std::make_shared<cv::Mat>(*(image_v_[i]));
+  if (!thread_pool_ || camera_count == 1) {
+    for (size_t i = 0; i < camera_count; ++i) {
+      project_camera(i);
     }
-    mask_v_.emplace_back(mask);
+    return;
   }
 
-  // auto start_time = std::chrono::high_resolution_clock::now();
-
-  project_lidar_to_camera_fast(cloud_, camera_params_, image_v_, mask_v_);
-
-  // auto end_time = std::chrono::high_resolution_clock::now();
-  // auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
-  //     end_time - start_time);
-  // double run_time_ms = duration.count();  // 运行时间，单位为毫秒
-  // std::cerr << "project_lidar_to_camera_fast run run_time_ms: " << run_time_ms
-  //           << " ms" << std::endl;
-
-  // std::cout << "cloud_color_ size: " << cloud_color_->size() << std::endl;
+  std::vector<std::future<void>> futures;
+  futures.reserve(camera_count);
+  for (size_t i = 0; i < camera_count; ++i) {
+    futures.emplace_back(thread_pool_->Enqueue(project_camera, i));
+  }
+  for (auto& future : futures) {
+    future.get();
+  }
 }
 
-void LidarMultiCameraFusion::project_lidar_to_camera_fast(
-    const pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud,
-    const std::shared_ptr<CameraParams> &camera_params,
-    const std::vector<std::shared_ptr<cv::Mat>> &image_v,
-    std::vector<std::shared_ptr<cv::Mat>> &mask_v) {
-  // 全局转换 将点云转为 Eigen 矩阵 减少计算消耗
-  Eigen::Matrix<float, 4, Eigen::Dynamic> points;
-  pcl_to_eigen<pcl::PointXYZ>(cloud, points);
-
-  auto &matrix_vector = camera_params->GetMatrixVector();
-
-  /* // way 1 单线程 将一簇点云串行投影到多个图像上  cost 6 ms */
-  for (uint i = 0; i < image_v.size(); ++i) {
-    Eigen::Ref<Eigen::Matrix<float, 3, 4>> projection_matrix =
-        matrix_vector.at(i)->projection_matrix.block<3, 4>(0, 0);
-    auto cloud_color = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(
-        new pcl::PointCloud<pcl::PointXYZRGB>());
-
-    project_lidar_to_camera_fast_impl(points, projection_matrix,
-                                      *(image_v.at(i)), *(mask_v.at(i)),
-                                      cloud_color);
-
-    *cloud_color_ += *cloud_color;
-  }
-  /* */
-
-  /* // way 2 多线程 cost 3 ms
-  const size_t num = image_v.size();
-  // 每个线程生成自己的点云指针
-  std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> thread_clouds(num);
-
-  // 存储 future
-  std::vector<std::future<void>> futures;
-  futures.reserve(num);
-
-  for (size_t i = 0; i < num; ++i) {
-    // clang-format off
-    thread_clouds[i] = 
-        pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>());
-    // clang-format on
-
-    // 拷贝 projection_matrix, image 只读
-    // mask 和 cloud 会修改，每个线程独立对象
-    auto projection_matrix =
-        matrix_vector.at(i)->projection_matrix.block<3, 4>(0, 0);
-    auto &image     = *(image_v.at(i));
-    auto &mask      = *(mask_v.at(i));
-    auto &cloud_ptr = thread_clouds[i];
-
-    // 异步任务
-    futures.emplace_back(thread_pool_->Enqueue(
-        [this, points, projection_matrix, &image, &mask, &cloud_ptr]() mutable {
-          // 每个线程独立计算
-          this->project_lidar_to_camera_fast_impl(points, projection_matrix,
-                                                  image, mask, cloud_ptr);
-        }));
+size_t LidarMultiCameraFusion::DrawProjectionResult(const cv::Mat& projection,
+                                                    cv::Mat& output) const {
+  if (projection.empty() || projection.type() != CV_32FC3 || output.empty() ||
+      projection.size() != output.size()) {
+    return 0;
   }
 
-  // 等待所有任务完成
-  // 不等待任务完成就读取 cloud_ptr 的数据一定是错误的
-  // 因为每个线程可能还没有计算完成 cloud_ptr
-  for (auto &f : futures) {
-    f.get();
-  }
+  size_t visible_pixel_count = 0;
+  for (int v = 0; v < projection.rows; ++v) {
+    const cv::Vec3f* projection_row = projection.ptr<cv::Vec3f>(v);
+    for (int u = 0; u < projection.cols; ++u) {
+      // 公共快速投影按 BGR 通道保存 Z、Y、X。
+      const cv::Vec3f& pixel = projection_row[u];
 
-  // 合并到全局 cloud_color_（加锁保护）
-  {
-    std::unique_lock<std::mutex> lock(cloud_mutex_);
-    for (auto &c : thread_clouds) {
-      // PCL 支持累积
-      *cloud_color_ += *c;  
+      const float z = pixel[0];
+      const float y = pixel[1];
+      const float x = pixel[2];
+
+      if (!std::isfinite(x) || !std::isfinite(y) || !std::isfinite(z)) {
+        continue;
+      }
+
+      const float distance = std::sqrt(x * x + y * y + z * z);
+      const cv::Scalar color =
+          GetColorByDistance(distance, static_cast<float>(dist_));
+      cv::circle(output, cv::Point(u, v), 2, color, -1, cv::LINE_AA);
+      ++visible_pixel_count;
     }
   }
-  */
+  return visible_pixel_count;
 }
 
 void LidarMultiCameraFusion::SetCameraParams(
-    std::shared_ptr<CameraParams> camera_params) {
+    std::shared_ptr<camera::CameraParams> camera_params) {
   std::lock_guard<std::mutex> lock(data_mutex_);
-  camera_params_ = camera_params;
+  camera_params_ = std::move(camera_params);
 }
 
 void LidarMultiCameraFusion::SetCameraImageVector(
-    const std::vector<std::shared_ptr<cv::Mat>> &image_v) {
+    const std::vector<std::shared_ptr<cv::Mat>>& image_v) {
   std::lock_guard<std::mutex> lock(data_mutex_);
   image_v_ = image_v;
 }
 
 bool LidarMultiCameraFusion::GetFusedImageVector(
-    std::vector<std::shared_ptr<cv::Mat>> &image_v) {
+    std::vector<std::shared_ptr<cv::Mat>>& image_v) {
   std::lock_guard<std::mutex> lock(data_mutex_);
   if (mask_v_.empty()) {
     return false;

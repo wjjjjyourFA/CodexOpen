@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=VideoRecorder
+Comment=This application created by FSZN in ChagnSha
+Exec=/home/neousys/workspace/CodexOpen/install/bin/tools/capture_record/capture_record_v4l2
+Icon=/home/neousys/workspace/CodexOpen/tools/capture_record/icon/orange.png
+Terminal=false
+StartupNotify=true

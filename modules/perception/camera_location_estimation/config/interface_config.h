@@ -21,6 +21,8 @@ class InterfaceConfig : public jojo::common::config::ConfigFileBase {
   bool b_compressed = true;
   std::string image_topic;
   std::string lidar_topic;
+  std::string gnss_topic;
+  std::string odom_topic;
 
   int rate = 10;
 

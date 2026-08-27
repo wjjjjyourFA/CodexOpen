@@ -12,7 +12,7 @@ CONFIG -= qt
 CONFIG += object_parallel_to_source
 TARGET = camera_image_to_ros1
 
-CODEX_PATH = $$PWD/../../../../../CodexOpen
+CODEX_PATH = $$clean_path($$PWD/../../../..)
 SELF_PATH = $$CODEX_PATH/modules/drivers/camera
 
 DESTDIR = $$CODEX_PATH/install/bin/modules/drivers/camera
@@ -33,7 +33,6 @@ SOURCES += \
   $$CODEX_PATH/modules/common/config/config_file_base.cpp \
   $$SELF_PATH/usb_cam_cv_test.cpp \
   $$SELF_PATH/usb_cam_cv.cpp \
-  $$SELF_PATH/jpeg_encode.cpp \
   $$files($$SELF_PATH/config/*.cpp) \
   # $$SELF_PATH/proto/config.pb.cc \
   $$SELF_PATH/ros1_convert.cpp \
@@ -46,7 +45,6 @@ HEADERS += \
   $$CODEX_PATH/modules/common/environment_conf.h \
   $$CODEX_PATH/modules/common/config/config_file_base.h \
   $$SELF_PATH/usb_cam_cv.h \
-  $$SELF_PATH/jpeg_encode.h \
   $$SELF_PATH/driver_wrapper.h \
   $$files($$SELF_PATH/config/*.h) \
   # $$SELF_PATH/proto/config.pb.h \
@@ -84,7 +82,6 @@ LIBS += \
   -lboost_filesystem -lboost_system -lboost_thread \
   -lavcodec -lavutil -lavformat -lswscale \
   -lpthread -lglog -lyaml-cpp -lprotobuf \
-  -lyuv -lturbojpeg
 
 ## ROS1
 contains(MY_ROS_INFO, 1){

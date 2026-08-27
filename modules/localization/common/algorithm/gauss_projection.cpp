@@ -95,7 +95,7 @@ void GaussProjection::Forward(double longitude, double latitude,
 void GaussProjection::Inverse(double gauss_x, double gauss_y, double* longitude,
                               double* latitude) {
   double longitude1, latitude1, longitude0, X0, Y0, xval, yval;
-  double e1, e2, f, a, ee, NN, T, C, M, D, R, u, fai;
+  double e1, e2, ee, NN, T, C, M, D, R, u, fai;
 
   int ProjNo = int(gauss_x / 1000000L);  // 查找带号
   longitude0 = (ProjNo - 1) * ZoneWide + ZoneWide / 2;

@@ -11,7 +11,7 @@ CONFIG -= qt
 CONFIG += object_parallel_to_source
 TARGET = fisheye_calib
 
-CODEX_PATH = $$PWD/../../../../../../../CodexOpen
+CODEX_PATH = $$clean_path($$PWD/../../../../../..)
 PREFIX = $$CODEX_PATH/modules/tools/sensor_calibration
 SELF_PATH = $$CODEX_PATH/modules/tools/sensor_calibration/camera_intrinsic/fisheye_calib
 

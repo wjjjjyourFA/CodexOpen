@@ -18,7 +18,7 @@ target_include_directories(cyber_binary
 )
 
 # 注意编译顺序
-add_subdirectory(proto)  # 采用顶层编译
+# add_subdirectory(proto)  # 采用顶层编译
 add_subdirectory(base)
 add_subdirectory(common)
 
@@ -32,12 +32,12 @@ target_include_directories(cyber_state
 )
 target_link_libraries(cyber_state PUBLIC cyber_common)
 
-add_subdirectory(context)
-add_subdirectory(time)
-add_subdirectory(logger)
-add_subdirectory(event)
-add_subdirectory(message)
-add_subdirectory(data)
+# add_subdirectory(context)
+# add_subdirectory(time)
+# add_subdirectory(logger)
+# add_subdirectory(event)
+# add_subdirectory(message)
+# add_subdirectory(data)
 
 # 混合编译库
 # add_subdirectory(croutine)
@@ -123,9 +123,9 @@ add_subdirectory(data)
 #   tinyxml2 uuid atomic 
 #   ${PROJ_LIBRARIES} 
 #   # ${GperfTools_LIBRARIES}
-#   # profiler           # ✅ 提供 HeapProfilerXXX 函数
-#   fastrtps           # ✅ 提供 eprosima::fastrtps::Time_t
-#   fastcdr            # ✅ 提供 eprosima::fastcdr::Cdr 等序列化
+#   # profiler           # 提供 HeapProfilerXXX 函数
+#   fastrtps           # 提供 eprosima::fastrtps::Time_t
+#   fastcdr            # 提供 eprosima::fastcdr::Cdr 等序列化
 #   dl rt
 #   gflags glog
 #   pthread 

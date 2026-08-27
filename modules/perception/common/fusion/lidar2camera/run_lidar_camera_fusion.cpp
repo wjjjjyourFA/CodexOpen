@@ -65,23 +65,22 @@ int main(int argc, char** argv) {
 
   if (interface_config->b_bin_or_pcd == 0) {
     FILE* fp = fopen(interface_config->lidar_file.c_str(), "rb");
-    int tmp_data[4];
-    while (!feof(fp)) {
-      fread(tmp_data, sizeof(int), 4, fp);
+    int data[4] = {0, 0, 0, 0};
+    while (std::fread(data, sizeof(int), 4, fp) == 4) {
       pcl::PointXYZI point;
       // cm ==> m    for m matrix
-      point.x = float(tmp_data[0] / 100.);
-      point.y = float(tmp_data[1] / 100.);
-      point.z = float(tmp_data[2] / 100.);
+      point.x = float(data[0] / 100.);
+      point.y = float(data[1] / 100.);
+      point.z = float(data[2] / 100.);
       // for mm matrix
-      // point.x = float(tmp_data[0]) * 10;
-      // point.y = float(tmp_data[1]) * 10;
-      // point.z = float(tmp_data[2]) * 10;
+      // point.x = float(data[0]) * 10;
+      // point.y = float(data[1]) * 10;
+      // point.z = float(data[2]) * 10;
       // for cm matrix
-      // point.x = float(tmp_data[0]);
-      // point.y = float(tmp_data[1]);
-      // point.z = float(tmp_data[2]);
-      point.intensity = tmp_data[3];
+      // point.x = float(data[0]);
+      // point.y = float(data[1]);
+      // point.z = float(data[2]);
+      point.intensity = data[3];
       cloud->push_back(point);
     }
     fclose(fp);

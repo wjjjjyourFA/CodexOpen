@@ -4,7 +4,7 @@
 
 #include "modules/common/environment_conf.h"
 // #include "modules/drivers/camera/usb_cam_cv.h"
-// #include "modules/drivers/camera/usb_cam_cv_legacy.h"
+// #include "modules/drivers/camera/usb_cam_cv_jpeg.h"
 #include "modules/drivers/camera/driver_wrapper.h"
 #if defined(ENABLE_ROS1)
 #include "modules/drivers/camera/ros1_convert.h"

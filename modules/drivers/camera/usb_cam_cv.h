@@ -45,7 +45,6 @@ extern "C" {
 
 #include "cyber/common/log.h"
 #include "modules/common/environment_conf.h"
-#include "modules/drivers/camera/jpeg_encode.h"
 
 // default is v4l2
 
@@ -90,9 +89,6 @@ struct buffer {
 // buf个数
 #define V4L2_BUFFER_LENGHT 2
 
-// typedef void (*JPEG_CALLBACK)(int nChan, struct timespec stTime, int nWidth,
-//                               int nHeight, unsigned char* pData, int nDatalen,
-//                               void* pUserData);
 using JPEG_CALLBACK = std::function<void(const uint8_t*, int)>;
 
 class UsbCamCv {
@@ -116,6 +112,21 @@ class UsbCamCv {
  protected:
   cv::Mat frame;
 
+  // 图像处理扩展点，派生类只需要覆盖与输出格式相关的差异逻辑。
+  virtual bool init_image_processor();
+  virtual bool process_image(void* src, int len, CameraImagePtr dest,
+                             bool show = false);
+  virtual bool process_image_mjpeg(void* src, int len, CameraImagePtr dest);
+
+  const std::shared_ptr<Config>& camera_config() const { return config_; }
+  int pixel_format() const { return pixel_format_; }
+
+  void InvokeMJPEGCallback(const uint8_t* data, int len) {
+    if (mjpeg_callback_) {
+      mjpeg_callback_(data, len);
+    }
+  }
+
  private:
   int xioctl(int fd, int request, void* arg);
   bool init_device(void);
@@ -127,9 +138,6 @@ class UsbCamCv {
   // set video device parameters
   void set_v4l_parameter(const std::string& param, int value);
   void set_v4l_parameter(const std::string& param, const std::string& value);
-
-  // JPEG Encoder
-  std::unique_ptr<JpegEnc> m_jpegEnc = nullptr;
 
   int init_mjpeg_decoder(int image_width, int image_height);
   bool init_mjpeg_sws();
@@ -148,9 +156,6 @@ class UsbCamCv {
   bool close_device(void);
   bool open_device(void);
   bool read_frame(CameraImagePtr raw_image);
-  bool process_image(void* src, int len, CameraImagePtr dest,
-                     bool show = false);
-  bool process_image_mjpeg(void* src, int len, CameraImagePtr dest);
   bool start_capturing(void);
   bool stop_capturing(void);
   void reconnect();

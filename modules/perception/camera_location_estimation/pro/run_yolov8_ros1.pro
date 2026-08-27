@@ -67,8 +67,9 @@ SOURCES += \
   $$SELF_PATH/common.cpp \
   $$SELF_PATH/config/runtime_config.cpp \
   $$SELF_PATH/config/interface_config.cpp \
-  $$SELF_PATH/run_camera_location_estimation.cpp \
+  $$SELF_PATH/run_camera_location_estimation_realtime.cpp \
   $$SELF_PATH/ros1_convert.cpp \
+  $$CODEX_PATH/modules/localization/common/transform/frame2d_transform.cpp \
 
 SOURCES -= \
   $$PREFIX/tools/pcl/pcl_viewer_test.cpp \
@@ -116,6 +117,7 @@ HEADERS += \
   $$SELF_PATH/config/runtime_config.h \
   $$SELF_PATH/config/interface_config.h \
   $$SELF_PATH/ros1_convert.h \
+  $$CODEX_PATH/modules/localization/common/transform/frame2d_transform.hpp \
 
 INCLUDEPATH += \
   $$CODEX_PATH \

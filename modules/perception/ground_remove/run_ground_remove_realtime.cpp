@@ -16,9 +16,9 @@ int main(int argc, char** argv) {
 
   std::string if_config_path = "./../../../config/GroundRemove/Interface.ini";
 
-  auto if_runtime_config = std::make_shared<jojo::perception::Interface>();
-  if_runtime_config->set_name(name);
-  if_runtime_config->LoadConfig(if_config_path);
+  auto interface_config = std::make_shared<jojo::perception::InterfaceConfig>();
+  interface_config->set_name(name);
+  interface_config->LoadConfig(if_config_path);
 
   // 初始化 ROS 节点
   ros::init(argc, argv, "ground_remove_node");
@@ -26,8 +26,8 @@ int main(int argc, char** argv) {
   ros::NodeHandle pnh("~");
 
   // GroundRemoveNode
-  auto _pRos1Convert = std::make_shared<Ros1Convert>();
-  _pRos1Convert->Init(nh, pnh, runtime_config, if_runtime_config);
+  auto _pRos1Convert = std::make_shared<Ros1Convert>(nh, pnh);
+  _pRos1Convert->Init(runtime_config, interface_config);
 
   _pRos1Convert->Run();
 

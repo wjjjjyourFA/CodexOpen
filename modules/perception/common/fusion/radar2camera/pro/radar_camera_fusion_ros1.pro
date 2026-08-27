@@ -12,7 +12,7 @@ CONFIG -= qt
 CONFIG += object_parallel_to_source
 TARGET = radar_camera_fusion_ros1
 
-CODEX_PATH = $$PWD/../../../../../../../CodexOpen
+CODEX_PATH = $$clean_path($$PWD/../../../../../..)
 PREFIX = $$CODEX_PATH/modules/perception
 SELF_PATH = $$CODEX_PATH/modules/perception/common/fusion/radar2camera
 
